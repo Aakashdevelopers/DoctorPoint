@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Doctor Point</string>
+    <string name="welcome_back">Welcome Back</string>
+    <string name="login_subtitle">Sign in to continue to Doctor Point</string>
+    <string name="create_account">Create Account</string>
+    <string name="signup_subtitle">Join Doctor Point for expert healthcare</string>
+</resources>
