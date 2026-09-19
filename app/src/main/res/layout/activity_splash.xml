@@ -10,32 +10,43 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="32dp">
 
-        <ImageView
-            android:layout_width="96dp"
-            android:layout_height="96dp"
-            android:src="@drawable/ic_stethoscope"
-            app:tint="@color/white"
-            android:contentDescription="Doctor Point Logo" />
+        <FrameLayout
+            android:layout_width="104dp"
+            android:layout_height="104dp"
+            android:background="@drawable/bg_squircle_icon"
+            android:backgroundTint="#1E3A8A"
+            android:padding="20dp">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:contentDescription="Doctor Point Logo"
+                android:src="@drawable/ic_stethoscope"
+                app:tint="@color/white" />
+        </FrameLayout>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="20dp"
+            android:letterSpacing="0.04"
             android:text="Doctor Point"
             android:textColor="@color/white"
-            android:textSize="36sp"
-            android:textStyle="bold"
-            android:letterSpacing="0.05" />
+            android:textSize="34sp"
+            android:textStyle="bold" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
+            android:letterSpacing="0.02"
             android:text="Your Health, Our Priority"
             android:textColor="@color/primary_light"
-            android:textSize="14sp" />
+            android:textSize="15sp" />
     </LinearLayout>
 
 </RelativeLayout>

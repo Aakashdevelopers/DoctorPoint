@@ -3,67 +3,92 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true"
-    android:background="@color/background_light">
+    android:background="@color/background_light"
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingBottom="24dp">
+        android:paddingBottom="32dp">
 
-        <!-- Top App Bar -->
-        <RelativeLayout
+        <!-- Top App Bar Card -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/surface_white"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="14dp">
+            app:cardBackgroundColor="@color/surface_white"
+            app:cardCornerRadius="0dp"
+            app:cardElevation="2dp"
+            app:strokeWidth="0dp">
 
-            <TextView
-                android:id="@+id/tv_title"
-                android:layout_width="wrap_content"
+            <RelativeLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_centerVertical="true"
-                android:text="Explore &amp; Find"
-                android:textColor="@color/text_primary"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+                android:paddingHorizontal="20dp"
+                android:paddingTop="16dp"
+                android:paddingBottom="16dp">
 
-            <TextView
-                android:id="@+id/tv_location_chip"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:background="@drawable/bg_date_chip_unselected"
-                android:paddingHorizontal="10dp"
-                android:paddingVertical="6dp"
-                android:text="📍 Bangalore ▾"
-                android:textColor="@color/primary"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-        </RelativeLayout>
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:orientation="vertical">
 
-        <!-- Search Bar -->
+                    <TextView
+                        android:id="@+id/tv_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Explore &amp; Find"
+                        android:textColor="@color/text_primary"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Find top specialists &amp; clinics near you"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_location_chip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/bg_squircle_icon"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="8dp"
+                    android:text="📍 Bangalore ▾"
+                    android:textColor="@color/primary"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+            </RelativeLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Search Bar Container -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="52dp"
             android:layout_marginHorizontal="16dp"
             android:layout_marginTop="16dp"
-            android:background="@drawable/bg_search_field"
+            android:background="@drawable/bg_search_field_elevated"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingHorizontal="14dp"
-            android:paddingVertical="10dp">
+            android:paddingHorizontal="14dp">
 
             <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:contentDescription="Search icon"
                 android:src="@drawable/ic_search"
-                app:tint="@color/text_secondary"
-                android:contentDescription="Search icon" />
+                app:tint="@color/primary" />
 
             <EditText
                 android:id="@+id/et_search"
@@ -72,61 +97,98 @@
                 android:layout_marginStart="10dp"
                 android:background="@null"
                 android:hint="Search symptoms, doctors, specialities..."
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:maxLines="1"
                 android:textColor="@color/text_primary"
                 android:textColorHint="@color/text_muted"
-                android:textSize="14sp"
-                android:inputType="text" />
+                android:textSize="13sp" />
         </LinearLayout>
 
-        <!-- Specialities Section Header -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="20dp"
-            android:text="Popular Specialities"
-            android:textColor="@color/text_primary"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <!-- Grid RecyclerView for Specialities -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rv_specialities"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="8dp"
-            android:layout_marginTop="8dp"
-            android:nestedScrollingEnabled="false" />
-
-        <!-- AI Symptom Checker Banner Card -->
+        <!-- AI Symptom Assistant Banner Card -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/card_ai_symptom"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="16dp"
             app:cardCornerRadius="16dp"
-            app:cardElevation="0dp"
-            app:strokeWidth="1dp"
-            app:strokeColor="@color/secondary"
-            app:cardBackgroundColor="@color/bg_blue_light"/>
+            app:cardElevation="3dp"
+            app:strokeWidth="0dp"/>
+
+        <!-- Popular Specialities Section Header -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="22dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Popular Specialities"
+                    android:textColor="@color/text_primary"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:text="Browse trusted doctors by department"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+        </RelativeLayout>
+
+        <!-- Grid RecyclerView for Specialities (4 columns) -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_specialities"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="10dp"
+            android:layout_marginTop="10dp"
+            android:clipToPadding="false"
+            android:nestedScrollingEnabled="false" />
 
         <!-- Top Doctors Section Header -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
+            android:layout_marginHorizontal="20dp"
             android:layout_marginTop="24dp">
 
-            <TextView
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
                 android:layout_centerVertical="true"
-                android:text="Top Doctors Near You"
-                android:textColor="@color/text_primary"
-                android:textSize="18sp"
-                android:textStyle="bold" />
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Top Doctors Near You"
+                    android:textColor="@color/text_primary"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:text="Verified specialists with high ratings"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp" />
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/tv_see_all_doctors"
@@ -134,20 +196,25 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
-                android:text="See All"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="2dp"
+                android:text="See All →"
                 android:textColor="@color/secondary"
-                android:textSize="14sp"
+                android:textSize="13sp"
                 android:textStyle="bold" />
         </RelativeLayout>
 
-        <!-- Horizontal RecyclerView for Doctor Previews -->
+        <!-- Grid RecyclerView for Doctor Previews (2 columns) -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rv_top_doctors"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginHorizontal="10dp"
+            android:layout_marginTop="10dp"
             android:clipToPadding="false"
-            android:paddingHorizontal="8dp" />
+            android:nestedScrollingEnabled="false" />
 
     </LinearLayout>
 

@@ -14,18 +14,14 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.amstudio.drpoint.adapter.DoctorListAdapter;
 import com.amstudio.drpoint.adapter.SpecialitiesAdapter;
 import com.amstudio.drpoint.databinding.FragmentExploreBinding;
 import com.amstudio.drpoint.model.Doctor;
-import com.amstudio.drpoint.model.Speciality;
 import com.amstudio.drpoint.ui.doctor.DoctorDetailActivity;
 import com.amstudio.drpoint.ui.doctor.DoctorListActivity;
 import com.amstudio.drpoint.util.DummyDataProvider;
-
-import java.util.List;
 
 public class ExploreFragment extends Fragment {
 
@@ -41,6 +37,24 @@ public class ExploreFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        // AI Symptom Checker Click
+        View.OnClickListener openAiSymptomListener = v -> {
+            Intent intent = new Intent(requireContext(), DoctorListActivity.class);
+            intent.putExtra("category_name", "General Physician");
+            startActivity(intent);
+            Toast.makeText(requireContext(), "Connecting to AI Doctor Assistant...", Toast.LENGTH_SHORT).show();
+        };
+
+        if (binding.cardAiSymptom != null) {
+            binding.cardAiSymptom.setOnClickListener(openAiSymptomListener);
+        }
+
+        if (binding.tvLocationChip != null) {
+            binding.tvLocationChip.setOnClickListener(v ->
+                Toast.makeText(requireContext(), "Selected Location: Bangalore", Toast.LENGTH_SHORT).show()
+            );
+        }
 
         binding.etSearch.addTextChangedListener(new TextWatcher() {
             @Override
@@ -59,7 +73,7 @@ public class ExploreFragment extends Fragment {
             public void afterTextChanged(Editable s) {}
         });
 
-        // Specialities
+        // Specialities Grid (4 Columns)
         binding.rvSpecialities.setLayoutManager(new GridLayoutManager(requireContext(), 4));
         SpecialitiesAdapter specialitiesAdapter = new SpecialitiesAdapter(speciality -> {
             Intent intent = new Intent(requireContext(), DoctorListActivity.class);
@@ -69,7 +83,7 @@ public class ExploreFragment extends Fragment {
         binding.rvSpecialities.setAdapter(specialitiesAdapter);
         DummyDataProvider.fetchSpecialitiesFromSupabase(specialitiesAdapter::submitList);
 
-        // Top Doctors (2-Column Grid)
+        // Top Doctors Grid (2 Columns)
         binding.rvTopDoctors.setLayoutManager(new GridLayoutManager(requireContext(), 2));
         DoctorListAdapter doctorListAdapter = new DoctorListAdapter(true, new DoctorListAdapter.OnDoctorClickListener() {
             @Override
@@ -109,7 +123,6 @@ public class ExploreFragment extends Fragment {
             intent.putExtra("category_name", "All Doctors");
             startActivity(intent);
         });
-
     }
 
     @Override

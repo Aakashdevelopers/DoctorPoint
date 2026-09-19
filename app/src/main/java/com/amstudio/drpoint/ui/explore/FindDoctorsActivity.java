@@ -9,18 +9,14 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.amstudio.drpoint.adapter.DoctorListAdapter;
 import com.amstudio.drpoint.adapter.SpecialitiesAdapter;
 import com.amstudio.drpoint.databinding.ActivityFindDoctorsBinding;
 import com.amstudio.drpoint.model.Doctor;
-import com.amstudio.drpoint.model.Speciality;
 import com.amstudio.drpoint.ui.doctor.DoctorDetailActivity;
 import com.amstudio.drpoint.ui.doctor.DoctorListActivity;
 import com.amstudio.drpoint.util.DummyDataProvider;
-
-import java.util.List;
 
 public class FindDoctorsActivity extends AppCompatActivity {
 
@@ -51,18 +47,17 @@ public class FindDoctorsActivity extends AppCompatActivity {
             public void afterTextChanged(Editable s) {}
         });
 
-        // Specialities Grid
+        // Specialities Grid (Live Supabase Data)
         binding.rvSpecialities.setLayoutManager(new GridLayoutManager(this, 4));
-        List<Speciality> specialities = DummyDataProvider.getSpecialities();
         SpecialitiesAdapter specialitiesAdapter = new SpecialitiesAdapter(speciality -> {
             Intent intent = new Intent(FindDoctorsActivity.this, DoctorListActivity.class);
             intent.putExtra("category_name", speciality.getName());
             startActivity(intent);
         });
         binding.rvSpecialities.setAdapter(specialitiesAdapter);
-        specialitiesAdapter.submitList(specialities);
+        DummyDataProvider.fetchSpecialitiesFromSupabase(specialitiesAdapter::submitList);
 
-        // Top Doctors Preview (2-Column Grid)
+        // Top Doctors Preview (Live Supabase Data)
         binding.rvTopDoctors.setLayoutManager(new GridLayoutManager(this, 2));
         DoctorListAdapter doctorListAdapter = new DoctorListAdapter(true, new DoctorListAdapter.OnDoctorClickListener() {
             @Override

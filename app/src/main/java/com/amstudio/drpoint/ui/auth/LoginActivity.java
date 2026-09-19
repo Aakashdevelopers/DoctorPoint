@@ -47,6 +47,9 @@ public class LoginActivity extends AppCompatActivity {
         binding.btnGoogleLogin.setOnClickListener(v -> {
             PreferenceManager prefManager = PreferenceManager.getInstance(LoginActivity.this);
             prefManager.setLoggedIn(true);
+            if (prefManager.getUserId() == null || prefManager.getUserId().trim().isEmpty()) {
+                prefManager.setUserId("google_user_" + System.currentTimeMillis());
+            }
             prefManager.setUserName("Aakash Mishra");
             prefManager.setUserEmail("aakash.mishra@example.com");
 
@@ -147,14 +150,20 @@ public class LoginActivity extends AppCompatActivity {
 
                     User user = authResponse.getUser();
                     if (user != null) {
-                        prefManager.setUserId(user.getId());
-                        prefManager.setUserEmail(user.getEmail());
+                        if (user.getId() != null) prefManager.setUserId(user.getId());
+                        if (user.getEmail() != null) prefManager.setUserEmail(user.getEmail());
                         if (user.getFullName() != null && !user.getFullName().isEmpty()) {
                             prefManager.setUserName(user.getFullName());
                         }
                         if (user.getPhone() != null && !user.getPhone().isEmpty()) {
                             prefManager.setUserPhone(user.getPhone());
                         }
+                    }
+                    if (prefManager.getUserId() == null || prefManager.getUserId().trim().isEmpty()) {
+                        prefManager.setUserId("user_" + System.currentTimeMillis());
+                    }
+                    if (prefManager.getUserEmail() == null || prefManager.getUserEmail().trim().isEmpty()) {
+                        prefManager.setUserEmail(email);
                     }
 
                     Toast.makeText(LoginActivity.this, "Login Successful!", Toast.LENGTH_SHORT).show();

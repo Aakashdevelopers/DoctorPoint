@@ -24,14 +24,21 @@ public class DateChipAdapter extends ListAdapter<DateChipAdapter.DateItem, DateC
     public static class DateItem {
         private final String day;
         private final String date;
+        private final String rawDate;
 
         public DateItem(String day, String date) {
+            this(day, date, null);
+        }
+
+        public DateItem(String day, String date, String rawDate) {
             this.day = day;
             this.date = date;
+            this.rawDate = rawDate;
         }
 
         public String getDay() { return day; }
         public String getDate() { return date; }
+        public String getRawDate() { return rawDate != null ? rawDate : date; }
 
         @Override
         public boolean equals(Object o) {

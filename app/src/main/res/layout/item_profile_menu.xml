@@ -4,6 +4,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
     android:gravity="center_vertical"
     android:orientation="horizontal"
     android:paddingHorizontal="16dp"
@@ -13,34 +15,35 @@
         android:id="@+id/fl_menu_icon_bg"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        android:background="@drawable/bg_circle_avatar">
+        android:background="@drawable/bg_squircle_icon">
 
         <ImageView
             android:id="@+id/iv_menu_icon"
             android:layout_width="20dp"
             android:layout_height="20dp"
             android:layout_gravity="center"
-            app:tint="@color/primary"
-            android:contentDescription="Menu icon" />
+            android:contentDescription="Menu icon"
+            android:src="@drawable/ic_calendar"
+            app:tint="@color/primary" />
     </FrameLayout>
 
     <TextView
         android:id="@+id/tv_menu_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
         android:layout_marginStart="14dp"
+        android:layout_weight="1"
         android:text="My Appointments"
         android:textColor="@color/text_primary"
-        android:textSize="15sp"
+        android:textSize="14sp"
         android:textStyle="bold" />
 
     <ImageView
         android:id="@+id/iv_chevron"
-        android:layout_width="20dp"
-        android:layout_height="20dp"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:contentDescription="Chevron"
         android:src="@drawable/ic_chevron_right"
-        app:tint="@color/text_secondary"
-        android:contentDescription="Chevron" />
+        app:tint="@color/text_muted" />
 
 </LinearLayout>

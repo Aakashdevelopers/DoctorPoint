@@ -3,78 +3,95 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true"
-    android:background="@color/background_light">
+    android:background="@color/background_light"
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingBottom="24dp">
+        android:paddingBottom="32dp">
 
-        <!-- Top App Bar -->
-        <RelativeLayout
+        <!-- Top App Bar Card -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/surface_white"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="14dp">
+            app:cardBackgroundColor="@color/surface_white"
+            app:cardCornerRadius="0dp"
+            app:cardElevation="2dp"
+            app:strokeWidth="0dp">
 
-            <ImageView
-                android:id="@+id/iv_back"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:layout_alignParentStart="true"
-                android:layout_centerVertical="true"
-                android:src="@drawable/ic_back"
-                app:tint="@color/text_primary"
-                android:contentDescription="Back" />
-
-            <TextView
-                android:id="@+id/tv_title"
-                android:layout_width="wrap_content"
+            <RelativeLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_toEndOf="@id/iv_back"
-                android:layout_centerVertical="true"
-                android:layout_marginStart="12dp"
-                android:text="Find Doctors"
-                android:textColor="@color/text_primary"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="14dp">
 
-            <TextView
-                android:id="@+id/tv_location_chip"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:background="@drawable/bg_date_chip_unselected"
-                android:paddingHorizontal="10dp"
-                android:paddingVertical="6dp"
-                android:text="📍 Bangalore ▾"
-                android:textColor="@color/primary"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-        </RelativeLayout>
+                <FrameLayout
+                    android:id="@+id/fl_back_bg"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/bg_squircle_icon">
 
-        <!-- Search Bar -->
+                    <ImageView
+                        android:id="@+id/iv_back"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="Back"
+                        android:src="@drawable/ic_back"
+                        app:tint="@color/text_primary" />
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/tv_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_marginStart="12dp"
+                    android:layout_toEndOf="@id/fl_back_bg"
+                    android:text="Find Doctors"
+                    android:textColor="@color/text_primary"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_location_chip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/bg_squircle_icon"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="8dp"
+                    android:text="📍 Bangalore ▾"
+                    android:textColor="@color/primary"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </RelativeLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Search Bar Container -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="52dp"
             android:layout_marginHorizontal="16dp"
             android:layout_marginTop="16dp"
-            android:background="@drawable/bg_search_field"
+            android:background="@drawable/bg_search_field_elevated"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingHorizontal="14dp"
-            android:paddingVertical="10dp">
+            android:paddingHorizontal="14dp">
 
             <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:contentDescription="Search icon"
                 android:src="@drawable/ic_search"
-                app:tint="@color/text_secondary"
-                android:contentDescription="Search icon" />
+                app:tint="@color/primary" />
 
             <EditText
                 android:id="@+id/et_search"
@@ -83,21 +100,21 @@
                 android:layout_marginStart="10dp"
                 android:background="@null"
                 android:hint="Search symptoms, doctors, specialities..."
+                android:inputType="text"
                 android:textColor="@color/text_primary"
                 android:textColorHint="@color/text_muted"
-                android:textSize="14sp"
-                android:inputType="text" />
+                android:textSize="14sp" />
         </LinearLayout>
 
         <!-- Specialities Section Header -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="20dp"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="22dp"
             android:text="Popular Specialities"
             android:textColor="@color/text_primary"
-            android:textSize="18sp"
+            android:textSize="17sp"
             android:textStyle="bold" />
 
         <!-- Grid RecyclerView for Specialities -->
@@ -105,8 +122,8 @@
             android:id="@+id/rv_specialities"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="8dp"
-            android:layout_marginTop="8dp"
+            android:layout_marginHorizontal="10dp"
+            android:layout_marginTop="10dp"
             android:nestedScrollingEnabled="false" />
 
         <!-- AI Symptom Checker Banner Card -->
@@ -116,11 +133,11 @@
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="16dp"
             android:layout_marginTop="20dp"
+            app:cardBackgroundColor="@color/bg_blue_light"
             app:cardCornerRadius="16dp"
             app:cardElevation="0dp"
-            app:strokeWidth="1dp"
             app:strokeColor="@color/secondary"
-            app:cardBackgroundColor="@color/bg_blue_light">
+            app:strokeWidth="1dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -134,18 +151,26 @@
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
-                    <ImageView
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:src="@drawable/ic_robot"
-                        app:tint="@color/secondary"
-                        android:contentDescription="AI Robot icon" />
+                    <FrameLayout
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_squircle_icon"
+                        android:backgroundTint="@color/secondary_light">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_gravity="center"
+                            android:contentDescription="AI Robot icon"
+                            android:src="@drawable/ic_robot"
+                            app:tint="@color/secondary" />
+                    </FrameLayout>
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
                         android:layout_weight="1"
-                        android:layout_marginStart="10dp"
                         android:text="Not sure what to choose?"
                         android:textColor="@color/primary"
                         android:textSize="15sp"
@@ -155,7 +180,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
+                    android:layout_marginTop="8dp"
                     android:text="Get AI suggestions based on your symptoms in less than a minute."
                     android:textColor="@color/text_secondary"
                     android:textSize="13sp" />
@@ -166,11 +191,13 @@
                     android:layout_height="38dp"
                     android:layout_marginTop="12dp"
                     android:backgroundTint="@color/secondary"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
                     android:text="Try Symptom Checker →"
                     android:textColor="@color/white"
                     android:textSize="12sp"
                     android:textStyle="bold"
-                    app:cornerRadius="8dp" />
+                    app:cornerRadius="10dp" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -178,7 +205,7 @@
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
+            android:layout_marginHorizontal="20dp"
             android:layout_marginTop="24dp">
 
             <TextView
@@ -188,7 +215,7 @@
                 android:layout_centerVertical="true"
                 android:text="Top Doctors Near You"
                 android:textColor="@color/text_primary"
-                android:textSize="18sp"
+                android:textSize="17sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -197,9 +224,13 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
-                android:text="See All"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="2dp"
+                android:text="See All →"
                 android:textColor="@color/secondary"
-                android:textSize="14sp"
+                android:textSize="13sp"
                 android:textStyle="bold" />
         </RelativeLayout>
 
@@ -208,9 +239,9 @@
             android:id="@+id/rv_top_doctors"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="10dp"
             android:clipToPadding="false"
-            android:paddingHorizontal="8dp" />
+            android:paddingHorizontal="10dp" />
 
     </LinearLayout>
 

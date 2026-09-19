@@ -25,6 +25,7 @@ public class Speciality {
     }
 
     public String getName() { return name; }
+    public String getTitle() { return name; }
     public void setName(String name) { this.name = name; }
 
     public int getIconRes() { return iconRes; }

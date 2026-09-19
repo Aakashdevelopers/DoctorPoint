@@ -3,14 +3,21 @@ package com.amstudio.drpoint.util;
 import com.amstudio.drpoint.R;
 import com.amstudio.drpoint.model.Appointment;
 import com.amstudio.drpoint.model.Doctor;
+import com.amstudio.drpoint.model.DoctorSlot;
 import com.amstudio.drpoint.model.MenuItem;
+import com.amstudio.drpoint.model.PatientUser;
 import com.amstudio.drpoint.model.QuickAccessItem;
 import com.amstudio.drpoint.model.Speciality;
 import com.amstudio.drpoint.network.SupabaseClient;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -20,6 +27,8 @@ public class DummyDataProvider {
 
     private static List<Doctor> doctors;
     private static List<Appointment> appointments;
+    private static List<PatientUser> patientUsers;
+    private static List<Speciality> specialitiesList;
 
     public static synchronized List<QuickAccessItem> getQuickAccessItems() {
         List<QuickAccessItem> items = new ArrayList<>();
@@ -31,16 +40,79 @@ public class DummyDataProvider {
     }
 
     public static synchronized List<Speciality> getSpecialities() {
-        List<Speciality> items = new ArrayList<>();
-        items.add(new Speciality("General Physician", R.drawable.ic_stethoscope));
-        items.add(new Speciality("Skin & Hair", R.drawable.ic_user));
-        items.add(new Speciality("Women's Health", R.drawable.ic_heart));
-        items.add(new Speciality("Dental Care", R.drawable.ic_medical_cross));
-        items.add(new Speciality("Child Care", R.drawable.ic_user));
-        items.add(new Speciality("ENT", R.drawable.ic_stethoscope));
-        items.add(new Speciality("Mental Health", R.drawable.ic_user));
-        items.add(new Speciality("Heart Care", R.drawable.ic_heart_filled));
-        return items;
+        if (specialitiesList == null) {
+            specialitiesList = new ArrayList<>();
+            specialitiesList.add(new Speciality("General Physician", R.drawable.ic_stethoscope));
+            specialitiesList.add(new Speciality("Women's Health", R.drawable.ic_heart));
+            specialitiesList.add(new Speciality("Skin Specialist", R.drawable.ic_user));
+            specialitiesList.add(new Speciality("Dentist", R.drawable.ic_medical_cross));
+            specialitiesList.add(new Speciality("Eye Specialist", R.drawable.ic_stethoscope));
+            specialitiesList.add(new Speciality("Ear, Nose & Throat", R.drawable.ic_stethoscope));
+            specialitiesList.add(new Speciality("Child Care", R.drawable.ic_user));
+            specialitiesList.add(new Speciality("Heart Care", R.drawable.ic_heart_filled));
+        }
+        return new ArrayList<>(specialitiesList);
+    }
+
+    public static synchronized void addSpeciality(Speciality speciality) {
+        if (specialitiesList == null) {
+            getSpecialities();
+        }
+        specialitiesList.add(speciality);
+    }
+
+    public static synchronized boolean deleteSpeciality(String title) {
+        if (specialitiesList == null) getSpecialities();
+        for (int i = 0; i < specialitiesList.size(); i++) {
+            if (specialitiesList.get(i).getTitle().equalsIgnoreCase(title)) {
+                specialitiesList.remove(i);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Patient Users Management
+    public static synchronized List<PatientUser> getPatientUsers() {
+        if (patientUsers == null) {
+            patientUsers = new ArrayList<>();
+            patientUsers.add(new PatientUser("usr_1", "Aakash Mishra", "aakash.mishra@example.com", "+91 9876543210", "Male", 26, "O+", "Active"));
+            patientUsers.add(new PatientUser("usr_2", "Rohan Sharma", "rohan.s@gmail.com", "+91 9123456789", "Male", 29, "B+", "Active"));
+            patientUsers.add(new PatientUser("usr_3", "Priya Verma", "priya.verma@yahoo.com", "+91 9988776655", "Female", 24, "A+", "Active"));
+            patientUsers.add(new PatientUser("usr_4", "Suresh Gupta", "suresh.g@gmail.com", "+91 9811223344", "Male", 45, "AB+", "Active"));
+            patientUsers.add(new PatientUser("usr_5", "Kavita Rao", "kavita.rao@gmail.com", "+91 9766554433", "Female", 32, "O-", "Blocked"));
+        }
+        return new ArrayList<>(patientUsers);
+    }
+
+    public static synchronized void addPatientUser(PatientUser user) {
+        if (patientUsers == null) getPatientUsers();
+        if (user.getId() == null || user.getId().isEmpty()) {
+            user.setId("usr_" + (patientUsers.size() + 1));
+        }
+        patientUsers.add(0, user);
+    }
+
+    public static synchronized boolean updatePatientUser(PatientUser user) {
+        if (patientUsers == null) getPatientUsers();
+        for (int i = 0; i < patientUsers.size(); i++) {
+            if (patientUsers.get(i).getId().equals(user.getId())) {
+                patientUsers.set(i, user);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static synchronized boolean deletePatientUser(String userId) {
+        if (patientUsers == null) getPatientUsers();
+        for (int i = 0; i < patientUsers.size(); i++) {
+            if (patientUsers.get(i).getId().equals(userId)) {
+                patientUsers.remove(i);
+                return true;
+            }
+        }
+        return false;
     }
 
     public interface SpecialitiesCallback {
@@ -158,34 +230,98 @@ public class DummyDataProvider {
         return new ArrayList<>(doctors);
     }
 
+    public static synchronized void addDoctor(Doctor doctor) {
+        if (doctors == null) getDoctors();
+        if (doctor.getId() == null || doctor.getId().isEmpty()) {
+            doctor.setId("doc_" + (doctors.size() + 1));
+        }
+        doctors.add(0, doctor);
+    }
+
+    public static synchronized boolean updateDoctor(Doctor doctor) {
+        if (doctors == null) getDoctors();
+        for (int i = 0; i < doctors.size(); i++) {
+            if (doctors.get(i).getId().equals(doctor.getId())) {
+                doctors.set(i, doctor);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static synchronized boolean deleteDoctor(String doctorId) {
+        if (doctors == null) getDoctors();
+        for (int i = 0; i < doctors.size(); i++) {
+            if (doctors.get(i).getId().equals(doctorId)) {
+                doctors.remove(i);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static synchronized Doctor getDoctorById(String doctorId) {
+        if (doctors == null) getDoctors();
+        for (Doctor d : doctors) {
+            if (d.getId().equals(doctorId)) {
+                return d;
+            }
+        }
+        return doctors.isEmpty() ? null : doctors.get(0);
+    }
+
     public interface DoctorsCallback {
         void onDoctorsLoaded(List<Doctor> doctors);
     }
 
     public static synchronized void fetchDoctorsFromSupabase(DoctorsCallback callback) {
+        String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+
         SupabaseClient.getDoctorService().getDoctors().enqueue(new Callback<List<Doctor>>() {
             @Override
             public void onResponse(Call<List<Doctor>> call, Response<List<Doctor>> response) {
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                    synchronized (DummyDataProvider.class) {
-                        doctors = new ArrayList<>(response.body());
-                    }
-                } else if (doctors == null) {
-                    getDoctors();
-                }
-                if (callback != null) {
-                    callback.onDoctorsLoaded(getDoctors());
+                    List<Doctor> fetchedDocs = response.body();
+
+                    SupabaseClient.getSlotService().getAllFutureAvailableSlots("gte." + todayDate)
+                            .enqueue(new Callback<List<DoctorSlot>>() {
+                                @Override
+                                public void onResponse(Call<List<DoctorSlot>> c, Response<List<DoctorSlot>> r) {
+                                    Set<String> activeSlotDoctorIds = new HashSet<>();
+                                    if (r.isSuccessful() && r.body() != null) {
+                                        for (DoctorSlot slot : r.body()) {
+                                            if (slot.getDoctorId() != null) {
+                                                activeSlotDoctorIds.add(slot.getDoctorId());
+                                            }
+                                        }
+                                    }
+                                    for (Doctor d : fetchedDocs) {
+                                        d.setAvailableToday(activeSlotDoctorIds.contains(d.getId()));
+                                    }
+                                    synchronized (DummyDataProvider.class) {
+                                        doctors = new ArrayList<>(fetchedDocs);
+                                    }
+                                    if (callback != null) callback.onDoctorsLoaded(getDoctors());
+                                }
+
+                                @Override
+                                public void onFailure(Call<List<DoctorSlot>> c, Throwable t) {
+                                    synchronized (DummyDataProvider.class) {
+                                        doctors = new ArrayList<>(fetchedDocs);
+                                    }
+                                    if (callback != null) callback.onDoctorsLoaded(getDoctors());
+                                }
+                            });
+                } else {
+                    if (doctors == null) getDoctors();
+                    if (callback != null) callback.onDoctorsLoaded(getDoctors());
                 }
             }
 
             @Override
             public void onFailure(Call<List<Doctor>> call, Throwable t) {
-                if (doctors == null) {
-                    getDoctors();
-                }
-                if (callback != null) {
-                    callback.onDoctorsLoaded(getDoctors());
-                }
+                if (doctors == null) getDoctors();
+                if (callback != null) callback.onDoctorsLoaded(getDoctors());
             }
         });
     }
@@ -195,9 +331,10 @@ public class DummyDataProvider {
         List<Doctor> result = new ArrayList<>();
 
         for (Doctor d : all) {
-            // Category check
+            // Category / Specialty check
             if (category != null && !category.isEmpty() && !"All Doctors".equalsIgnoreCase(category) && !"AI Recommended Doctors".equalsIgnoreCase(category)) {
-                boolean matchesCategory = d.getQualification().toLowerCase().contains(category.toLowerCase()) ||
+                boolean matchesCategory = (d.getSpecialization() != null && d.getSpecialization().toLowerCase().contains(category.toLowerCase())) ||
+                        (d.getQualification() != null && d.getQualification().toLowerCase().contains(category.toLowerCase())) ||
                         d.getSpecializationString().toLowerCase().contains(category.toLowerCase());
                 if (!matchesCategory) {
                     continue;
@@ -215,11 +352,12 @@ public class DummyDataProvider {
                 continue;
             }
 
-            // Search Query check
+            // Search Query check (Doctor name, specialty, qualification, clinic, location)
             if (query != null && !query.trim().isEmpty()) {
                 String q = query.trim().toLowerCase();
                 boolean matchesQuery = d.getName().toLowerCase().contains(q) ||
                         d.getQualification().toLowerCase().contains(q) ||
+                        d.getSpecializationString().toLowerCase().contains(q) ||
                         d.getClinicName().toLowerCase().contains(q) ||
                         d.getLocation().toLowerCase().contains(q);
                 if (!matchesQuery) {
@@ -237,6 +375,7 @@ public class DummyDataProvider {
             appointments = new ArrayList<>();
             appointments.add(new Appointment(
                     "appt_1",
+                    "usr_1",
                     "doc_1",
                     "Dr. Priya Sharma",
                     "Dermatologist",
@@ -244,12 +383,14 @@ public class DummyDataProvider {
                     "10:30 AM",
                     "Skin Care Clinic",
                     "Indiranagar, Bangalore",
-                    "✓ Confirmed",
+                    "Confirmed",
                     900,
+                    "Patient reported skin rashes.",
                     R.drawable.ic_user
             ));
             appointments.add(new Appointment(
                     "appt_2",
+                    "usr_2",
                     "doc_2",
                     "Dr. Rajesh Kumar",
                     "Cardiologist",
@@ -257,12 +398,14 @@ public class DummyDataProvider {
                     "02:15 PM",
                     "Heart Care Centre",
                     "Koramangala, Bangalore",
-                    "✓ Confirmed",
+                    "Confirmed",
                     1200,
+                    "Routine checkup.",
                     R.drawable.ic_user
             ));
             appointments.add(new Appointment(
                     "appt_3",
+                    "usr_3",
                     "doc_3",
                     "Dr. Ananya Rao",
                     "Gynaecologist",
@@ -272,10 +415,40 @@ public class DummyDataProvider {
                     "HSR Layout, Bangalore",
                     "Completed",
                     800,
+                    "Prescribed vitamins.",
+                    R.drawable.ic_user
+            ));
+            appointments.add(new Appointment(
+                    "appt_4",
+                    "usr_4",
+                    "doc_1",
+                    "Dr. Priya Sharma",
+                    "Dermatologist",
+                    "08 Sep",
+                    "04:00 PM",
+                    "Skin Care Clinic",
+                    "Indiranagar, Bangalore",
+                    "Pending",
+                    900,
+                    "Follow up consultation.",
                     R.drawable.ic_user
             ));
         }
-        return appointments;
+        return new ArrayList<>(appointments);
+    }
+
+    public static synchronized List<Appointment> getDoctorAppointments(String doctorId) {
+        List<Appointment> all = getAppointments();
+        List<Appointment> docAppts = new ArrayList<>();
+        for (Appointment a : all) {
+            if (a.getDoctorId() != null && a.getDoctorId().equalsIgnoreCase(doctorId)) {
+                docAppts.add(a);
+            }
+        }
+        if (docAppts.isEmpty()) {
+            return all; // Fallback to show sample list
+        }
+        return docAppts;
     }
 
     public static synchronized void addAppointment(Appointment appt) {
@@ -285,11 +458,37 @@ public class DummyDataProvider {
         appointments.add(0, appt);
     }
 
-    public static synchronized boolean cancelAppointment(String appointmentId) {
-        if (appointments == null) return false;
+    public static synchronized boolean updateAppointmentStatus(String appointmentId, String newStatus) {
+        if (appointments == null) getAppointments();
         for (Appointment a : appointments) {
             if (a.getId().equals(appointmentId)) {
-                a.setStatus("Cancelled");
+                a.setStatus(newStatus);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static synchronized boolean updateAppointmentNotes(String appointmentId, String notes) {
+        if (appointments == null) getAppointments();
+        for (Appointment a : appointments) {
+            if (a.getId().equals(appointmentId)) {
+                a.setNotes(notes);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static synchronized boolean cancelAppointment(String appointmentId) {
+        return updateAppointmentStatus(appointmentId, "Cancelled");
+    }
+
+    public static synchronized boolean deleteAppointment(String appointmentId) {
+        if (appointments == null) getAppointments();
+        for (int i = 0; i < appointments.size(); i++) {
+            if (appointments.get(i).getId().equals(appointmentId)) {
+                appointments.remove(i);
                 return true;
             }
         }
@@ -320,3 +519,4 @@ public class DummyDataProvider {
         );
     }
 }
+

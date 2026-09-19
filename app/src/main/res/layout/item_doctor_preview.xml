@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
+    android:layout_width="165dp"
     android:layout_height="wrap_content"
     android:layout_margin="6dp"
+    app:cardBackgroundColor="@color/surface_white"
     app:cardCornerRadius="16dp"
     app:cardElevation="2dp"
     app:strokeColor="@color/card_stroke"
-    app:strokeWidth="1dp"
-    app:cardBackgroundColor="@color/surface_white">
+    app:strokeWidth="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -17,73 +17,102 @@
         android:orientation="vertical"
         android:padding="12dp">
 
-        <com.google.android.material.imageview.ShapeableImageView
-            android:id="@+id/iv_doctor_preview"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:scaleType="centerCrop"
-            android:src="@drawable/ic_user"
-            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.Corner8dp"
-            android:contentDescription="Doctor Preview Image" />
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/iv_doctor_preview"
+                android:layout_width="68dp"
+                android:layout_height="68dp"
+                android:layout_gravity="center"
+                android:contentDescription="Doctor Preview Image"
+                android:padding="2dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_user"
+                app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.Circle"
+                app:strokeColor="@color/primary"
+                app:strokeWidth="2dp" />
+
+            <!-- Green Online Dot Badge -->
+            <View
+                android:id="@+id/view_available_dot"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:layout_gravity="top|start"
+                android:background="@drawable/bg_badge_verified" />
+
+            <!-- Rating Badge Chip -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:background="@drawable/bg_rating_chip"
+                android:elevation="2dp"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="2dp">
+
+                <ImageView
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:contentDescription="Rating star"
+                    android:src="@drawable/ic_star"
+                    app:tint="@color/warning_yellow" />
+
+                <TextView
+                    android:id="@+id/tv_rating_preview"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="2dp"
+                    android:text="4.8"
+                    android:textColor="#92400E"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+        </FrameLayout>
 
         <TextView
             android:id="@+id/tv_doctor_name_preview"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:maxLines="1"
             android:text="Dr. Priya Sharma"
             android:textColor="@color/text_primary"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:maxLines="1"
-            android:ellipsize="end" />
+            android:textSize="13sp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tv_specialization_preview"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:maxLines="1"
             android:text="Dermatologist"
             android:textColor="@color/text_secondary"
-            android:textSize="12sp"
-            android:maxLines="1"
-            android:ellipsize="end" />
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:layout_width="14dp"
-                android:layout_height="14dp"
-                android:src="@drawable/ic_star"
-                android:contentDescription="Rating star" />
-
-            <TextView
-                android:id="@+id/tv_rating_preview"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:text="4.8"
-                android:textColor="@color/text_primary"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-        </LinearLayout>
+            android:textSize="11sp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_book_preview"
             android:layout_width="match_parent"
-            android:layout_height="36dp"
+            android:layout_height="34dp"
             android:layout_marginTop="10dp"
             android:backgroundTint="@color/primary"
-            android:text="Book"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:padding="0dp"
+            android:text="Book Now"
             android:textColor="@color/white"
-            android:textSize="12sp"
-            app:cornerRadius="8dp"
-            android:padding="0dp" />
+            android:textSize="11sp"
+            android:textStyle="bold"
+            app:cornerRadius="17dp" />
 
     </LinearLayout>
 

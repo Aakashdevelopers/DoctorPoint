@@ -6,63 +6,94 @@
     android:background="@color/background_light"
     android:orientation="vertical">
 
-    <!-- Top App Bar -->
-    <RelativeLayout
+    <!-- Top App Bar Card -->
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/surface_white"
-        android:paddingHorizontal="16dp"
-        android:paddingVertical="14dp">
+        app:cardBackgroundColor="@color/surface_white"
+        app:cardCornerRadius="0dp"
+        app:cardElevation="2dp"
+        app:strokeWidth="0dp">
 
-        <ImageView
-            android:id="@+id/iv_back"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:layout_alignParentStart="true"
-            android:layout_centerVertical="true"
-            android:src="@drawable/ic_back"
-            app:tint="@color/text_primary"
-            android:contentDescription="Back button" />
-
-        <TextView
-            android:id="@+id/tv_category_title"
-            android:layout_width="wrap_content"
+        <RelativeLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_toEndOf="@id/iv_back"
-            android:layout_centerVertical="true"
-            android:layout_marginStart="12dp"
-            android:text="Dermatologist"
-            android:textColor="@color/text_primary"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="14dp">
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:orientation="horizontal">
+            <FrameLayout
+                android:id="@+id/fl_back_bg"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:background="@drawable/bg_squircle_icon">
 
-            <ImageView
-                android:id="@+id/iv_search"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_marginEnd="16dp"
-                android:src="@drawable/ic_search"
-                app:tint="@color/text_primary"
-                android:contentDescription="Search" />
+                <ImageView
+                    android:id="@+id/iv_back"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="Back button"
+                    android:src="@drawable/ic_back"
+                    app:tint="@color/text_primary" />
+            </FrameLayout>
 
-            <ImageView
-                android:id="@+id/iv_filter"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_filter"
-                app:tint="@color/text_primary"
-                android:contentDescription="Filter" />
-        </LinearLayout>
-    </RelativeLayout>
+            <TextView
+                android:id="@+id/tv_category_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="12dp"
+                android:layout_toEndOf="@id/fl_back_bg"
+                android:text="Dermatologist"
+                android:textColor="@color/text_primary"
+                android:textSize="20sp"
+                android:textStyle="bold" />
 
-    <!-- Search Box (Toggleable or always available) -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:orientation="horizontal">
+
+                <FrameLayout
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/bg_squircle_icon">
+
+                    <ImageView
+                        android:id="@+id/iv_search"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="Search"
+                        android:src="@drawable/ic_search"
+                        app:tint="@color/text_primary" />
+                </FrameLayout>
+
+                <FrameLayout
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_squircle_icon">
+
+                    <ImageView
+                        android:id="@+id/iv_filter"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="Filter"
+                        android:src="@drawable/ic_filter"
+                        app:tint="@color/text_primary" />
+                </FrameLayout>
+
+            </LinearLayout>
+        </RelativeLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Search Box Container -->
     <LinearLayout
         android:id="@+id/ll_search_container"
         android:layout_width="match_parent"
@@ -78,13 +109,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Search doctor name or specialty..."
-            app:boxCornerRadiusTopStart="12dp"
-            app:boxCornerRadiusTopEnd="12dp"
-            app:boxCornerRadiusBottomStart="12dp"
             app:boxCornerRadiusBottomEnd="12dp"
+            app:boxCornerRadiusBottomStart="12dp"
+            app:boxCornerRadiusTopEnd="12dp"
+            app:boxCornerRadiusTopStart="12dp"
+            app:endIconMode="clear_text"
             app:startIconDrawable="@drawable/ic_search"
-            app:startIconTint="@color/text_secondary"
-            app:endIconMode="clear_text">
+            app:startIconTint="@color/text_secondary">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/et_search"
@@ -104,7 +135,7 @@
         android:background="@color/surface_white"
         android:clipToPadding="false"
         android:paddingHorizontal="16dp"
-        android:paddingBottom="12dp"
+        android:paddingBottom="14dp"
         android:scrollbars="none">
 
         <LinearLayout
@@ -118,6 +149,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
                 android:background="@drawable/bg_chip_selected"
+                android:clickable="true"
+                android:focusable="true"
                 android:paddingHorizontal="16dp"
                 android:paddingVertical="8dp"
                 android:text="All"
@@ -131,6 +164,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
                 android:background="@drawable/bg_chip_unselected"
+                android:clickable="true"
+                android:focusable="true"
                 android:paddingHorizontal="16dp"
                 android:paddingVertical="8dp"
                 android:text="Female"
@@ -143,6 +178,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
                 android:background="@drawable/bg_chip_unselected"
+                android:clickable="true"
+                android:focusable="true"
                 android:paddingHorizontal="16dp"
                 android:paddingVertical="8dp"
                 android:text="Available Today"
@@ -154,6 +191,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_chip_unselected"
+                android:clickable="true"
+                android:focusable="true"
                 android:paddingHorizontal="16dp"
                 android:paddingVertical="8dp"
                 android:text="Nearby"
@@ -187,8 +226,12 @@
             android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
             android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:padding="4dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -202,9 +245,9 @@
                 android:layout_width="16dp"
                 android:layout_height="16dp"
                 android:layout_marginStart="4dp"
+                android:contentDescription="Sort icon"
                 android:src="@drawable/ic_sort"
-                app:tint="@color/primary"
-                android:contentDescription="Sort icon" />
+                app:tint="@color/primary" />
         </LinearLayout>
     </RelativeLayout>
 
@@ -234,28 +277,37 @@
             android:layout_gravity="center"
             android:gravity="center"
             android:orientation="vertical"
+            android:padding="24dp"
             android:visibility="gone">
 
-            <ImageView
+            <FrameLayout
                 android:layout_width="80dp"
                 android:layout_height="80dp"
-                android:src="@drawable/ic_search"
-                app:tint="@color/text_muted"
-                android:contentDescription="No results icon" />
+                android:background="@drawable/bg_squircle_icon">
+
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="No results icon"
+                    android:src="@drawable/ic_search"
+                    app:tint="@color/text_muted" />
+            </FrameLayout>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="16dp"
                 android:text="No Doctors Found"
                 android:textColor="@color/text_primary"
-                android:textSize="16sp"
+                android:textSize="17sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
+                android:gravity="center"
                 android:text="Try adjusting your filters or search keywords"
                 android:textColor="@color/text_secondary"
                 android:textSize="13sp" />

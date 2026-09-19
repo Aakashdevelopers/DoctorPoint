@@ -18,6 +18,8 @@ public class PreferenceManager {
     private static final String KEY_REFRESH_TOKEN = "refresh_token";
     private static final String KEY_FAVORITE_DOCTORS = "favorite_doctors";
     private static final String KEY_REMINDERS_ENABLED = "reminders_enabled";
+    private static final String KEY_USER_ROLE = "user_role";
+    private static final String KEY_SELECTED_DOCTOR_ID = "selected_doctor_id";
 
     private static PreferenceManager instance;
     private final SharedPreferences prefs;
@@ -120,6 +122,32 @@ public class PreferenceManager {
 
     public void setRemindersEnabled(boolean enabled) {
         prefs.edit().putBoolean(KEY_REMINDERS_ENABLED, enabled).apply();
+    }
+
+    public String getUserRole() {
+        return prefs.getString(KEY_USER_ROLE, "USER");
+    }
+
+    public void setUserRole(String role) {
+        prefs.edit().putString(KEY_USER_ROLE, role).apply();
+    }
+
+    public String getSelectedDoctorId() {
+        return prefs.getString(KEY_SELECTED_DOCTOR_ID, "doc_1");
+    }
+
+    public void setSelectedDoctorId(String doctorId) {
+        prefs.edit().putString(KEY_SELECTED_DOCTOR_ID, doctorId).apply();
+    }
+
+    public void recordDoctorBooking(String doctorId) {
+        if (doctorId == null || doctorId.trim().isEmpty()) return;
+        prefs.edit().putBoolean("booked_doc_" + doctorId, true).apply();
+    }
+
+    public boolean hasBookedWithDoctor(String doctorId) {
+        if (doctorId == null || doctorId.trim().isEmpty()) return false;
+        return prefs.getBoolean("booked_doc_" + doctorId, false);
     }
 
     public void clearSession() {

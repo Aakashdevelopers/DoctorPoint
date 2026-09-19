@@ -12,17 +12,17 @@ import com.amstudio.drpoint.R;
 import com.amstudio.drpoint.databinding.ItemClinicPhotoBinding;
 import com.bumptech.glide.Glide;
 
-public class ClinicPhotoAdapter extends ListAdapter<Integer, ClinicPhotoAdapter.ViewHolder> {
+public class ClinicPhotoAdapter extends ListAdapter<Object, ClinicPhotoAdapter.ViewHolder> {
 
-    private static final DiffUtil.ItemCallback<Integer> DIFF_CALLBACK = new DiffUtil.ItemCallback<Integer>() {
+    private static final DiffUtil.ItemCallback<Object> DIFF_CALLBACK = new DiffUtil.ItemCallback<Object>() {
         @Override
-        public boolean areItemsTheSame(@NonNull Integer oldItem, @NonNull Integer newItem) {
+        public boolean areItemsTheSame(@NonNull Object oldItem, @NonNull Object newItem) {
             return oldItem.equals(newItem);
         }
 
         @Override
-        public boolean areContentsTheSame(@NonNull Integer oldItem, @NonNull Integer newItem) {
-            return oldItem.equals(newItem);
+        public boolean areContentsTheSame(@NonNull Object oldItem, @NonNull Object newItem) {
+            return oldItem.toString().equals(newItem.toString());
         }
     };
 
@@ -50,9 +50,9 @@ public class ClinicPhotoAdapter extends ListAdapter<Integer, ClinicPhotoAdapter.
             this.binding = binding;
         }
 
-        void bind(Integer resId) {
+        void bind(Object item) {
             Glide.with(itemView.getContext())
-                    .load(resId)
+                    .load(item)
                     .placeholder(R.drawable.ic_stethoscope)
                     .error(R.drawable.ic_stethoscope)
                     .into(binding.ivClinicPhoto);

@@ -7,10 +7,12 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.amstudio.drpoint.R;
 import com.amstudio.drpoint.databinding.ActivityBookingConfirmedBinding;
 import com.amstudio.drpoint.model.Doctor;
 import com.amstudio.drpoint.ui.main.MainActivity;
 import com.amstudio.drpoint.util.DummyDataProvider;
+import com.bumptech.glide.Glide;
 
 public class BookingConfirmedActivity extends AppCompatActivity {
 
@@ -71,10 +73,26 @@ public class BookingConfirmedActivity extends AppCompatActivity {
         binding.tvSpecialization.setText(doctor.getQualification());
         binding.tvBookingDatetime.setText(dateStr + " • " + timeStr);
         binding.tvBookingLocation.setText(doctor.getClinicName() + " • " + doctor.getLocation());
-        binding.tvBookingFee.setText("₹" + doctor.getFee() + " (To be paid at clinic)");
-        if (doctor.getImageRes() != 0) {
-            binding.ivDoctor.setImageResource(doctor.getImageRes());
+
+        String feeTypeLabel = getIntent().getStringExtra("booking_fee_type");
+        int defaultDocFee = doctor != null ? doctor.getFee() : 500;
+        int feeAmount = getIntent().getIntExtra("booking_fee_amount", defaultDocFee);
+
+        if (feeTypeLabel != null && !feeTypeLabel.trim().isEmpty()) {
+            binding.tvBookingFee.setText("₹" + feeAmount + " (" + feeTypeLabel + " • Pay at Clinic)");
+        } else {
+            binding.tvBookingFee.setText("₹" + feeAmount + " (Consultation Fee • Pay at Clinic)");
         }
+
+        Object imageSource = (doctor != null && doctor.getImageUrl() != null && !doctor.getImageUrl().isEmpty())
+                ? doctor.getImageUrl()
+                : (doctor != null && doctor.getImageRes() != 0 ? doctor.getImageRes() : R.drawable.ic_user);
+
+        Glide.with(this)
+                .load(imageSource)
+                .placeholder(R.drawable.ic_user)
+                .error(R.drawable.ic_user)
+                .into(binding.ivDoctor);
     }
 
     private void addToCalendar() {

@@ -16,7 +16,8 @@ import com.amstudio.drpoint.databinding.ItemDoctorPreviewBinding;
 import com.amstudio.drpoint.model.Doctor;
 import com.amstudio.drpoint.util.PreferenceManager;
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.resource.bitmap.CircleCrop;
+
+import java.util.Locale;
 
 public class DoctorListAdapter extends ListAdapter<Doctor, RecyclerView.ViewHolder> {
 
@@ -39,7 +40,6 @@ public class DoctorListAdapter extends ListAdapter<Doctor, RecyclerView.ViewHold
         @Override
         public boolean areContentsTheSame(@NonNull Doctor oldItem, @NonNull Doctor newItem) {
             return oldItem.getName().equals(newItem.getName()) &&
-                   oldItem.getQualification().equals(newItem.getQualification()) &&
                    oldItem.getFee() == newItem.getFee() &&
                    oldItem.getRating() == newItem.getRating();
         }
@@ -91,17 +91,25 @@ public class DoctorListAdapter extends ListAdapter<Doctor, RecyclerView.ViewHold
         }
 
         void bind(Doctor doctor, OnDoctorClickListener listener) {
-            binding.tvDoctorNamePreview.setText(doctor.getName());
-            binding.tvSpecializationPreview.setText(doctor.getQualification());
-            binding.tvRatingPreview.setText(String.valueOf(doctor.getRating()));
+            binding.tvDoctorNamePreview.setText(doctor.getName() != null ? doctor.getName() : "Dr. Medical Specialist");
+            
+            String spec = doctor.getSpecializationString();
+            binding.tvSpecializationPreview.setText((spec != null && !spec.isEmpty()) ? spec : "General Physician");
 
-            Object imageSource = (doctor.getImageUrl() != null && !doctor.getImageUrl().isEmpty())
-                    ? doctor.getImageUrl()
+            double rating = doctor.getRating() > 0 ? doctor.getRating() : 4.8;
+            binding.tvRatingPreview.setText(String.format(Locale.getDefault(), "%.1f", rating));
+
+            if (binding.viewAvailableDot != null) {
+                binding.viewAvailableDot.setVisibility(doctor.isAvailableToday() ? View.VISIBLE : View.GONE);
+            }
+
+            Object imageSource = (doctor.getImageUrl() != null && !doctor.getImageUrl().trim().isEmpty())
+                    ? doctor.getImageUrl().trim()
                     : (doctor.getImageRes() != 0 ? doctor.getImageRes() : R.drawable.ic_user);
 
             Glide.with(itemView.getContext())
                     .load(imageSource)
-                    .transform(new CircleCrop())
+                    .centerCrop()
                     .placeholder(R.drawable.ic_user)
                     .error(R.drawable.ic_user)
                     .into(binding.ivDoctorPreview);
@@ -127,25 +135,51 @@ public class DoctorListAdapter extends ListAdapter<Doctor, RecyclerView.ViewHold
 
         void bind(Doctor doctor, OnDoctorClickListener listener) {
             Context context = itemView.getContext();
-            binding.tvDoctorName.setText(doctor.getName());
-            binding.tvQualification.setText(doctor.getQualification() + " • " + doctor.getExperience());
-            binding.tvRating.setText(doctor.getRating() + " (" + doctor.getReviewCount() + " reviews)");
-            binding.tvClinicLocation.setText(doctor.getClinicName() + " • " + doctor.getLocation());
-            binding.tvFee.setText("₹" + doctor.getFee() + " Consultation Fee");
 
-            if (doctor.isVerified()) {
-                binding.llVerified.setVisibility(View.VISIBLE);
+            binding.tvDoctorName.setText(doctor.getName() != null ? doctor.getName() : "Dr. Medical Specialist");
+
+            String spec = doctor.getSpecializationString();
+            String qual = doctor.getQualification();
+            if (spec != null && !spec.isEmpty() && qual != null && !qual.isEmpty() && !qual.equalsIgnoreCase(spec)) {
+                binding.tvQualification.setText(spec + " • " + qual);
+            } else if (spec != null && !spec.isEmpty()) {
+                binding.tvQualification.setText(spec);
+            } else if (qual != null && !qual.isEmpty()) {
+                binding.tvQualification.setText(qual);
             } else {
-                binding.llVerified.setVisibility(View.GONE);
+                binding.tvQualification.setText("General Physician");
             }
 
-            Object imageSource = (doctor.getImageUrl() != null && !doctor.getImageUrl().isEmpty())
-                    ? doctor.getImageUrl()
+            String exp = doctor.getExperience();
+            if (exp != null && !exp.isEmpty()) {
+                binding.tvExperience.setText(exp.toLowerCase().contains("exp") ? exp : exp + " Exp");
+                binding.tvExperience.setVisibility(View.VISIBLE);
+            } else {
+                binding.tvExperience.setVisibility(View.GONE);
+            }
+
+            double rating = doctor.getRating() > 0 ? doctor.getRating() : 4.8;
+            int reviews = doctor.getReviewCount() > 0 ? doctor.getReviewCount() : 120;
+            binding.tvRating.setText(String.format(Locale.getDefault(), "%.1f (%d reviews)", rating, reviews));
+
+            String clinic = doctor.getClinicName() != null ? doctor.getClinicName() : "Care Clinic";
+            String location = doctor.getLocation() != null ? doctor.getLocation() : "Main Branch";
+            binding.tvClinicLocation.setText(clinic + " • " + location);
+
+            int fee = doctor.getFee() > 0 ? doctor.getFee() : 500;
+            binding.tvFee.setText("₹" + fee + " Fee");
+
+            if (binding.llVerified != null) {
+                binding.llVerified.setVisibility(doctor.isVerified() ? View.VISIBLE : View.GONE);
+            }
+
+            Object imageSource = (doctor.getImageUrl() != null && !doctor.getImageUrl().trim().isEmpty())
+                    ? doctor.getImageUrl().trim()
                     : (doctor.getImageRes() != 0 ? doctor.getImageRes() : R.drawable.ic_user);
 
             Glide.with(context)
                     .load(imageSource)
-                    .transform(new CircleCrop())
+                    .centerCrop()
                     .placeholder(R.drawable.ic_user)
                     .error(R.drawable.ic_user)
                     .into(binding.ivDoctor);

@@ -20,6 +20,9 @@ import com.amstudio.drpoint.ui.main.MainActivity;
 import com.amstudio.drpoint.util.PreferenceManager;
 import com.google.gson.Gson;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -215,27 +218,27 @@ public class SignupActivity extends AppCompatActivity {
                     PreferenceManager prefManager = PreferenceManager.getInstance(SignupActivity.this);
 
                     User user = authResponse.getUser();
-                    if (user != null) {
-                        prefManager.setUserId(user.getId());
-                        prefManager.setUserEmail(user.getEmail() != null ? user.getEmail() : email);
-                        prefManager.setUserName(name);
-                        prefManager.setUserPhone(phone);
-                    }
+                    String userId = (user != null && user.getId() != null) ? user.getId() : "user_" + System.currentTimeMillis();
+                    String userEmail = (user != null && user.getEmail() != null && !user.getEmail().isEmpty()) ? user.getEmail() : email;
+
+                    prefManager.setUserId(userId);
+                    prefManager.setUserEmail(userEmail);
+                    prefManager.setUserName(name);
+                    prefManager.setUserPhone(phone);
+                    prefManager.setLoggedIn(true);
 
                     if (authResponse.getAccessToken() != null && !authResponse.getAccessToken().isEmpty()) {
                         prefManager.setAccessToken(authResponse.getAccessToken());
                         prefManager.setRefreshToken(authResponse.getRefreshToken());
-                        prefManager.setLoggedIn(true);
-
-                        Toast.makeText(SignupActivity.this, "Account Created Successfully!", Toast.LENGTH_SHORT).show();
-                        Intent intent = new Intent(SignupActivity.this, MainActivity.class);
-                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                        startActivity(intent);
-                        finish();
-                    } else {
-                        Toast.makeText(SignupActivity.this, "Registration Successful! Please check your email to confirm registration.", Toast.LENGTH_LONG).show();
-                        finish();
                     }
+
+                    ensurePatientProfileInSupabase(userId, name, userEmail, phone);
+
+                    Toast.makeText(SignupActivity.this, "Account Created Successfully!", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(SignupActivity.this, MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    finish();
                 } else {
                     String errorMessage = "Signup failed";
                     if (response.errorBody() != null) {
@@ -258,6 +261,33 @@ public class SignupActivity extends AppCompatActivity {
                 Toast.makeText(SignupActivity.this, "Network Error: " + t.getLocalizedMessage(), Toast.LENGTH_LONG).show();
             }
         });
+    }
+
+    private void ensurePatientProfileInSupabase(String userId, String name, String email, String phone) {
+        Map<String, Object> profileMap = new HashMap<>();
+        profileMap.put("id", userId);
+        profileMap.put("full_name", name);
+        profileMap.put("email", email);
+        if (phone != null && !phone.isEmpty()) profileMap.put("phone", phone);
+        profileMap.put("role", "patient");
+
+        SupabaseClient.getPatientService().createProfileRecord("resolution=merge-duplicates", profileMap)
+                .enqueue(new Callback<Void>() {
+                    @Override public void onResponse(Call<Void> call, Response<Void> response) {}
+                    @Override public void onFailure(Call<Void> call, Throwable t) {}
+                });
+
+        Map<String, Object> patientMap = new HashMap<>();
+        patientMap.put("id", userId);
+        patientMap.put("full_name", name);
+        patientMap.put("email", email);
+        if (phone != null && !phone.isEmpty()) patientMap.put("phone", phone);
+
+        SupabaseClient.getPatientService().createPatientRecord("resolution=merge-duplicates", patientMap)
+                .enqueue(new Callback<Void>() {
+                    @Override public void onResponse(Call<Void> call, Response<Void> response) {}
+                    @Override public void onFailure(Call<Void> call, Throwable t) {}
+                });
     }
 
     private void setLoading(boolean isLoading) {

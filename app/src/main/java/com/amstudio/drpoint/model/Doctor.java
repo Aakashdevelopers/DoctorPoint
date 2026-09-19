@@ -3,6 +3,8 @@ package com.amstudio.drpoint.model;
 import com.google.gson.annotations.SerializedName;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class Doctor implements Serializable {
@@ -16,13 +18,16 @@ public class Doctor implements Serializable {
     @SerializedName("qualification")
     private String qualification;
 
+    @SerializedName("specialization")
+    private String specialization;
+
     @SerializedName("experience")
     private String experience;
 
     @SerializedName("rating")
     private double rating;
 
-    @SerializedName("review_count")
+    @SerializedName(value = "review_count", alternate = {"total_reviews"})
     private int reviewCount;
 
     @SerializedName("clinic_name")
@@ -34,12 +39,21 @@ public class Doctor implements Serializable {
     @SerializedName("fee")
     private int fee;
 
+    @SerializedName(value = "followup_fee", alternate = {"followUpFee", "returning_patient_fee"})
+    private int followUpFee = 300;
+
     @SerializedName("image_url")
     private String imageUrl;
 
+    @SerializedName(value = "clinic_photos", alternate = {"clinic_photo_urls", "clinicPhotos"})
+    private String clinicPhotos;
+
+    @SerializedName("about")
+    private String about;
+
     private int imageRes;
 
-    @SerializedName("is_verified")
+    @SerializedName(value = "is_verified", alternate = {"is_popular"})
     private boolean isVerified = true;
 
     @SerializedName("gender")
@@ -88,7 +102,13 @@ public class Doctor implements Serializable {
     public String getQualification() { return qualification; }
     public void setQualification(String qualification) { this.qualification = qualification; }
 
+    public String getSpecialization() { return specialization; }
+    public void setSpecialization(String specialization) { this.specialization = specialization; }
+
     public String getSpecializationString() {
+        if (specialization != null && !specialization.trim().isEmpty()) {
+            return specialization;
+        }
         if (qualification == null) return "";
         if (qualification.contains("-")) {
             String[] parts = qualification.split("-");
@@ -112,11 +132,17 @@ public class Doctor implements Serializable {
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
 
-    public int getFee() { return fee; }
+    public int getFee() { return fee > 0 ? fee : 500; }
     public void setFee(int fee) { this.fee = fee; }
+
+    public int getFollowUpFee() { return followUpFee > 0 ? followUpFee : (fee > 0 ? fee : 300); }
+    public void setFollowUpFee(int followUpFee) { this.followUpFee = followUpFee; }
 
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    public String getAbout() { return about; }
+    public void setAbout(String about) { this.about = about; }
 
     public int getImageRes() { return imageRes; }
     public void setImageRes(int imageRes) { this.imageRes = imageRes; }
@@ -132,6 +158,39 @@ public class Doctor implements Serializable {
 
     public boolean isNearby() { return isNearby; }
     public void setNearby(boolean nearby) { isNearby = nearby; }
+
+    public String getClinicPhotos() { return clinicPhotos; }
+    public void setClinicPhotos(String clinicPhotos) { this.clinicPhotos = clinicPhotos; }
+
+    public List<Object> getClinicPhotosList() {
+        List<Object> photos = new ArrayList<>();
+        if (clinicPhotos != null && !clinicPhotos.trim().isEmpty()) {
+            if (clinicPhotos.startsWith("[")) {
+                try {
+                    String clean = clinicPhotos.replace("[", "").replace("]", "").replace("\"", "").replace("'", "");
+                    String[] urls = clean.split(",");
+                    for (String u : urls) {
+                        if (!u.trim().isEmpty()) {
+                            photos.add(u.trim());
+                        }
+                    }
+                } catch (Exception ignored) {}
+            } else {
+                String[] urls = clinicPhotos.split(",");
+                for (String u : urls) {
+                    if (!u.trim().isEmpty()) {
+                        photos.add(u.trim());
+                    }
+                }
+            }
+        }
+        if (photos.isEmpty()) {
+            photos.add("https://images.unsplash.com/photo-1586773860418-d37222d8fce3?auto=format&fit=crop&q=80&w=600");
+            photos.add("https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&q=80&w=600");
+            photos.add("https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=600");
+        }
+        return photos;
+    }
 
     @Override
     public boolean equals(Object o) {

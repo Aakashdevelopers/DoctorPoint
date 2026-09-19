@@ -5,6 +5,8 @@
     android:layout_height="40dp"
     android:layout_margin="4dp"
     android:background="@drawable/bg_date_chip_unselected"
+    android:clickable="true"
+    android:focusable="true"
     android:gravity="center"
     android:text="10:00 AM"
     android:textColor="@color/text_primary"

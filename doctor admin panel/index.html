@@ -1,0 +1,2626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Panel - Manage Patient Appointments &amp; Data</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script>
+        function switchToSignup(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            var lCard = document.getElementById('login-card');
+            var sCard = document.getElementById('signup-card');
+            if (lCard) lCard.classList.add('hidden');
+            if (sCard) sCard.classList.remove('hidden');
+        }
+
+        function switchToLogin(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            var lCard = document.getElementById('login-card');
+            var sCard = document.getElementById('signup-card');
+            if (sCard) sCard.classList.add('hidden');
+            if (lCard) lCard.classList.remove('hidden');
+        }
+
+        window.handleLoginSubmit = function(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            if (window._handleLoginSubmitImpl) {
+                return window._handleLoginSubmitImpl(e);
+            }
+        };
+
+        window.handleSignupSubmit = function(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            if (window._handleSignupSubmitImpl) {
+                return window._handleSignupSubmitImpl(e);
+            }
+        };
+
+        window.showToast = function(message, type, duration) {
+            type = type || 'info';
+            duration = duration !== undefined ? duration : 4500;
+            var container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'toast-container';
+                document.body.appendChild(container);
+            }
+
+            var toast = document.createElement('div');
+            toast.className = 'toast-item toast-' + type;
+
+            var content = document.createElement('div');
+            content.style.flex = '1';
+            content.innerHTML = message;
+
+            var closeBtn = document.createElement('button');
+            closeBtn.className = 'toast-close';
+            closeBtn.innerHTML = '&times;';
+            closeBtn.onclick = function() {
+                toast.classList.remove('show');
+                setTimeout(function() { if (toast.parentNode) toast.remove(); }, 300);
+            };
+
+            toast.appendChild(content);
+            toast.appendChild(closeBtn);
+            container.appendChild(toast);
+
+            requestAnimationFrame(function() {
+                toast.classList.add('show');
+            });
+
+            if (duration > 0) {
+                setTimeout(function() {
+                    if (toast.parentNode) {
+                        toast.classList.remove('show');
+                        setTimeout(function() { if (toast.parentNode) toast.remove(); }, 300);
+                    }
+                }, duration);
+            }
+        };
+    </script>
+    <style>
+        :root {
+            --primary: #152C69;
+            --primary-dark: #0D1D47;
+            --primary-light: #EBF1FF;
+            --secondary: #2563EB;
+            --secondary-light: #DBEAFE;
+            --success: #15803D;
+            --success-light: #DCFCE7;
+            --warning: #D97706;
+            --warning-light: #FEF3C7;
+            --error: #DC2626;
+            --error-light: #FEE2E2;
+            --bg-light: #F8FAFC;
+            --surface: #FFFFFF;
+            --text-primary: #0F172A;
+            --text-secondary: #475569;
+            --text-muted: #94A3B8;
+            --border: #E2E8F0;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --radius-md: 8px;
+            --radius-lg: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-light);
+            color: var(--text-primary);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Auth Container */
+        .auth-container {
+            display: flex;
+            min-height: 100vh;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--bg-light);
+            padding: 1.5rem;
+        }
+
+        .auth-card {
+            background: var(--surface);
+            padding: 2.5rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            width: 100%;
+            max-width: 440px;
+            border: 1px solid var(--border);
+        }
+
+        .auth-card-wide {
+            max-width: 760px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        @media (min-width: 640px) {
+            .form-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .span-full {
+                grid-column: span 2;
+            }
+        }
+
+        /* ImgBB Image Upload & Preview Styling */
+        .img-preview-thumb {
+            width: 64px;
+            height: 64px;
+            object-fit: cover;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .preview-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .gallery-item {
+            position: relative;
+            display: inline-block;
+        }
+
+        .gallery-item .remove-btn {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: var(--error);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 13px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .auth-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px var(--secondary-light);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            border-radius: var(--radius-md);
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--bg-light);
+        }
+
+        .btn-success { background: var(--success); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-danger { background: var(--error); color: white; }
+
+        .btn-sm {
+            padding: 0.35rem 0.75rem;
+            font-size: 0.75rem;
+        }
+
+        /* App Layout */
+        .app-layout {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem 0;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background-color: var(--primary-light);
+            color: var(--primary);
+            border-right: 4px solid var(--primary);
+        }
+
+        .nav-item i {
+            margin-right: 0.75rem;
+            font-size: 1.25rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .top-header {
+            height: 64px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+        }
+
+        .header-user {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--primary-light);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            border: 2px solid var(--primary);
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        /* Cards & Stats */
+        .grid-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+        }
+
+        .stat-title {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            color: var(--text-primary);
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin-top: 0.5rem;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            font-weight: 600;
+            color: var(--text-secondary);
+            background-color: var(--bg-light);
+            font-size: 0.875rem;
+        }
+
+        td {
+            font-size: 0.875rem;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-success { background: var(--success-light); color: var(--success); }
+        .badge-warning { background: var(--warning-light); color: var(--warning); }
+        .badge-error { background: var(--error-light); color: var(--error); }
+        .badge-info { background: var(--secondary-light); color: var(--secondary); }
+        .badge-secondary { background: var(--border); color: var(--text-secondary); }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 1rem;
+        }
+
+        .modal-content {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 2rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                transform: translateX(-100%);
+                z-index: 50;
+                height: 100%;
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .top-header {
+                padding: 0 1rem;
+            }
+            .content-area {
+                padding: 1rem;
+            }
+        }
+
+        /* Toast Notification Styles */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 999999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 400px;
+            width: calc(100% - 40px);
+            pointer-events: none;
+        }
+
+        .toast-item {
+            background: var(--surface);
+            color: var(--text-primary);
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid var(--primary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            opacity: 0;
+            transform: translateY(-20px) scale(0.95);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: auto;
+        }
+
+        .toast-item.show {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .toast-item.toast-success {
+            border-left-color: var(--success);
+            background-color: #F0FDF4;
+            color: #166534;
+            border: 1px solid #BBF7D0;
+        }
+
+        .toast-item.toast-error {
+            border-left-color: var(--error);
+            background-color: #FEF2F2;
+            color: #991B1B;
+            border: 1px solid #FECACA;
+        }
+
+        .toast-item.toast-warning {
+            border-left-color: var(--warning);
+            background-color: #FFFBEB;
+            color: #92400E;
+            border: 1px solid #FDE68A;
+        }
+
+        .toast-item.toast-info {
+            border-left-color: var(--secondary);
+            background-color: #EFF6FF;
+            color: #1E40AF;
+            border: 1px solid #BFDBFE;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            cursor: pointer;
+            color: inherit;
+            opacity: 0.6;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .toast-close:hover {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- ========================================== -->
+    <!-- AUTHENTICATION VIEW -->
+    <!-- ========================================== -->
+    <div id="auth-view" class="auth-container">
+        <!-- LOGIN CARD -->
+        <div class="auth-card" id="login-card">
+            <h1 class="auth-title">👨‍⚕️ Doctor Panel</h1>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.875rem;">Manage patient appointments, prescriptions &amp; slots.</p>
+
+            <form id="login-form" onsubmit="window.handleLoginSubmit(event)">
+                <div class="form-group">
+                    <label class="form-label" for="login-email">Email Address</label>
+                    <input type="email" id="login-email" class="form-control" required placeholder="doctor@example.com">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="login-password">Password</label>
+                    <input type="password" id="login-password" class="form-control" required placeholder="••••••••">
+                </div>
+
+                <div id="login-error-msg" style="padding: 0.75rem 1rem; background: var(--error-light); color: var(--error); border: 1px solid #FCA5A5; border-radius: var(--radius-md); font-weight: 500; font-size: 0.875rem; margin-bottom: 1.25rem; display: none;"></div>
+
+                <button type="submit" class="btn btn-primary" id="login-btn">Sign In to Doctor Panel</button>
+
+                <div style="margin-top: 1.25rem; text-align: center; font-size: 0.875rem; color: var(--text-secondary);">
+                    New doctor? <button type="button" id="show-signup" onclick="switchToSignup(event)" style="background: none; border: none; color: var(--secondary); cursor: pointer; font-weight: 600; font-size: 0.875rem; text-decoration: underline; padding: 0;">Create Doctor Account</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- SIGNUP CARD (ALL REQUIRED DOCTOR FIELDS) -->
+        <div class="auth-card auth-card-wide hidden" id="signup-card">
+            <h1 class="auth-title">Create Doctor Account</h1>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.875rem;">Enter your professional details to set up your doctor profile.</p>
+
+            <form id="signup-form" onsubmit="window.handleSignupSubmit(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="signup-name">Doctor Full Name *</label>
+                        <input type="text" id="signup-name" class="form-control" required placeholder="Dr. Priya Sharma">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="signup-email">Email Address *</label>
+                        <input type="email" id="signup-email" class="form-control" required placeholder="doctor@example.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="signup-password">Password *</label>
+                        <input type="password" id="signup-password" class="form-control" required placeholder="••••••••" minlength="6">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="signup-phone">Phone Number *</label>
+                        <input type="text" id="signup-phone" class="form-control" required placeholder="+91 9876543210">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="signup-profile-file">Profile Picture (Upload via ImgBB)</label>
+                        <input type="file" id="signup-profile-file" accept="image/*" class="form-control" style="margin-bottom: 0.5rem;">
+                        <input type="url" id="signup-profile-pic" class="form-control" placeholder="Direct Image URL (auto-filled on upload)">
+                        <div id="signup-profile-preview-container" class="preview-container" style="display:none; margin-top: 0.5rem;">
+                            <img id="signup-profile-preview" src="" class="img-preview-thumb" alt="Profile Preview">
+                            <span id="signup-profile-status" style="font-size: 0.8rem; color: var(--success); font-weight: 500;"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="signup-experience">Experience *</label>
+                        <input type="text" id="signup-experience" class="form-control" required placeholder="e.g. 10+ Years">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="signup-spec">Category / Specialization *</label>
+                        <input type="text" id="signup-spec" class="form-control" required placeholder="e.g. Dermatologist / Cardiologist">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="signup-location">Location / City *</label>
+                        <input type="text" id="signup-location" class="form-control" required placeholder="e.g. Mumbai, Maharashtra">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="signup-clinic">Clinic / Hospital Name *</label>
+                        <input type="text" id="signup-clinic" class="form-control" required placeholder="e.g. Care Skin & Laser Clinic">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="signup-qualification">Education / Qualification *</label>
+                        <input type="text" id="signup-qualification" class="form-control" required placeholder="e.g. MBBS, MD (Dermatology)">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="signup-fee">Consultation Fee (₹) *</label>
+                        <input type="number" id="signup-fee" class="form-control" required min="0" placeholder="500">
+                    </div>
+
+                    <div class="form-group span-full">
+                        <label class="form-label">Clinic / Hospital Photos (Upload Multiple via ImgBB)</label>
+                        <input type="file" id="signup-clinic-files" accept="image/*" multiple class="form-control" style="margin-bottom: 0.5rem;">
+                        <input type="text" id="signup-clinic-photos" class="form-control" placeholder="Comma-separated image URLs (auto-filled on upload)">
+                        <div id="signup-clinic-previews" class="preview-container"></div>
+                        <small style="color: var(--text-muted); font-size: 0.75rem;">Select image file(s) to upload directly to ImgBB.</small>
+                    </div>
+
+                    <div class="form-group span-full">
+                        <label class="form-label" for="signup-about">Bio / About</label>
+                        <textarea id="signup-about" class="form-control" rows="3" placeholder="Brief details about your medical practice, specialties, and background..."></textarea>
+                    </div>
+                </div>
+
+                <div id="signup-error-msg" style="padding: 0.75rem 1rem; background: var(--error-light); color: var(--error); border: 1px solid #FCA5A5; border-radius: var(--radius-md); font-weight: 500; font-size: 0.875rem; margin-bottom: 1.25rem; display: none;"></div>
+
+                <button type="submit" class="btn btn-primary" id="signup-btn" style="margin-top: 0.5rem;">Create Account &amp; Start Managing</button>
+
+                <div style="margin-top: 1.25rem; text-align: center; font-size: 0.875rem; color: var(--text-secondary);">
+                    Already registered? <button type="button" id="show-login" onclick="switchToLogin(event)" style="background: none; border: none; color: var(--secondary); cursor: pointer; font-weight: 600; font-size: 0.875rem; text-decoration: underline; padding: 0;">Sign In</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MAIN DOCTOR PANEL APP VIEW -->
+    <!-- ========================================== -->
+    <div id="app-view" class="app-layout hidden">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <i class='bx bx-plus-medical'></i> Doctor Panel
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#dashboard" class="nav-item active" data-page="dashboard"><i class='bx bx-grid-alt'></i> Dashboard</a>
+                <a href="#appointments" class="nav-item" data-page="appointments"><i class='bx bx-calendar-check'></i> Appointments</a>
+                <a href="#patients" class="nav-item" data-page="patients"><i class='bx bx-user'></i> Patients</a>
+                <a href="#prescriptions" class="nav-item" data-page="prescriptions"><i class='bx bx-notepad'></i> Prescriptions</a>
+                <a href="#slots" class="nav-item" data-page="slots"><i class='bx bx-time-five'></i> Slots &amp; Availability</a>
+                <a href="#profile" class="nav-item" data-page="profile"><i class='bx bx-id-card'></i> Profile &amp; Settings</a>
+                <a href="#" class="nav-item" onclick="window.logout()"><i class='bx bx-log-out'></i> Logout</a>
+            </nav>
+        </aside>
+
+        <!-- Main Wrapper -->
+        <div class="main-wrapper">
+            <header class="top-header">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <i class='bx bx-menu' id="mobile-menu-toggle" style="font-size: 1.5rem; cursor: pointer; display: none;"></i>
+                    <h2 id="page-title" style="font-size: 1.125rem; font-weight: 600;">Dashboard</h2>
+                </div>
+
+                <div class="header-user">
+                    <span id="header-doctor-name" style="font-weight: 600; font-size: 0.875rem; color: var(--primary);">Dr. Medical Specialist</span>
+                    <div class="avatar" id="header-avatar">DR</div>
+                </div>
+            </header>
+
+            <main class="content-area" id="app-content">
+                <!-- Dynamic HTML Templates Loaded Here -->
+            </main>
+        </div>
+    </div>
+
+    <!-- Modals Layer -->
+    <div id="modal-container"></div>
+
+    <!-- ========================================== -->
+    <!-- TEMPLATES FOR PAGES -->
+    <!-- ========================================== -->
+
+    <!-- Dashboard Template -->
+    <template id="tpl-dashboard">
+        <div class="grid-stats">
+            <div class="stat-card">
+                <div class="stat-title">Today's Appointments</div>
+                <div class="stat-value" id="stat-today">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">Pending Approvals</div>
+                <div class="stat-value" id="stat-pending" style="color: var(--warning);">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">Total Patients</div>
+                <div class="stat-value" id="stat-patients">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">Consultation Fee</div>
+                <div class="stat-value" id="stat-fee" style="color: var(--success);">₹0</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3 style="font-size: 1.125rem;">Today's Patient Schedule</h3>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">Manage live queue and appointment statuses</p>
+                </div>
+                <a href="#appointments" class="btn btn-outline btn-sm">View All Appointments →</a>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Patient Name</th>
+                            <th>Type</th>
+                            <th>Token #</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="today-schedule-body">
+                        <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading today's schedule...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </template>
+
+    <!-- Appointments Template -->
+    <template id="tpl-appointments">
+        <!-- VIEW 1: DATE CARDS LIST -->
+        <div id="date-folders-view">
+            <div class="card" style="margin-bottom: 1.25rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h3 style="font-size: 1.125rem; font-weight: 700;">📅 Appointment Dates Calendar</h3>
+                        <p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 2px;">Select any date below to view patient appointments for that day.</p>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <input type="date" id="date-folder-picker" class="form-control" style="width: auto;" onchange="window.openDateFolder(this.value)">
+                        <button class="btn btn-primary btn-sm" onclick="window.openAllDatesFolder()">Show All Appointments</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grid of Date Folders -->
+            <div id="date-folders-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                <div style="padding: 2rem; text-align: center; color: var(--text-muted); grid-column: span 3;">Loading appointment dates...</div>
+            </div>
+        </div>
+
+        <!-- VIEW 2: APPOINTMENTS TABLE FOR SELECTED DATE -->
+        <div id="date-details-view" class="hidden">
+            <div class="card" style="margin-bottom: 1.25rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <button class="btn btn-outline btn-sm" onclick="window.backToDateFolders()">← Back to Dates List</button>
+                        <div>
+                            <h3 id="selected-date-heading" style="font-size: 1.125rem; font-weight: 700; color: var(--primary);">📅 Appointments for Date</h3>
+                            <p id="selected-date-sub" style="font-size: 0.85rem; color: var(--text-secondary);">Showing scheduled patients for selected date</p>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                        <button class="btn btn-outline btn-sm" id="tab-today" onclick="window.setApptFilter('today', this)">Today</button>
+                        <button class="btn btn-outline btn-sm" id="tab-upcoming" onclick="window.setApptFilter('upcoming', this)">Upcoming</button>
+                        <button class="btn btn-outline btn-sm" id="tab-completed" onclick="window.setApptFilter('completed', this)">Completed</button>
+                        <button class="btn btn-outline btn-sm" id="tab-cancelled" onclick="window.setApptFilter('cancelled', this)">Cancelled</button>
+                        <button class="btn btn-primary btn-sm" id="tab-all" onclick="window.setApptFilter('all', this)">All Statuses</button>
+                        <input type="text" id="appt-search" class="form-control" style="width: 180px;" placeholder="Search patient name..." onkeyup="window.searchAppointments(this.value)">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date &amp; Time</th>
+                                <th>Patient</th>
+                                <th>Clinic / Location</th>
+                                <th>Token #</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="appointments-body">
+                            <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading patient appointments...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Patients Template -->
+    <template id="tpl-patients">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3>My Patients Directory</h3>
+                    <p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 2px;">Patients who have booked consultations with your clinic.</p>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Patient ID</th>
+                            <th>Patient Name</th>
+                            <th>Total Consultations</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="patients-body">
+                        <tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading patients list...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </template>
+
+    <!-- Prescriptions Template -->
+    <template id="tpl-prescriptions">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3>Prescription Management</h3>
+                    <p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 2px;">Issue prescriptions and view patient medical history.</p>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="window.openNewPrescriptionModal()">+ New Prescription</button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Patient Name</th>
+                            <th>Diagnosis</th>
+                            <th>Medicines Prescribed</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="prescriptions-body">
+                        <tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading prescription records...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </template>
+
+    <!-- Slots & Availability Template -->
+    <template id="tpl-slots">
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <!-- SLOT GENERATOR CARD -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3>📅 Create &amp; Schedule Appointment Slots</h3>
+                        <p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 2px;">Generate bookable appointment time slots for any single date or upcoming month range.</p>
+                    </div>
+                </div>
+
+                <form id="slot-generator-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label" for="slot-gen-mode">Selection Mode</label>
+                            <select id="slot-gen-mode" class="form-control" onchange="window.onSlotGenModeChange(this.value)">
+                                <option value="single">Single Specific Date</option>
+                                <option value="range">Date Range / Entire Month</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" id="single-date-group">
+                            <label class="form-label" for="slot-single-date">Select Date</label>
+                            <input type="date" id="slot-single-date" class="form-control">
+                        </div>
+
+                        <div class="form-group span-full hidden" id="range-date-group">
+                            <div class="form-grid">
+                                <div>
+                                    <label class="form-label" for="slot-start-date">From Date</label>
+                                    <input type="date" id="slot-start-date" class="form-control">
+                                </div>
+                                <div>
+                                    <label class="form-label" for="slot-end-date">To Date</label>
+                                    <input type="date" id="slot-end-date" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="slot-morning-start">Morning Session Start</label>
+                            <input type="time" id="slot-morning-start" class="form-control" value="09:00">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="slot-morning-end">Morning Session End</label>
+                            <input type="time" id="slot-morning-end" class="form-control" value="13:00">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="slot-evening-start">Evening Session Start (Optional)</label>
+                            <input type="time" id="slot-evening-start" class="form-control" value="17:00">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="slot-evening-end">Evening Session End (Optional)</label>
+                            <input type="time" id="slot-evening-end" class="form-control" value="20:00">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="slot-consult-time">⏱️ Patient Consultation Time (Minutes) *</label>
+                            <input type="number" id="slot-consult-time" class="form-control" value="15" min="5" max="180" placeholder="e.g. 15 (Time with 1 Patient)">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="slot-buffer-gap">☕ Rest / Buffer Gap Between Patients (Minutes) *</label>
+                            <input type="number" id="slot-buffer-gap" class="form-control" value="5" min="0" max="60" placeholder="e.g. 5 (Break before next patient)">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="slot-consult-fee">New Patient Consultation Fee (₹) *</label>
+                            <input type="number" id="slot-consult-fee" class="form-control" value="500" min="0" placeholder="e.g. 500 (First Visit)">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="slot-followup-fee">Follow-up / Returning Patient Fee (₹) *</label>
+                            <input type="number" id="slot-followup-fee" class="form-control" value="300" min="0" placeholder="e.g. 300 (Repeat Visit)">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="slot-max-patients">Max Patients per Slot</label>
+                            <input type="number" id="slot-max-patients" class="form-control" value="1" min="1" max="10">
+                        </div>
+                    </div>
+
+                    <div id="slot-gen-msg" style="margin-top: 1rem; font-size: 0.875rem; display: none;"></div>
+
+                    <button type="submit" class="btn btn-primary" id="btn-generate-slots" style="margin-top: 1rem; width: auto;">
+                        ⚡ Generate &amp; Publish Appointment Slots
+                    </button>
+                </form>
+            </div>
+
+            <!-- EXISTING SLOTS LIST & FILTER CARD -->
+            <div class="card">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h3>📋 Existing Doctor Schedules (1 Row Per Date)</h3>
+                        <p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 2px;">Daily Morning and Evening session timings per date.</p>
+                    </div>
+
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <input type="date" id="slot-filter-date" class="form-control" style="width: auto;" onchange="window.filterSlotsByDate(this.value)">
+                        <button class="btn btn-outline btn-sm" onclick="window.clearSlotDateFilter()">Show All Dates</button>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Schedule Date</th>
+                                <th>Morning Session</th>
+                                <th>Evening Session</th>
+                                <th>Slot Gap</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="slots-body">
+                            <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading doctor schedule...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Profile & Settings Template -->
+    <template id="tpl-profile">
+        <div class="card" style="max-width: 640px;">
+            <div class="card-header">
+                <div>
+                    <h3>Doctor Profile &amp; Practice Settings</h3>
+                    <p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 2px;">Manage your fees, specialization, and clinic details.</p>
+                </div>
+            </div>
+
+            <form id="profile-edit-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="prof-name">Doctor Full Name</label>
+                        <input type="text" id="prof-name" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="prof-spec">Category / Specialization</label>
+                        <input type="text" id="prof-spec" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="prof-experience">Experience</label>
+                        <input type="text" id="prof-experience" class="form-control" required placeholder="e.g. 10+ Years">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="prof-qualification">Education / Qualification</label>
+                        <input type="text" id="prof-qualification" class="form-control" required placeholder="e.g. MBBS, MD">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="prof-clinic">Clinic / Hospital Name</label>
+                        <input type="text" id="prof-clinic" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="prof-location">Location / City</label>
+                        <input type="text" id="prof-location" class="form-control" required placeholder="e.g. Mumbai, Maharashtra">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="prof-fee">New Patient Fee (₹) *</label>
+                        <input type="number" id="prof-fee" class="form-control" required min="0" placeholder="500">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="prof-followup-fee">Follow-up / Returning Fee (₹) *</label>
+                        <input type="number" id="prof-followup-fee" class="form-control" required min="0" placeholder="300">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="prof-morning-start">Default Morning Start</label>
+                        <input type="time" id="prof-morning-start" class="form-control" value="09:00">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="prof-morning-end">Default Morning End</label>
+                        <input type="time" id="prof-morning-end" class="form-control" value="13:00">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="prof-evening-start">Default Evening Start</label>
+                        <input type="time" id="prof-evening-start" class="form-control" value="17:00">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="prof-evening-end">Default Evening End</label>
+                        <input type="time" id="prof-evening-end" class="form-control" value="20:00">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Profile Picture (Upload via ImgBB)</label>
+                        <input type="file" id="prof-profile-file" accept="image/*" class="form-control" style="margin-bottom: 0.5rem;">
+                        <input type="url" id="prof-image-url" class="form-control" placeholder="Direct Image URL (auto-filled on upload)">
+                        <div id="prof-profile-preview-container" class="preview-container" style="display:none; margin-top: 0.5rem;">
+                            <img id="prof-profile-preview" src="" class="img-preview-thumb" alt="Profile Preview">
+                            <span id="prof-profile-status" style="font-size: 0.8rem; color: var(--success); font-weight: 500;"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group span-full">
+                        <label class="form-label">Clinic / Hospital Photos (Upload Multiple via ImgBB)</label>
+                        <input type="file" id="prof-clinic-files" accept="image/*" multiple class="form-control" style="margin-bottom: 0.5rem;">
+                        <input type="text" id="prof-clinic-photos" class="form-control" placeholder="Comma-separated image URLs">
+                        <div id="prof-clinic-previews" class="preview-container"></div>
+                    </div>
+
+                    <div class="form-group span-full">
+                        <label class="form-label" for="prof-about">Bio / About</label>
+                        <textarea id="prof-about" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label class="form-label">Account Status</label>
+                    <span id="prof-status" class="badge badge-success">ACTIVE DOCTOR PROFILE</span>
+                </div>
+
+                <div id="prof-msg" style="margin-bottom: 1rem; font-size: 0.875rem; display: none;"></div>
+
+                <button type="submit" class="btn btn-primary" id="prof-save-btn">Save Profile Changes</button>
+            </form>
+        </div>
+    </template>
+
+
+    <!-- ========================================== -->
+    <!-- SUPABASE JS MODULE (EXACT SCHEMA MATCH) -->
+    <!-- ========================================== -->
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm';
+
+        // Supabase Initialization
+        const SUPABASE_URL = 'https://kewuxbvilvqxphmvyhkz.supabase.co/';
+        const SUPABASE_ANON_KEY = 'sb_publishable_2vrXZkEw8rHLVwK6fCMjgw_uqQ-D5BA';
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Global Doctor Context
+        window.doctorContext = null;
+        let currentApptFilter = 'today';
+        let selectedApptDate = new Date().toISOString().split('T')[0];
+        let cachedAppointments = [];
+
+        // DOM Elements
+        const authView = document.getElementById('auth-view');
+        const loginCard = document.getElementById('login-card');
+        const signupCard = document.getElementById('signup-card');
+        const appView = document.getElementById('app-view');
+        const appContent = document.getElementById('app-content');
+        const pageTitle = document.getElementById('page-title');
+        const navItems = document.querySelectorAll('.nav-item[data-page]');
+
+        // Auth Screen Switcher Window Functions (Instant OnClick Handlers)
+        window.switchToSignup = (e) => {
+            if (e && e.preventDefault) e.preventDefault();
+            const lCard = document.getElementById('login-card');
+            const sCard = document.getElementById('signup-card');
+            if (lCard) lCard.classList.add('hidden');
+            if (sCard) sCard.classList.remove('hidden');
+        };
+
+        window.switchToLogin = (e) => {
+            if (e && e.preventDefault) e.preventDefault();
+            const lCard = document.getElementById('login-card');
+            const sCard = document.getElementById('signup-card');
+            if (sCard) sCard.classList.add('hidden');
+            if (lCard) lCard.classList.remove('hidden');
+        };
+
+        // Global Auth Submit Handlers (Guarantees form execution on button click)
+        window._handleLoginSubmitImpl = async (e) => {
+            if (e && e.preventDefault) e.preventDefault();
+            await handleLogin(e);
+        };
+
+        window._handleSignupSubmitImpl = async (e) => {
+            if (e && e.preventDefault) e.preventDefault();
+            await handleSignup(e);
+        };
+
+        window.handleLoginSubmit = window._handleLoginSubmitImpl;
+        window.handleSignupSubmit = window._handleSignupSubmitImpl;
+
+        function bindAuthListeners() {
+            const loginForm = document.getElementById('login-form');
+            if (loginForm && !loginForm.dataset.bound) {
+                loginForm.dataset.bound = "true";
+                loginForm.addEventListener('submit', window.handleLoginSubmit);
+            }
+
+            const signupForm = document.getElementById('signup-form');
+            if (signupForm && !signupForm.dataset.bound) {
+                signupForm.dataset.bound = "true";
+                signupForm.addEventListener('submit', window.handleSignupSubmit);
+            }
+
+            const toggle = document.getElementById('mobile-menu-toggle');
+            const sidebar = document.getElementById('sidebar');
+            if (toggle && !toggle.dataset.bound) {
+                toggle.dataset.bound = "true";
+                toggle.style.display = window.innerWidth <= 768 ? 'block' : 'none';
+                toggle.addEventListener('click', () => sidebar.classList.toggle('open'));
+            }
+        }
+
+        // Run binding immediately & on DOMContentLoaded
+        bindAuthListeners();
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', bindAuthListeners);
+        } else {
+            setTimeout(bindAuthListeners, 0);
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            window.addEventListener('hashchange', handleRouting);
+            await checkSession();
+        });
+
+        // ----------------------------------------------------
+        // AUTHENTICATION & EXACT SCHEMA MATCH
+        // ----------------------------------------------------
+        async function checkSession() {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) {
+                    showAuth();
+                    return;
+                }
+
+                const userId = session.user.id;
+
+                // Fetch Doctor Record
+                let { data: doc, error } = await supabase
+                    .from('doctors')
+                    .select('*')
+                    .eq('id', userId)
+                    .maybeSingle();
+
+                if (error || !doc) {
+                    const fallbackName = session.user.user_metadata?.full_name || 'Dr. Medical Specialist';
+                    const fallbackPhone = session.user.user_metadata?.phone || '';
+                    const fallbackEmail = session.user.email || '';
+
+                    doc = {
+                        id: userId,
+                        name: fallbackName,
+                        email: fallbackEmail,
+                        phone: fallbackPhone,
+                        specialization: 'General Physician',
+                        qualification: 'MBBS, MD',
+                        clinic_name: 'Care Clinic',
+                        location: 'Main City Branch',
+                        fee: 500,
+                        gender: 'Doctor',
+                        is_available_today: true,
+                        is_nearby: true,
+                        is_popular: true,
+                        morning_start: '09:00:00',
+                        morning_end: '13:00:00',
+                        evening_start: '17:00:00',
+                        evening_end: '20:00:00'
+                    };
+
+                    try {
+                        await supabase.from('doctors').upsert([doc]);
+                    } catch (ignored) {}
+                }
+
+                window.doctorContext = doc;
+                const docName = doc.name || 'Doctor';
+                document.getElementById('header-doctor-name').textContent = docName;
+                const initials = (docName.replace(/^Dr\.\s*/i, '').trim() || 'DR').split(/\s+/).map(n => n[0]).filter(Boolean).join('').substring(0, 2).toUpperCase() || 'DR';
+                document.getElementById('header-avatar').textContent = initials;
+
+                showApp();
+                handleRouting();
+            } catch (err) {
+                console.error("checkSession error:", err);
+                showAuth();
+            }
+        }
+
+        function formatAuthError(errMessage, type) {
+            if (!errMessage) return "⚠️ An error occurred. Please try again.";
+            const msg = errMessage.toLowerCase();
+
+            if (type === 'signup') {
+                if (msg.includes('user already registered') || msg.includes('already exists') || msg.includes('already been registered') || msg.includes('duplicate key')) {
+                    return "⚠️ This Email Address is <strong>ALREADY REGISTERED</strong>! Please click <a href='javascript:void(0)' onclick='switchToLogin(event)' style='color: var(--primary); text-decoration: underline; font-weight:700;'>Sign In</a> to log in with your password.";
+                }
+                if (msg.includes('password should be at least') || msg.includes('weak password')) {
+                    return "⚠️ Password is too short! Password must be at least 6 characters long.";
+                }
+                if (msg.includes('unable to validate email') || msg.includes('invalid email')) {
+                    return "⚠️ Invalid Email format! Please enter a valid email address (e.g. doctor@example.com).";
+                }
+            }
+
+            if (type === 'login') {
+                if (msg.includes('invalid login credentials') || msg.includes('invalid credentials')) {
+                    return "⚠️ <strong>Incorrect Email or Password</strong>! Please double-check your email and password and try again.";
+                }
+                if (msg.includes('email not confirmed')) {
+                    return "⚠️ Email not confirmed! Please check your inbox or sign up again.";
+                }
+                if (msg.includes('user not found')) {
+                    return "⚠️ No account found with this email. Please click <a href='javascript:void(0)' onclick='switchToSignup(event)' style='color: var(--primary); text-decoration: underline; font-weight:700;'>Create Doctor Account</a> below to register.";
+                }
+            }
+
+            return "⚠️ " + errMessage;
+        }
+
+        async function handleLogin(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+            const errorMsg = document.getElementById('login-error-msg');
+            const loginBtn = document.getElementById('login-btn');
+
+            if (loginBtn.disabled) return;
+
+            if (!email || !password) {
+                const msg = "⚠️ Please enter both email address and password.";
+                errorMsg.innerHTML = msg;
+                errorMsg.style.display = 'block';
+                if (window.showToast) window.showToast("Please enter both email address and password.", "warning");
+                return;
+            }
+
+            errorMsg.style.display = 'none';
+            loginBtn.textContent = 'Signing in...';
+            loginBtn.disabled = true;
+            if (window.showToast) window.showToast("⌛ Signing in to Doctor Panel...", "info", 2000);
+
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+
+                if (window.showToast) window.showToast("✅ Signed in successfully!", "success", 3000);
+                await checkSession();
+            } catch (err) {
+                console.error("Login error:", err);
+                const formattedErr = formatAuthError(err.message || String(err), 'login');
+                errorMsg.innerHTML = formattedErr;
+                errorMsg.style.display = 'block';
+                if (window.showToast) window.showToast(formattedErr, "error", 5000);
+            } finally {
+                loginBtn.textContent = 'Sign In to Doctor Panel';
+                loginBtn.disabled = false;
+            }
+        }
+
+        async function handleSignup(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            const signupBtn = document.getElementById('signup-btn');
+            if (signupBtn && signupBtn.disabled) return;
+
+            const name = document.getElementById('signup-name').value.trim();
+            const email = document.getElementById('signup-email').value.trim();
+            const password = document.getElementById('signup-password').value;
+            const phone = document.getElementById('signup-phone').value.trim();
+            const profilePic = document.getElementById('signup-profile-pic').value.trim();
+            const experience = document.getElementById('signup-experience').value.trim();
+            const spec = document.getElementById('signup-spec').value.trim();
+            const location = document.getElementById('signup-location').value.trim();
+            const clinic = document.getElementById('signup-clinic').value.trim();
+            const qualification = document.getElementById('signup-qualification').value.trim();
+            const fee = parseInt(document.getElementById('signup-fee').value) || 500;
+            const clinicPhotos = document.getElementById('signup-clinic-photos').value.trim();
+            const about = document.getElementById('signup-about').value.trim();
+
+            const errorMsg = document.getElementById('signup-error-msg');
+
+            if (!email || !password || !name) {
+                const msg = "⚠️ Please fill in all required fields (Name, Email, Password).";
+                errorMsg.innerHTML = msg;
+                errorMsg.style.display = 'block';
+                if (window.showToast) window.showToast("Please fill in Name, Email and Password.", "warning");
+                return;
+            }
+
+            errorMsg.style.display = 'none';
+            signupBtn.textContent = 'Creating Doctor Account...';
+            signupBtn.disabled = true;
+            if (window.showToast) window.showToast("⌛ Creating Doctor Account...", "info", 2000);
+
+            try {
+                // 1. Sign Up in Supabase Auth
+                const { data: authData, error: authErr } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            full_name: name,
+                            phone: phone,
+                            role: 'doctor'
+                        }
+                    }
+                });
+
+                if (authErr) throw authErr;
+
+                let userId = authData.user ? authData.user.id : null;
+
+                // Immediate sign-in attempt
+                const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+                if (!signInErr && signInData?.user) {
+                    userId = signInData.user.id;
+                }
+
+                if (userId) {
+                    // 2. Insert Doctor record in doctors table
+                    try {
+                        await supabase.from('doctors').upsert([{
+                            id: userId,
+                            name: name,
+                            email: email,
+                            phone: phone,
+                            image_url: profilePic || null,
+                            experience: experience || '5+ Years',
+                            specialization: spec || 'General Physician',
+                            location: location || 'Main City Branch',
+                            clinic_name: clinic || 'Care Clinic',
+                            clinic_photos: clinicPhotos || null,
+                            qualification: qualification || 'MBBS',
+                            fee: fee,
+                            about: about || null,
+                            gender: 'Doctor',
+                            is_available_today: true,
+                            is_nearby: true,
+                            is_popular: true,
+                            morning_start: '09:00:00',
+                            morning_end: '13:00:00',
+                            evening_start: '17:00:00',
+                            evening_end: '20:00:00'
+                        }]);
+                    } catch (upsertErr) {
+                        console.warn("Doctor row upsert note:", upsertErr);
+                    }
+                }
+
+                if (window.showToast) window.showToast("✅ Doctor Account created successfully!", "success", 3000);
+
+                // Verify active session or redirect to Login
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session) {
+                    await checkSession();
+                } else {
+                    document.getElementById('login-email').value = email;
+                    switchToLogin();
+                }
+
+            } catch (err) {
+                console.error("Registration error:", err);
+                const formattedErr = formatAuthError(err.message || String(err), 'signup');
+                errorMsg.innerHTML = formattedErr;
+                errorMsg.style.display = 'block';
+                if (window.showToast) window.showToast(formattedErr, "error", 5000);
+            } finally {
+                signupBtn.textContent = 'Create Account & Start Managing';
+                signupBtn.disabled = false;
+            }
+        }
+
+        // Link implementation to window handlers
+        window._handleLoginSubmitImpl = handleLogin;
+        window._handleSignupSubmitImpl = handleSignup;
+
+        window.logout = async () => {
+            await supabase.auth.signOut();
+            window.doctorContext = null;
+            window.location.hash = '';
+            showAuth();
+        };
+
+        function showAuth() {
+            authView.classList.remove('hidden');
+            loginCard.classList.remove('hidden');
+            signupCard.classList.add('hidden');
+            appView.classList.add('hidden');
+        }
+
+        function showApp() {
+            authView.classList.add('hidden');
+            appView.classList.remove('hidden');
+        }
+
+        // ----------------------------------------------------
+        // SPA ROUTER
+        // ----------------------------------------------------
+        function handleRouting() {
+            if (appView.classList.contains('hidden')) return;
+
+            const hash = window.location.hash.replace('#', '') || 'dashboard';
+
+            navItems.forEach(item => {
+                if (item.getAttribute('data-page') === hash) {
+                    item.classList.add('active');
+                    pageTitle.textContent = item.textContent.trim();
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('open');
+            }
+
+            const template = document.getElementById(`tpl-${hash}`);
+            if (template) {
+                appContent.innerHTML = '';
+                appContent.appendChild(template.content.cloneNode(true));
+
+                if (hash === 'dashboard') initDashboard();
+                if (hash === 'appointments') initAppointments();
+                if (hash === 'patients') initPatients();
+                if (hash === 'prescriptions') initPrescriptions();
+                if (hash === 'slots') initSlots();
+                if (hash === 'profile') initProfile();
+            } else {
+                appContent.innerHTML = `<div style="padding: 3rem; text-align: center;"><h3>Page Not Found</h3></div>`;
+            }
+        }
+
+        // ----------------------------------------------------
+        // UTILS
+        // ----------------------------------------------------
+        function formatTime(timeStr) {
+            if (!timeStr) return '';
+            try {
+                const [h, m] = timeStr.split(':');
+                let hours = parseInt(h);
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12;
+                hours = hours ? hours : 12;
+                return `${hours}:${String(m).padStart(2, '0')} ${ampm}`;
+            } catch(e) {
+                return timeStr;
+            }
+        }
+
+        // ----------------------------------------------------
+        // DASHBOARD MODULE
+        // ----------------------------------------------------
+        async function initDashboard() {
+            if (!window.doctorContext) return;
+            const doctorId = window.doctorContext.id;
+            const today = new Date().toISOString().split('T')[0];
+
+            document.getElementById('stat-fee').textContent = `₹${window.doctorContext.fee || 500}`;
+
+            try {
+                // Today's appointments query
+                let { data: todayAppts } = await supabase
+                    .from('appointments')
+                    .select('*, patient:profiles(full_name)')
+                    .eq('doctor_id', doctorId)
+                    .eq('appointment_date', today)
+                    .order('start_time', { ascending: true });
+
+                // Fallback query if no appointments matched doctor_id strictly
+                if (!todayAppts || todayAppts.length === 0) {
+                    const { data: fallbackAppts } = await supabase
+                        .from('appointments')
+                        .select('*, patient:profiles(full_name)')
+                        .eq('appointment_date', today)
+                        .order('start_time', { ascending: true });
+                    todayAppts = fallbackAppts || [];
+                }
+
+                document.getElementById('stat-today').textContent = todayAppts ? todayAppts.length : 0;
+
+                // Pending approvals query
+                let { data: pendingAppts } = await supabase
+                    .from('appointments')
+                    .select('id')
+                    .eq('status', 'Pending');
+
+                document.getElementById('stat-pending').textContent = pendingAppts ? pendingAppts.length : 0;
+
+                // Unique patients count query
+                let { data: allAppts } = await supabase
+                    .from('appointments')
+                    .select('patient_id');
+
+                const uniquePatients = new Set((allAppts || []).map(a => a.patient_id).filter(Boolean));
+                document.getElementById('stat-patients').textContent = uniquePatients.size;
+
+                // Today Schedule Table
+                const tbody = document.getElementById('today-schedule-body');
+                if (!todayAppts || todayAppts.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No patient appointments scheduled for today.</td></tr>`;
+                    return;
+                }
+
+                let html = '';
+                todayAppts.forEach(appt => {
+                    const pName = (appt.patient && appt.patient.full_name) ? appt.patient.full_name : ('Patient #' + (appt.id ? appt.id.substring(0, 5) : '01'));
+
+                    let actions = '';
+                    if (appt.status === 'Pending' || appt.status === 'pending') {
+                        actions = `<button class="btn btn-primary btn-sm" onclick="window.updateApptStatus('${appt.id}', 'Confirmed')">Confirm</button>`;
+                    } else if (appt.status === 'Confirmed' || appt.status === 'confirmed') {
+                        actions = `<button class="btn btn-outline btn-sm" onclick="window.updateApptStatus('${appt.id}', 'In Consultation')">Start Consult</button>`;
+                    } else if (appt.status === 'In Consultation' || appt.status === 'in_consultation') {
+                        actions = `<button class="btn btn-success btn-sm" onclick="window.updateApptStatus('${appt.id}', 'Completed')">Complete</button>`;
+                    }
+
+                    let badgeClass = 'badge-info';
+                    if (appt.status === 'Confirmed' || appt.status === 'confirmed') badgeClass = 'badge-success';
+                    if (appt.status === 'Pending' || appt.status === 'pending') badgeClass = 'badge-warning';
+                    if (appt.status === 'Cancelled' || appt.status === 'cancelled') badgeClass = 'badge-error';
+
+                    html += `
+                        <tr>
+                            <td style="font-weight: 600;">${formatTime(appt.start_time)}</td>
+                            <td style="font-weight: 500;">${pName}</td>
+                            <td style="text-transform: capitalize;">${appt.appointment_type || 'Clinic'}</td>
+                            <td style="font-weight: 700; color: var(--primary);">#${String(appt.token_number || 1).padStart(2, '0')}</td>
+                            <td><span class="badge ${badgeClass}">${appt.status || 'Confirmed'}</span></td>
+                            <td>${actions}</td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
+
+            } catch (err) {
+                console.error("Dashboard error:", err);
+            }
+        }
+
+        // ----------------------------------------------------
+        // APPOINTMENTS MODULE
+        // ----------------------------------------------------
+        async function initAppointments() {
+            currentApptFilter = 'all';
+            selectedApptDate = null;
+            await loadAppointmentsData();
+        }
+
+        function formatDateLabel(dateStr) {
+            if (!dateStr) return '';
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const parts = dateStr.split('-');
+                const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                const dayName = dateStr === today ? 'Today' : d.toLocaleDateString('en-US', { weekday: 'long' });
+                const dateFormatted = d.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
+                return `${dayName}, ${dateFormatted}`;
+            } catch(e) {
+                return dateStr;
+            }
+        }
+
+        function renderDateFolders() {
+            const grid = document.getElementById('date-folders-grid');
+            if (!grid) return;
+
+            const datesSet = new Set((cachedAppointments || []).map(a => a.appointment_date).filter(Boolean));
+            const sortedDates = Array.from(datesSet).sort();
+
+            if (sortedDates.length === 0) {
+                grid.innerHTML = `<div class="card" style="padding: 2.5rem; text-align: center; color: var(--text-muted); grid-column: span 3;">No patient appointments found in database.</div>`;
+                return;
+            }
+
+            let html = '';
+            sortedDates.forEach(dateStr => {
+                const count = cachedAppointments.filter(a => a.appointment_date === dateStr).length;
+                const label = formatDateLabel(dateStr);
+
+                html += `
+                    <div class="card" style="cursor: pointer; transition: all 0.2s; border: 1px solid var(--border);" onclick="window.openDateFolder('${dateStr}')">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                            <div style="background: var(--primary-light); color: var(--primary); padding: 0.5rem 0.75rem; border-radius: 8px; font-weight: 700; font-size: 1.25rem;">
+                                📅
+                            </div>
+                            <span class="badge badge-info" style="font-size: 0.8rem;">${count} ${count === 1 ? 'Booking' : 'Bookings'}</span>
+                        </div>
+                        <h4 style="font-size: 1.125rem; font-weight: 700; color: var(--primary); margin-bottom: 0.25rem;">${dateStr}</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">${label}</p>
+                        <button class="btn btn-outline btn-sm" style="width: 100%;">View Patients (${count}) →</button>
+                    </div>
+                `;
+            });
+
+            grid.innerHTML = html;
+        }
+
+        window.openDateFolder = (dateStr) => {
+            if (!dateStr) return;
+            selectedApptDate = dateStr;
+
+            const foldersView = document.getElementById('date-folders-view');
+            const detailsView = document.getElementById('date-details-view');
+            const heading = document.getElementById('selected-date-heading');
+            const sub = document.getElementById('selected-date-sub');
+
+            if (foldersView) foldersView.classList.add('hidden');
+            if (detailsView) detailsView.classList.remove('hidden');
+
+            if (heading) heading.textContent = `📅 Appointments for ${dateStr}`;
+            if (sub) sub.textContent = `Showing patient queue for ${formatDateLabel(dateStr)}`;
+
+            renderAppointmentsTable();
+        };
+
+        window.openAllDatesFolder = () => {
+            selectedApptDate = null;
+
+            const foldersView = document.getElementById('date-folders-view');
+            const detailsView = document.getElementById('date-details-view');
+            const heading = document.getElementById('selected-date-heading');
+            const sub = document.getElementById('selected-date-sub');
+
+            if (foldersView) foldersView.classList.add('hidden');
+            if (detailsView) detailsView.classList.remove('hidden');
+
+            if (heading) heading.textContent = `📅 All Scheduled Appointments`;
+            if (sub) sub.textContent = `Showing all patient appointments across all dates`;
+
+            renderAppointmentsTable();
+        };
+
+        window.backToDateFolders = () => {
+            selectedApptDate = null;
+
+            const foldersView = document.getElementById('date-folders-view');
+            const detailsView = document.getElementById('date-details-view');
+
+            if (detailsView) detailsView.classList.add('hidden');
+            if (foldersView) foldersView.classList.remove('hidden');
+
+            renderDateFolders();
+        };
+
+        window.setApptFilter = (filter, btnElement) => {
+            currentApptFilter = filter;
+            const container = btnElement.parentElement;
+            container.querySelectorAll('button').forEach(b => {
+                b.classList.remove('btn-primary');
+                b.classList.add('btn-outline');
+            });
+            btnElement.classList.remove('btn-outline');
+            btnElement.classList.add('btn-primary');
+            renderAppointmentsTable();
+        };
+
+        window.searchAppointments = (query) => {
+            renderAppointmentsTable(query);
+        };
+
+        async function loadAppointmentsData() {
+            if (!window.doctorContext) return;
+            const doctorId = window.doctorContext.id;
+
+            try {
+                let { data, error } = await supabase
+                    .from('appointments')
+                    .select('*, patient:profiles(full_name)')
+                    .eq('doctor_id', doctorId)
+                    .order('appointment_date', { ascending: true })
+                    .order('start_time', { ascending: true });
+
+                if (error || !data || data.length === 0) {
+                    const { data: fallbackData } = await supabase
+                        .from('appointments')
+                        .select('*, patient:profiles(full_name)')
+                        .order('appointment_date', { ascending: true })
+                        .order('start_time', { ascending: true });
+                    data = fallbackData || [];
+                }
+
+                cachedAppointments = data || [];
+                renderDateFolders();
+            } catch (err) {
+                console.error(err);
+                document.getElementById('date-folders-grid').innerHTML = `<div class="card" style="padding: 2rem; text-align: center; color: var(--error); grid-column: span 3;">Failed to load appointments.</div>`;
+            }
+        }
+
+        function renderAppointmentsTable(searchQuery = '') {
+            const tbody = document.getElementById('appointments-body');
+            if (!tbody) return;
+
+            const today = new Date().toISOString().split('T')[0];
+
+            let filtered = cachedAppointments.filter(appt => {
+                if (selectedApptDate && appt.appointment_date !== selectedApptDate) {
+                    return false;
+                }
+
+                const st = (appt.status || 'confirmed').toLowerCase();
+                if (currentApptFilter === 'today') return appt.appointment_date === today && !st.includes('completed') && !st.includes('cancel');
+                if (currentApptFilter === 'upcoming') return appt.appointment_date > today && !st.includes('cancel');
+                if (currentApptFilter === 'completed') return st.includes('completed');
+                if (currentApptFilter === 'cancelled') return st.includes('cancel') || st.includes('reject');
+                return true;
+            });
+
+            if (searchQuery.trim() !== '') {
+                const q = searchQuery.toLowerCase();
+                filtered = filtered.filter(a => {
+                    const pName = (a.patient && a.patient.full_name) ? a.patient.full_name.toLowerCase() : '';
+                    return pName.includes(q) || String(a.token_number).includes(q);
+                });
+            }
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No appointments found for selected date/filter.</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            filtered.forEach(appt => {
+                const pName = (appt.patient && appt.patient.full_name) ? appt.patient.full_name : ('Patient #' + (appt.id ? appt.id.substring(0, 5) : '01'));
+                const st = (appt.status || 'Confirmed').toLowerCase();
+
+                let actions = '';
+                if (st.includes('pending')) {
+                    actions = `<button class="btn btn-primary btn-sm" onclick="window.updateApptStatus('${appt.id}', 'Confirmed')">Confirm</button>`;
+                } else if (st.includes('confirm')) {
+                    actions = `<button class="btn btn-outline btn-sm" onclick="window.updateApptStatus('${appt.id}', 'In Consultation')">Start Consult</button>`;
+                } else if (st.includes('consultation')) {
+                    actions = `<button class="btn btn-success btn-sm" onclick="window.updateApptStatus('${appt.id}', 'Completed')">Complete</button>`;
+                }
+
+                let badgeClass = 'badge-info';
+                if (st.includes('confirm')) badgeClass = 'badge-success';
+                if (st.includes('cancel')) badgeClass = 'badge-error';
+                if (st.includes('completed')) badgeClass = 'badge-secondary';
+
+                html += `
+                    <tr>
+                        <td>
+                            <div style="font-weight: 600;">${appt.appointment_date}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">${formatTime(appt.start_time)}</div>
+                        </td>
+                        <td style="font-weight: 500;">${pName}</td>
+                        <td>${appt.clinic_name || window.doctorContext.clinic_name || 'Main Clinic'}</td>
+                        <td style="font-weight: 700; color: var(--primary);">#${String(appt.token_number || 1).padStart(2, '0')}</td>
+                        <td><span class="badge ${badgeClass}">${appt.status || 'Confirmed'}</span></td>
+                        <td>${actions}</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        window.updateApptStatus = async (appointmentId, newStatus) => {
+            try {
+                const { error } = await supabase
+                    .from('appointments')
+                    .update({ status: newStatus })
+                    .eq('id', appointmentId);
+
+                if (error) throw error;
+                await loadAppointmentsData();
+            } catch (err) {
+                alert("Failed to update status: " + err.message);
+            }
+        };
+
+        // ----------------------------------------------------
+        // PATIENTS MODULE
+        // ----------------------------------------------------
+        async function initPatients() {
+            if (!window.doctorContext) return;
+            const doctorId = window.doctorContext.id;
+
+            try {
+                const { data: appts } = await supabase
+                    .from('appointments')
+                    .select('patient_id')
+                    .eq('doctor_id', doctorId);
+
+                const patientMap = new Map();
+                (appts || []).forEach(a => {
+                    if (a.patient_id) {
+                        patientMap.set(a.patient_id, (patientMap.get(a.patient_id) || 0) + 1);
+                    }
+                });
+
+                const tbody = document.getElementById('patients-body');
+                if (patientMap.size === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 2rem;">No patients registered yet.</td></tr>`;
+                    return;
+                }
+
+                let html = '';
+                for (const [pid, count] of patientMap.entries()) {
+                    const { data: profile } = await supabase.from('profiles').select('full_name, email, phone').eq('id', pid).single();
+                    const pName = profile ? profile.full_name : 'Patient';
+
+                    html += `
+                        <tr>
+                            <td style="font-family: monospace; color: var(--text-muted);">${pid.substring(0, 8)}...</td>
+                            <td style="font-weight: 600;">${pName}</td>
+                            <td><span class="badge badge-info">${count} Consultations</span></td>
+                            <td><span class="badge badge-success">ACTIVE</span></td>
+                        </tr>
+                    `;
+                }
+                tbody.innerHTML = html;
+
+            } catch (err) {
+                console.error("Patients load error:", err);
+            }
+        }
+
+        // ----------------------------------------------------
+        // PRESCRIPTIONS MODULE
+        // ----------------------------------------------------
+        async function initPrescriptions() {
+            if (!window.doctorContext) return;
+            const doctorId = window.doctorContext.id;
+
+            try {
+                const { data: list } = await supabase
+                    .from('medical_records')
+                    .select('*')
+                    .eq('doctor_name', window.doctorContext.name)
+                    .order('created_at', { ascending: false });
+
+                const tbody = document.getElementById('prescriptions-body');
+                if (!list || list.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 2rem;">No prescriptions issued yet.</td></tr>`;
+                    return;
+                }
+
+                let html = '';
+                list.forEach(rec => {
+                    html += `
+                        <tr>
+                            <td>${rec.record_date || 'Recent'}</td>
+                            <td style="font-weight: 600;">${rec.patient_id ? rec.patient_id.substring(0, 8) : 'Patient'}</td>
+                            <td>${rec.diagnosis || 'Clinical Prescription'}</td>
+                            <td>${rec.medicines || 'Medication supplements'}</td>
+                            <td><button class="btn btn-outline btn-sm" onclick="alert('${rec.medicines || 'Prescription Details'}')">View Details</button></td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
+
+            } catch (err) {
+                console.error("Prescriptions load error:", err);
+            }
+        }
+
+        window.openNewPrescriptionModal = () => {
+            const modalContainer = document.getElementById('modal-container');
+            modalContainer.innerHTML = `
+                <div class="modal-overlay">
+                    <div class="modal-content">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                            <h3 style="font-size: 1.25rem; font-weight: 700;">Issue Patient Prescription</h3>
+                            <button class="btn btn-outline btn-sm" onclick="document.getElementById('modal-container').innerHTML=''">✕</button>
+                        </div>
+                        <form id="create-presc-form">
+                            <div class="form-group">
+                                <label class="form-label">Diagnosis</label>
+                                <input type="text" id="presc-diagnosis" class="form-control" placeholder="e.g. Acute Dermatitis" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Prescribed Medicines</label>
+                                <textarea id="presc-medicines" class="form-control" rows="3" placeholder="e.g. Cetirizine 10mg (1-0-1, 5 days)" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Advice / Instructions</label>
+                                <input type="text" id="presc-advice" class="form-control" placeholder="Avoid direct sunlight, drink water">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Save &amp; Issue Prescription</button>
+                        </form>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('create-presc-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const diagnosis = document.getElementById('presc-diagnosis').value;
+                const medicines = document.getElementById('presc-medicines').value;
+                const advice = document.getElementById('presc-advice').value;
+
+                try {
+                    await supabase.from('medical_records').insert([{
+                        record_type: 'prescription',
+                        title: 'Doctor Prescription',
+                        doctor_name: window.doctorContext.name,
+                        clinic_name: window.doctorContext.clinic_name || 'Care Clinic',
+                        record_date: new Date().toISOString().split('T')[0],
+                        diagnosis: diagnosis,
+                        medicines: medicines,
+                        advice: advice,
+                        is_doctor_generated: true
+                    }]);
+
+                    alert("Prescription issued successfully!");
+                    modalContainer.innerHTML = '';
+                    initPrescriptions();
+                } catch (err) {
+                    alert("Failed to save prescription: " + err.message);
+                }
+            });
+        };
+
+        // ----------------------------------------------------
+        // SLOTS & SCHEDULE GENERATION MODULE
+        // ----------------------------------------------------
+        let currentSlotDateFilter = null;
+
+        function timeToMinutes(timeStr) {
+            if (!timeStr) return 0;
+            const [h, m] = timeStr.split(':').map(Number);
+            return h * 60 + m;
+        }
+
+        function minutesToTime(mins) {
+            const h = Math.floor(mins / 60);
+            const m = mins % 60;
+            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`;
+        }
+
+        function generateTimePairs(startTimeStr, endTimeStr, durationMins, breakMins = 5) {
+            if (!startTimeStr || !endTimeStr) return [];
+            let start = timeToMinutes(startTimeStr);
+            let end = timeToMinutes(endTimeStr);
+            if (start >= end) return [];
+
+            const pairs = [];
+            while (start + durationMins <= end) {
+                pairs.push({
+                    start_time: minutesToTime(start),
+                    end_time: minutesToTime(start + durationMins)
+                });
+                start += durationMins + breakMins;
+            }
+            return pairs;
+        }
+
+        async function initSlots() {
+            if (!window.doctorContext) return;
+
+            const doc = window.doctorContext;
+            if (doc.morning_start && document.getElementById('slot-morning-start')) document.getElementById('slot-morning-start').value = doc.morning_start;
+            if (doc.morning_end && document.getElementById('slot-morning-end')) document.getElementById('slot-morning-end').value = doc.morning_end;
+            if (doc.evening_start && document.getElementById('slot-evening-start')) document.getElementById('slot-evening-start').value = doc.evening_start;
+            if (doc.evening_end && document.getElementById('slot-evening-end')) document.getElementById('slot-evening-end').value = doc.evening_end;
+            if (doc.fee && document.getElementById('slot-consult-fee')) document.getElementById('slot-consult-fee').value = doc.fee;
+            if (doc.followup_fee && document.getElementById('slot-followup-fee')) document.getElementById('slot-followup-fee').value = doc.followup_fee;
+
+            const today = new Date().toISOString().split('T')[0];
+            const singleDateInput = document.getElementById('slot-single-date');
+            if (singleDateInput && !singleDateInput.value) {
+                singleDateInput.value = today;
+            }
+
+            const form = document.getElementById('slot-generator-form');
+            if (form && !form.dataset.bound) {
+                form.dataset.bound = "true";
+                form.addEventListener('submit', handleGenerateSlots);
+            }
+
+            await loadSlotsData();
+        }
+
+        window.onSlotGenModeChange = (mode) => {
+            const singleGroup = document.getElementById('single-date-group');
+            const rangeGroup = document.getElementById('range-date-group');
+            if (mode === 'range') {
+                singleGroup.classList.add('hidden');
+                rangeGroup.classList.remove('hidden');
+            } else {
+                rangeGroup.classList.add('hidden');
+                singleGroup.classList.remove('hidden');
+            }
+        };
+
+        window.filterSlotsByDate = (dateVal) => {
+            currentSlotDateFilter = dateVal || null;
+            loadSlotsData();
+        };
+
+        window.clearSlotDateFilter = () => {
+            currentSlotDateFilter = null;
+            const filterInput = document.getElementById('slot-filter-date');
+            if (filterInput) filterInput.value = '';
+            loadSlotsData();
+        };
+
+        async function loadSlotsData() {
+            if (!window.doctorContext) return;
+            const doctorId = window.doctorContext.id;
+            const today = new Date().toISOString().split('T')[0];
+
+            try {
+                let schedules = [];
+                let { data, error } = await supabase
+                    .from('doctor_schedules')
+                    .select('*')
+                    .eq('doctor_id', doctorId);
+
+                if (!error && data && data.length > 0) {
+                    schedules = data;
+                } else {
+                    const { data: fallbackData } = await supabase
+                        .from('doctor_schedules')
+                        .select('*');
+                    if (fallbackData && fallbackData.length > 0) {
+                        schedules = fallbackData;
+                    } else {
+                        const { data: slotsData } = await supabase.from('doctor_slots').select('*');
+                        if (slotsData && slotsData.length > 0) {
+                            const groupedByDate = new Map();
+                            slotsData.forEach(s => {
+                                if (!groupedByDate.has(s.slot_date)) {
+                                    groupedByDate.set(s.slot_date, {
+                                        id: s.id,
+                                        slot_date: s.slot_date,
+                                        morning_start: s.start_time < '12:00:00' ? s.start_time : '09:00:00',
+                                        morning_end: s.start_time < '12:00:00' ? s.end_time : '13:00:00',
+                                        evening_start: s.start_time >= '12:00:00' ? s.start_time : '17:00:00',
+                                        evening_end: s.start_time >= '12:00:00' ? s.end_time : '20:00:00',
+                                        slot_duration: 20
+                                    });
+                                }
+                            });
+                            schedules = Array.from(groupedByDate.values());
+                        }
+                    }
+                }
+
+                const tbody = document.getElementById('slots-body');
+                if (!tbody) return;
+
+                if (!schedules || schedules.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No schedules found for selected date(s). Set Morning and Evening session times above and click save!</td></tr>`;
+                    return;
+                }
+
+                let html = '';
+                schedules.forEach(sched => {
+                    const morningText = `${formatTime(sched.morning_start || '09:00:00')} - ${formatTime(sched.morning_end || '13:00:00')}`;
+                    const eveningText = (sched.evening_start && sched.evening_end) ? `${formatTime(sched.evening_start)} - ${formatTime(sched.evening_end)}` : 'Off / Closed';
+                    const consultMins = sched.consult_duration || 15;
+                    const bufferMins = (sched.buffer_gap !== undefined && sched.buffer_gap !== null) ? sched.buffer_gap : 5;
+                    const gapText = `${consultMins}m Consult + ${bufferMins}m Gap`;
+
+                    html += `
+                        <tr>
+                            <td style="font-weight: 700; color: var(--primary);">${sched.slot_date}</td>
+                            <td><span class="badge" style="background: #EBF1FF; color: #152C69; font-size: 0.85rem;">☀️ ${morningText}</span></td>
+                            <td><span class="badge" style="background: #FEF3C7; color: #D97706; font-size: 0.85rem;">🌙 ${eveningText}</span></td>
+                            <td style="font-weight: 600;">${gapText}</td>
+                            <td><span class="badge badge-success">ACTIVE SCHEDULE</span></td>
+                            <td>
+                                <button class="btn btn-outline btn-sm" style="color: var(--error); border-color: var(--error);" onclick="window.deleteSchedule('${sched.id}')">Delete Schedule</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
+
+            } catch (err) {
+                console.error("Slots load error:", err);
+            }
+        }
+
+        window.deleteSchedule = async (schedId) => {
+            if (!confirm("Are you sure you want to delete this date schedule?")) return;
+            try {
+                await supabase.from('doctor_schedules').delete().eq('id', schedId);
+                await loadSlotsData();
+            } catch (err) {
+                alert("Failed to delete schedule: " + err.message);
+            }
+        };
+
+        async function handleGenerateSlots(e) {
+            e.preventDefault();
+            if (!window.doctorContext) return;
+            const doctorId = window.doctorContext.id;
+
+            const mode = document.getElementById('slot-gen-mode').value;
+            const morningStart = document.getElementById('slot-morning-start').value;
+            const morningEnd = document.getElementById('slot-morning-end').value;
+            const eveningStart = document.getElementById('slot-evening-start').value;
+            const eveningEnd = document.getElementById('slot-evening-end').value;
+            const consultTime = parseInt(document.getElementById('slot-consult-time')?.value) || 15;
+            const bufferGap = parseInt(document.getElementById('slot-buffer-gap')?.value) || 5;
+            const duration = consultTime + bufferGap;
+            const maxPatients = parseInt(document.getElementById('slot-max-patients').value) || 1;
+
+            const msgEl = document.getElementById('slot-gen-msg');
+            const btn = document.getElementById('btn-generate-slots');
+
+            msgEl.style.display = 'none';
+
+            let dates = [];
+            if (mode === 'single') {
+                const singleDate = document.getElementById('slot-single-date').value;
+                if (!singleDate) {
+                    alert("Please select a date.");
+                    return;
+                }
+                dates.push(singleDate);
+            } else {
+                const startDateStr = document.getElementById('slot-start-date').value;
+                const endDateStr = document.getElementById('slot-end-date').value;
+                if (!startDateStr || !endDateStr) {
+                    alert("Please select both From Date and To Date.");
+                    return;
+                }
+                let curr = new Date(startDateStr);
+                const end = new Date(endDateStr);
+                if (curr > end) {
+                    alert("From Date cannot be after To Date.");
+                    return;
+                }
+                while (curr <= end) {
+                    dates.push(curr.toISOString().split('T')[0]);
+                    curr.setDate(curr.getDate() + 1);
+                }
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Saving Schedule...';
+
+            try {
+                const schedulesToInsert = dates.map(dateStr => ({
+                    doctor_id: doctorId,
+                    slot_date: dateStr,
+                    morning_start: morningStart || '09:00:00',
+                    morning_end: morningEnd || '13:00:00',
+                    evening_start: eveningStart || '17:00:00',
+                    evening_end: eveningEnd || '20:00:00',
+                    consult_duration: consultTime,
+                    buffer_gap: bufferGap,
+                    slot_duration: duration,
+                    max_patients: maxPatients
+                }));
+
+                // 1. Try upserting into doctor_schedules table
+                const { error } = await supabase.from('doctor_schedules').upsert(schedulesToInsert);
+
+                if (error) {
+                    console.warn("doctor_schedules upsert notice:", error.message);
+                    // Fallback: Populate doctor_slots table so old schema works seamlessly
+                    const morningPairs = generateTimePairs(morningStart, morningEnd, duration, 5).map(pair => ({ ...pair, session: 'morning' }));
+                    const eveningPairs = generateTimePairs(eveningStart, eveningEnd, duration, 5).map(pair => ({ ...pair, session: 'evening' }));
+                    const allPairs = [...morningPairs, ...eveningPairs];
+
+                    const slotsToInsert = [];
+                    dates.forEach(dateStr => {
+                        allPairs.forEach(pair => {
+                            slotsToInsert.push({
+                                doctor_id: doctorId,
+                                slot_date: dateStr,
+                                start_time: pair.start_time,
+                                end_time: pair.end_time,
+                                session: pair.session,
+                                status: 'available',
+                                max_patients: maxPatients
+                            });
+                        });
+                    });
+                    await supabase.from('doctor_slots').upsert(slotsToInsert);
+                }
+
+                // 2. Persist doctor's fee, followup_fee, morning and evening working schedule in doctors table
+                try {
+                    const consultFee = parseInt(document.getElementById('slot-consult-fee')?.value) || 500;
+                    const followupFee = parseInt(document.getElementById('slot-followup-fee')?.value) || 300;
+                    await supabase.from('doctors').update({
+                        fee: consultFee,
+                        followup_fee: followupFee,
+                        morning_start: morningStart || null,
+                        morning_end: morningEnd || null,
+                        evening_start: eveningStart || null,
+                        evening_end: eveningEnd || null
+                    }).eq('id', doctorId);
+
+                    window.doctorContext.fee = consultFee;
+                    window.doctorContext.followup_fee = followupFee;
+                    window.doctorContext.morning_start = morningStart;
+                    window.doctorContext.morning_end = morningEnd;
+                    window.doctorContext.evening_start = eveningStart;
+                    window.doctorContext.evening_end = eveningEnd;
+                } catch (ignored) {}
+
+                msgEl.style.color = 'var(--success)';
+                msgEl.textContent = `Success! Saved schedule (1 row per date, ${schedulesToInsert.length} date(s) recorded).`;
+                msgEl.style.display = 'block';
+
+                await loadSlotsData();
+
+            } catch (err) {
+                msgEl.style.color = 'var(--error)';
+                msgEl.textContent = "Failed to save schedule: " + err.message;
+                msgEl.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '⚡ Save Daily Practice Schedule';
+            }
+        }
+
+        window.toggleBlockSlot = async (slotId, newStatus) => {
+            try {
+                await supabase.from('doctor_slots').update({ status: newStatus }).eq('id', slotId);
+                await loadSlotsData();
+            } catch (err) {
+                alert("Failed to update slot: " + err.message);
+            }
+        };
+
+        window.deleteSlot = async (slotId) => {
+            if (!confirm("Are you sure you want to delete this slot?")) return;
+            try {
+                const { error } = await supabase.from('doctor_slots').delete().eq('id', slotId);
+                if (error) throw error;
+                await loadSlotsData();
+            } catch (err) {
+                alert("Failed to delete slot: " + err.message);
+            }
+        };
+
+        // ----------------------------------------------------
+        // IMGBB IMAGE UPLOAD HELPER & EVENT LISTENERS
+        // ----------------------------------------------------
+        window.IMGBB_API_KEY = '98b5b00cee79645e2ea44a187446c2e3'; // Your ImgBB API Key
+
+        async function uploadToImgBB(file) {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const apiKey = window.IMGBB_API_KEY || '98b5b00cee79645e2ea44a187446c2e3';
+            const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            if (result.success && result.data && result.data.url) {
+                return result.data.url;
+            } else {
+                throw new Error(result.error?.message || 'ImgBB upload failed');
+            }
+        }
+
+        // Setup Single Profile Image Uploader Listener
+        function bindProfileImageUploader(fileInputId, urlInputId, previewContainerId, previewImgId, statusId) {
+            document.getElementById(fileInputId)?.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const statusEl = document.getElementById(statusId);
+                const previewContainer = document.getElementById(previewContainerId);
+                const previewImg = document.getElementById(previewImgId);
+                const urlInput = document.getElementById(urlInputId);
+
+                if (previewContainer) previewContainer.style.display = 'flex';
+                if (statusEl) {
+                    statusEl.style.color = 'var(--text-secondary)';
+                    statusEl.textContent = 'Uploading to ImgBB...';
+                }
+
+                try {
+                    const uploadedUrl = await uploadToImgBB(file);
+                    urlInput.value = uploadedUrl;
+                    if (previewImg) previewImg.src = uploadedUrl;
+                    if (statusEl) {
+                        statusEl.style.color = 'var(--success)';
+                        statusEl.textContent = 'Uploaded successfully!';
+                    }
+                } catch (err) {
+                    if (statusEl) {
+                        statusEl.style.color = 'var(--error)';
+                        statusEl.textContent = 'Upload failed: ' + err.message;
+                    }
+                }
+            });
+        }
+
+        // Setup Multiple Clinic Photos Uploader Listener
+        function bindClinicPhotosUploader(fileInputId, urlInputId, previewContainerId) {
+            document.getElementById(fileInputId)?.addEventListener('change', async (e) => {
+                const files = Array.from(e.target.files);
+                if (files.length === 0) return;
+
+                const previewContainer = document.getElementById(previewContainerId);
+                const urlInput = document.getElementById(urlInputId);
+
+                let currentUrls = urlInput.value ? urlInput.value.split(',').map(u => u.trim()).filter(Boolean) : [];
+
+                for (const file of files) {
+                    const item = document.createElement('div');
+                    item.className = 'gallery-item';
+                    item.innerHTML = `<div style="font-size: 0.75rem; color: var(--text-secondary); padding: 0.25rem 0.5rem; border: 1px solid var(--border); border-radius: 6px;">Uploading ${file.name.substring(0, 12)}...</div>`;
+                    previewContainer.appendChild(item);
+
+                    try {
+                        const uploadedUrl = await uploadToImgBB(file);
+                        currentUrls.push(uploadedUrl);
+                        urlInput.value = currentUrls.join(', ');
+
+                        item.innerHTML = `
+                            <img src="${uploadedUrl}" class="img-preview-thumb" alt="Clinic photo">
+                            <button type="button" class="remove-btn" title="Remove">&times;</button>
+                        `;
+
+                        item.querySelector('.remove-btn').addEventListener('click', () => {
+                            currentUrls = currentUrls.filter(u => u !== uploadedUrl);
+                            urlInput.value = currentUrls.join(', ');
+                            item.remove();
+                        });
+
+                    } catch (err) {
+                        item.innerHTML = `<span style="color: var(--error); font-size: 0.75rem;">Failed</span>`;
+                        setTimeout(() => item.remove(), 3000);
+                    }
+                }
+            });
+        }
+
+        // Helper to Render Gallery Previews from Comma Separated URLs
+        function renderGalleryPreviews(urlInputId, previewContainerId) {
+            const urlInput = document.getElementById(urlInputId);
+            const previewContainer = document.getElementById(previewContainerId);
+            if (!urlInput || !previewContainer) return;
+
+            previewContainer.innerHTML = '';
+            let currentUrls = urlInput.value ? urlInput.value.split(',').map(u => u.trim()).filter(Boolean) : [];
+
+            currentUrls.forEach(url => {
+                const item = document.createElement('div');
+                item.className = 'gallery-item';
+                item.innerHTML = `
+                    <img src="${url}" class="img-preview-thumb" alt="Clinic photo">
+                    <button type="button" class="remove-btn" title="Remove">&times;</button>
+                `;
+
+                item.querySelector('.remove-btn').addEventListener('click', () => {
+                    currentUrls = currentUrls.filter(u => u !== url);
+                    urlInput.value = currentUrls.join(', ');
+                    item.remove();
+                });
+
+                previewContainer.appendChild(item);
+            });
+        }
+
+        // Attach Image Uploaders for Signup Form
+        bindProfileImageUploader('signup-profile-file', 'signup-profile-pic', 'signup-profile-preview-container', 'signup-profile-preview', 'signup-profile-status');
+        bindClinicPhotosUploader('signup-clinic-files', 'signup-clinic-photos', 'signup-clinic-previews');
+
+        // ----------------------------------------------------
+        // PROFILE MODULE
+        // ----------------------------------------------------
+        async function initProfile() {
+            if (!window.doctorContext) return;
+            const doc = window.doctorContext;
+
+            document.getElementById('prof-name').value = doc.name || '';
+            document.getElementById('prof-spec').value = doc.specialization || '';
+            document.getElementById('prof-experience').value = doc.experience || '';
+            document.getElementById('prof-qualification').value = doc.qualification || '';
+            document.getElementById('prof-clinic').value = doc.clinic_name || '';
+            document.getElementById('prof-location').value = doc.location || '';
+            document.getElementById('prof-fee').value = doc.fee || 500;
+            if (document.getElementById('prof-followup-fee')) document.getElementById('prof-followup-fee').value = doc.followup_fee || 300;
+            if (document.getElementById('prof-morning-start')) document.getElementById('prof-morning-start').value = doc.morning_start || '09:00';
+            if (document.getElementById('prof-morning-end')) document.getElementById('prof-morning-end').value = doc.morning_end || '13:00';
+            if (document.getElementById('prof-evening-start')) document.getElementById('prof-evening-start').value = doc.evening_start || '17:00';
+            if (document.getElementById('prof-evening-end')) document.getElementById('prof-evening-end').value = doc.evening_end || '20:00';
+            document.getElementById('prof-image-url').value = doc.image_url || '';
+            document.getElementById('prof-clinic-photos').value = doc.clinic_photos || '';
+            document.getElementById('prof-about').value = doc.about || '';
+
+            // Render existing Profile Avatar preview
+            if (doc.image_url) {
+                const container = document.getElementById('prof-profile-preview-container');
+                const img = document.getElementById('prof-profile-preview');
+                if (container && img) {
+                    container.style.display = 'flex';
+                    img.src = doc.image_url;
+                }
+            }
+
+            // Render existing Clinic Photos gallery
+            renderGalleryPreviews('prof-clinic-photos', 'prof-clinic-previews');
+
+            // Attach Uploaders for Profile Page
+            bindProfileImageUploader('prof-profile-file', 'prof-image-url', 'prof-profile-preview-container', 'prof-profile-preview', 'prof-profile-status');
+            bindClinicPhotosUploader('prof-clinic-files', 'prof-clinic-photos', 'prof-clinic-previews');
+
+            document.getElementById('profile-edit-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('prof-name').value.trim();
+                const spec = document.getElementById('prof-spec').value.trim();
+                const experience = document.getElementById('prof-experience').value.trim();
+                const qualification = document.getElementById('prof-qualification').value.trim();
+                const clinic = document.getElementById('prof-clinic').value.trim();
+                const location = document.getElementById('prof-location').value.trim();
+                const fee = parseInt(document.getElementById('prof-fee').value) || 500;
+                const followupFee = parseInt(document.getElementById('prof-followup-fee')?.value) || 300;
+                const morningStart = document.getElementById('prof-morning-start')?.value || '09:00';
+                const morningEnd = document.getElementById('prof-morning-end')?.value || '13:00';
+                const eveningStart = document.getElementById('prof-evening-start')?.value || '17:00';
+                const eveningEnd = document.getElementById('prof-evening-end')?.value || '20:00';
+                const imageUrl = document.getElementById('prof-image-url').value.trim();
+                const clinicPhotos = document.getElementById('prof-clinic-photos').value.trim();
+                const about = document.getElementById('prof-about').value.trim();
+
+                const saveBtn = document.getElementById('prof-save-btn');
+                const msg = document.getElementById('prof-msg');
+
+                saveBtn.disabled = true;
+                saveBtn.textContent = 'Saving Changes...';
+
+                try {
+                    const { error } = await supabase.from('doctors').update({
+                        name: name,
+                        specialization: spec,
+                        experience: experience,
+                        qualification: qualification,
+                        clinic_name: clinic,
+                        location: location,
+                        fee: fee,
+                        followup_fee: followupFee,
+                        morning_start: morningStart,
+                        morning_end: morningEnd,
+                        evening_start: eveningStart,
+                        evening_end: eveningEnd,
+                        image_url: imageUrl || null,
+                        clinic_photos: clinicPhotos || null,
+                        about: about || null
+                    }).eq('id', doc.id);
+
+                    if (error) throw error;
+
+                    window.doctorContext.name = name;
+                    window.doctorContext.specialization = spec;
+                    window.doctorContext.experience = experience;
+                    window.doctorContext.qualification = qualification;
+                    window.doctorContext.clinic_name = clinic;
+                    window.doctorContext.location = location;
+                    window.doctorContext.fee = fee;
+                    window.doctorContext.followup_fee = followupFee;
+                    window.doctorContext.morning_start = morningStart;
+                    window.doctorContext.morning_end = morningEnd;
+                    window.doctorContext.evening_start = eveningStart;
+                    window.doctorContext.evening_end = eveningEnd;
+                    window.doctorContext.image_url = imageUrl;
+                    window.doctorContext.clinic_photos = clinicPhotos;
+                    window.doctorContext.about = about;
+
+                    document.getElementById('header-doctor-name').textContent = name;
+
+                    msg.style.color = 'var(--success)';
+                    msg.textContent = 'Profile updated successfully!';
+                    msg.style.display = 'block';
+
+                } catch (err) {
+                    msg.style.color = 'var(--error)';
+                    msg.textContent = 'Failed to update profile: ' + err.message;
+                    msg.style.display = 'block';
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = 'Save Profile Changes';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

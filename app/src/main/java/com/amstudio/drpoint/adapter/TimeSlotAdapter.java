@@ -3,6 +3,7 @@ package com.amstudio.drpoint.adapter;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
@@ -12,26 +13,28 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.amstudio.drpoint.R;
 import com.amstudio.drpoint.databinding.ItemTimeSlotBinding;
+import com.amstudio.drpoint.model.DoctorSlot;
+import com.amstudio.drpoint.util.AvailabilityHelper;
 
-public class TimeSlotAdapter extends ListAdapter<String, TimeSlotAdapter.ViewHolder> {
+public class TimeSlotAdapter extends ListAdapter<DoctorSlot, TimeSlotAdapter.ViewHolder> {
 
     public interface OnTimeSlotSelectedListener {
-        void onTimeSlotSelected(String slot, int position);
+        void onTimeSlotSelected(DoctorSlot slot, int position);
     }
 
-    private static final DiffUtil.ItemCallback<String> DIFF_CALLBACK = new DiffUtil.ItemCallback<String>() {
+    private static final DiffUtil.ItemCallback<DoctorSlot> DIFF_CALLBACK = new DiffUtil.ItemCallback<DoctorSlot>() {
         @Override
-        public boolean areItemsTheSame(@NonNull String oldItem, @NonNull String newItem) {
-            return oldItem.equals(newItem);
+        public boolean areItemsTheSame(@NonNull DoctorSlot oldItem, @NonNull DoctorSlot newItem) {
+            return oldItem.getId() != null && oldItem.getId().equals(newItem.getId());
         }
 
         @Override
-        public boolean areContentsTheSame(@NonNull String oldItem, @NonNull String newItem) {
-            return oldItem.equals(newItem);
+        public boolean areContentsTheSame(@NonNull DoctorSlot oldItem, @NonNull DoctorSlot newItem) {
+            return oldItem.getStatus().equals(newItem.getStatus()) && oldItem.getStartTime().equals(newItem.getStartTime());
         }
     };
 
-    private int selectedPosition = 0;
+    private int selectedPosition = -1;
     private final OnTimeSlotSelectedListener listener;
 
     public TimeSlotAdapter(OnTimeSlotSelectedListener listener) {
@@ -50,7 +53,7 @@ public class TimeSlotAdapter extends ListAdapter<String, TimeSlotAdapter.ViewHol
         return selectedPosition;
     }
 
-    public String getSelectedSlot() {
+    public DoctorSlot getSelectedSlot() {
         if (selectedPosition >= 0 && selectedPosition < getItemCount()) {
             return getItem(selectedPosition);
         }
@@ -83,20 +86,39 @@ public class TimeSlotAdapter extends ListAdapter<String, TimeSlotAdapter.ViewHol
             this.binding = binding;
         }
 
-        void bind(String slot, boolean isSelected, OnInternalSlotClickListener listener) {
+        void bind(DoctorSlot slot, boolean isSelected, OnInternalSlotClickListener listener) {
             Context context = itemView.getContext();
-            binding.getRoot().setText(slot);
+            String timeStr = slot.getFormattedTime();
+            binding.getRoot().setText(timeStr);
 
-            if (isSelected) {
-                binding.getRoot().setBackgroundResource(R.drawable.bg_date_chip_selected);
+            boolean isAvailable = "available".equalsIgnoreCase(slot.getStatus());
+
+            if (!isAvailable) {
+                // Booked / Blocked -> Red
+                binding.getRoot().setBackgroundResource(R.drawable.bg_calendar_day_unavailable);
+                binding.getRoot().setTextColor(ContextCompat.getColor(context, R.color.error_red));
+                binding.getRoot().setEnabled(false);
+                binding.getRoot().setAlpha(0.6f);
+            } else if (isSelected) {
+                // Available & Selected -> Dark Green Fill
+                binding.getRoot().setBackgroundResource(R.drawable.bg_calendar_day_selected);
                 binding.getRoot().setTextColor(ContextCompat.getColor(context, R.color.white));
+                binding.getRoot().setEnabled(true);
+                binding.getRoot().setAlpha(1.0f);
             } else {
-                binding.getRoot().setBackgroundResource(R.drawable.bg_date_chip_unselected);
-                binding.getRoot().setTextColor(ContextCompat.getColor(context, R.color.text_primary));
+                // Available & Not Selected -> Light Green (Available) outline
+                binding.getRoot().setBackgroundResource(R.drawable.bg_calendar_day_available);
+                binding.getRoot().setTextColor(ContextCompat.getColor(context, R.color.primary));
+                binding.getRoot().setEnabled(true);
+                binding.getRoot().setAlpha(1.0f);
             }
 
             itemView.setOnClickListener(v -> {
-                int pos = getAdapterPosition();
+                if (!isAvailable) {
+                    Toast.makeText(context, "Slot is already booked or unavailable.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                int pos = getBindingAdapterPosition();
                 if (pos != RecyclerView.NO_POSITION && listener != null) {
                     listener.onSlotClick(slot, pos);
                 }
@@ -104,7 +126,7 @@ public class TimeSlotAdapter extends ListAdapter<String, TimeSlotAdapter.ViewHol
         }
 
         interface OnInternalSlotClickListener {
-            void onSlotClick(String slot, int position);
+            void onSlotClick(DoctorSlot slot, int position);
         }
     }
 }

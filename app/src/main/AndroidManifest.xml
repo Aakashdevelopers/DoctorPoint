@@ -18,7 +18,7 @@
         <activity
             android:name=".ui.splash.SplashActivity"
             android:exported="true"
-            android:theme="@style/Theme.CareWell">
+            android:theme="@style/Theme.DoctorPoint.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -62,6 +62,16 @@
 
         <activity
             android:name=".ui.booking.BookingConfirmedActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.profile.MedicalRecordsActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.home.NotificationsActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 

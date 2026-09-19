@@ -12,12 +12,15 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.amstudio.drpoint.R;
 import com.amstudio.drpoint.adapter.DoctorListAdapter;
-import com.amstudio.drpoint.adapter.QuickAccessAdapter;
+import com.amstudio.drpoint.adapter.SpecialitiesAdapter;
 import com.amstudio.drpoint.databinding.FragmentHomeBinding;
 import com.amstudio.drpoint.model.Doctor;
+import com.amstudio.drpoint.model.NotificationItem;
+import com.amstudio.drpoint.network.SupabaseClient;
 import com.amstudio.drpoint.ui.doctor.DoctorDetailActivity;
 import com.amstudio.drpoint.ui.explore.FindDoctorsActivity;
 import com.amstudio.drpoint.util.DummyDataProvider;
@@ -28,6 +31,10 @@ import com.denzcoskun.imageslider.models.SlideModel;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class HomeFragment extends Fragment {
 
@@ -44,17 +51,23 @@ public class HomeFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        String userName = PreferenceManager.getInstance(requireContext()).getUserName();
-        if (userName != null && !userName.isEmpty()) {
-            binding.tvUsername.setText(userName + " 👋");
-        }
+        updateGreeting();
 
         // Clicks
         binding.cardCarePlan.setOnClickListener(v -> openFindDoctors());
         binding.layoutSearch.setOnClickListener(v -> openFindDoctors());
         binding.flFilter.setOnClickListener(v -> openFindDoctors());
-        binding.flBell.setOnClickListener(v -> Toast.makeText(requireContext(), "No new notifications", Toast.LENGTH_SHORT).show());
+        binding.flBell.setOnClickListener(v -> {
+            Intent intent = new Intent(requireContext(), NotificationsActivity.class);
+            startActivity(intent);
+        });
         binding.tvSeeAllDoctors.setOnClickListener(v -> openFindDoctors());
+
+        if (binding.tvSeeAllSpecialities != null) {
+            binding.tvSeeAllSpecialities.setOnClickListener(v -> openFindDoctors());
+        }
+
+
 
         // Image Slideshow Setup (denzcoskun/ImageSlideshow)
         List<SlideModel> slideList = new ArrayList<>();
@@ -72,14 +85,54 @@ public class HomeFragment extends Fragment {
             }
         });
 
-        // Quick Access Grid (4 Columns)
-        binding.rvQuickAccess.setLayoutManager(new GridLayoutManager(requireContext(), 4));
-        QuickAccessAdapter quickAccessAdapter = new QuickAccessAdapter(item -> {
-            Toast.makeText(requireContext(), "Selected: " + item.getTitle(), Toast.LENGTH_SHORT).show();
-            openFindDoctors();
+        // Explore Specialities Horizontal Carousel
+        if (binding.rvSpecialities != null) {
+            binding.rvSpecialities.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
+            SpecialitiesAdapter specialitiesAdapter = new SpecialitiesAdapter(speciality -> {
+                Intent intent = new Intent(requireContext(), FindDoctorsActivity.class);
+                intent.putExtra("category", speciality.getName());
+                startActivity(intent);
+            });
+            binding.rvSpecialities.setAdapter(specialitiesAdapter);
+            DummyDataProvider.fetchSpecialitiesFromSupabase(specialitiesAdapter::submitList);
+        }
+
+        // Available Today Section (Horizontal Carousel)
+        if (binding.tvSeeAllAvailable != null) {
+            binding.tvSeeAllAvailable.setOnClickListener(v -> openFindDoctors());
+        }
+
+        binding.rvAvailableToday.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
+        DoctorListAdapter availableAdapter = new DoctorListAdapter(true, new DoctorListAdapter.OnDoctorClickListener() {
+            @Override
+            public void onDoctorClick(Doctor doctor) {
+                Intent intent = new Intent(requireContext(), DoctorDetailActivity.class);
+                intent.putExtra("doctor", doctor);
+                startActivity(intent);
+            }
+
+            @Override
+            public void onBookClick(Doctor doctor) {
+                Intent intent = new Intent(requireContext(), DoctorDetailActivity.class);
+                intent.putExtra("doctor", doctor);
+                startActivity(intent);
+            }
+
+            @Override
+            public void onCallClick(Doctor doctor) {
+                try {
+                    Intent intent = new Intent(Intent.ACTION_DIAL);
+                    intent.setData(Uri.parse("tel:9876543210"));
+                    startActivity(intent);
+                } catch (Exception e) {
+                    Toast.makeText(requireContext(), "Calling Dr. " + doctor.getName(), Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFavoriteClick(Doctor doctor) {}
         });
-        binding.rvQuickAccess.setAdapter(quickAccessAdapter);
-        quickAccessAdapter.submitList(DummyDataProvider.getQuickAccessItems());
+        binding.rvAvailableToday.setAdapter(availableAdapter);
 
         // Top Doctors Section (2-Column Grid)
         binding.rvTopDoctors.setLayoutManager(new GridLayoutManager(requireContext(), 2));
@@ -114,7 +167,63 @@ public class HomeFragment extends Fragment {
         });
         binding.rvTopDoctors.setAdapter(doctorAdapter);
 
-        DummyDataProvider.fetchDoctorsFromSupabase(doctorAdapter::submitList);
+        DummyDataProvider.fetchDoctorsFromSupabase(doctors -> {
+            List<Doctor> availableTodayList = new ArrayList<>();
+            for (Doctor d : doctors) {
+                if (d.isAvailableToday()) {
+                    availableTodayList.add(d);
+                }
+            }
+            if (availableTodayList.isEmpty()) {
+                availableTodayList.addAll(doctors);
+            }
+            availableAdapter.submitList(availableTodayList);
+            doctorAdapter.submitList(doctors);
+        });
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        updateGreeting();
+        updateNotificationBadge();
+    }
+
+    private void updateNotificationBadge() {
+        if (binding == null) return;
+        String userId = PreferenceManager.getInstance(requireContext()).getUserId();
+        if (userId == null || userId.trim().isEmpty()) return;
+
+        SupabaseClient.getNotificationService().getNotificationsForPatient("eq." + userId)
+                .enqueue(new Callback<List<NotificationItem>>() {
+                    @Override
+                    public void onResponse(Call<List<NotificationItem>> call, Response<List<NotificationItem>> response) {
+                        if (binding == null) return;
+                        boolean hasUnread = false;
+                        if (response.isSuccessful() && response.body() != null) {
+                            for (NotificationItem item : response.body()) {
+                                if (!item.isRead()) {
+                                    hasUnread = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (binding.vUnreadBadge != null) {
+                            binding.vUnreadBadge.setVisibility(hasUnread ? View.VISIBLE : View.GONE);
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<List<NotificationItem>> call, Throwable t) {}
+                });
+    }
+
+    private void updateGreeting() {
+        if (binding == null) return;
+        String userName = PreferenceManager.getInstance(requireContext()).getUserName();
+        if (userName != null && !userName.isEmpty()) {
+            binding.tvUsername.setText(userName + " 👋");
+        }
     }
 
     private void openFindDoctors() {

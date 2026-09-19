@@ -5,11 +5,11 @@
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="16dp"
     android:layout_marginVertical="8dp"
+    app:cardBackgroundColor="@color/surface_white"
     app:cardCornerRadius="16dp"
     app:cardElevation="2dp"
     app:strokeColor="@color/card_stroke"
-    app:strokeWidth="1dp"
-    app:cardBackgroundColor="@color/surface_white">
+    app:strokeWidth="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -22,20 +22,38 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/iv_doctor"
-                android:layout_width="72dp"
-                android:layout_height="72dp"
-                android:scaleType="centerCrop"
-                android:src="@drawable/ic_user"
-                app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.Corner8dp"
-                android:contentDescription="Doctor Image" />
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/iv_doctor"
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:contentDescription="Doctor Image"
+                    android:padding="2dp"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_user"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.Circle"
+                    app:strokeColor="@color/primary"
+                    app:strokeWidth="2dp" />
+
+                <!-- Online Dot Status -->
+                <View
+                    android:id="@+id/view_online_status"
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:layout_gravity="bottom|end"
+                    android:layout_marginEnd="4dp"
+                    android:layout_marginBottom="4dp"
+                    android:background="@drawable/bg_badge_verified" />
+            </FrameLayout>
 
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
                 android:layout_weight="1"
-                android:layout_marginStart="12dp"
                 android:orientation="vertical">
 
                 <LinearLayout
@@ -49,6 +67,8 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
+                        android:ellipsize="end"
+                        android:maxLines="1"
                         android:text="Dr. Priya Sharma"
                         android:textColor="@color/text_primary"
                         android:textSize="16sp"
@@ -56,11 +76,15 @@
 
                     <ImageView
                         android:id="@+id/iv_favorite"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:contentDescription="Favorite icon"
+                        android:focusable="true"
+                        android:padding="4dp"
                         android:src="@drawable/ic_heart"
-                        app:tint="@color/text_secondary"
-                        android:contentDescription="Favorite icon" />
+                        app:tint="@color/text_secondary" />
                 </LinearLayout>
 
                 <TextView
@@ -68,7 +92,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="MBBS, MD - Dermatology • 12 Yrs Exp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="Dermatologist • MBBS, MD"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
 
@@ -79,21 +105,42 @@
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
-                    <ImageView
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
-                        android:src="@drawable/ic_star"
-                        android:contentDescription="Rating star" />
-
+                    <!-- Experience Pill Badge -->
                     <TextView
-                        android:id="@+id/tv_rating"
+                        android:id="@+id/tv_experience"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="4dp"
-                        android:text="4.8 (120 reviews)"
-                        android:textColor="@color/text_primary"
-                        android:textSize="12sp"
+                        android:background="@drawable/bg_search_field_elevated"
+                        android:paddingHorizontal="6dp"
+                        android:paddingVertical="2dp"
+                        android:text="12 Yrs Exp"
+                        android:textColor="@color/primary"
+                        android:textSize="10sp"
                         android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:gravity="center_vertical">
+
+                        <ImageView
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
+                            android:contentDescription="Rating star"
+                            android:src="@drawable/ic_star"
+                            app:tint="@color/warning_yellow" />
+
+                        <TextView
+                            android:id="@+id/tv_rating"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="3dp"
+                            android:text="4.8 (120 reviews)"
+                            android:textColor="@color/text_primary"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
 
                     <LinearLayout
                         android:id="@+id/ll_verified"
@@ -101,13 +148,13 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:background="@drawable/bg_badge_verified"
+                        android:gravity="center_vertical"
                         android:paddingHorizontal="6dp"
-                        android:paddingVertical="2dp"
-                        android:gravity="center_vertical">
+                        android:paddingVertical="2dp">
 
                         <ImageView
-                            android:layout_width="12dp"
-                            android:layout_height="12dp"
+                            android:layout_width="11dp"
+                            android:layout_height="11dp"
                             android:src="@drawable/ic_verified" />
 
                         <TextView
@@ -128,7 +175,7 @@
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:layout_marginVertical="12dp"
+            android:layout_marginVertical="10dp"
             android:background="@color/divider" />
 
         <LinearLayout
@@ -138,29 +185,29 @@
             android:orientation="horizontal">
 
             <ImageView
-                android:layout_width="16dp"
-                android:layout_height="16dp"
+                android:layout_width="15dp"
+                android:layout_height="15dp"
+                android:contentDescription="Location icon"
                 android:src="@drawable/ic_location"
-                app:tint="@color/text_secondary"
-                android:contentDescription="Location icon" />
+                app:tint="@color/primary" />
 
             <TextView
                 android:id="@+id/tv_clinic_location"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
                 android:layout_weight="1"
-                android:layout_marginStart="4dp"
+                android:ellipsize="end"
+                android:maxLines="1"
                 android:text="Skin Care Clinic • Indiranagar, Bangalore"
                 android:textColor="@color/text_secondary"
-                android:textSize="12sp"
-                android:maxLines="1"
-                android:ellipsize="end" />
+                android:textSize="12sp" />
         </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="10dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -169,9 +216,9 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="₹900 Consultation Fee"
+                android:text="₹500 Fee"
                 android:textColor="@color/primary"
-                android:textSize="14sp"
+                android:textSize="15sp"
                 android:textStyle="bold" />
 
             <com.google.android.material.button.MaterialButton
@@ -180,27 +227,32 @@
                 android:layout_width="wrap_content"
                 android:layout_height="38dp"
                 android:layout_marginEnd="8dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:paddingHorizontal="12dp"
                 android:text="Call"
                 android:textColor="@color/primary"
                 android:textSize="12sp"
-                app:strokeColor="@color/primary"
-                app:strokeWidth="1dp"
-                app:cornerRadius="8dp"
+                app:cornerRadius="10dp"
                 app:icon="@drawable/ic_phone"
                 app:iconSize="14dp"
                 app:iconTint="@color/primary"
-                android:paddingHorizontal="12dp" />
+                app:strokeColor="@color/primary"
+                app:strokeWidth="1dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_book_now"
                 android:layout_width="wrap_content"
                 android:layout_height="38dp"
                 android:backgroundTint="@color/primary"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:paddingHorizontal="14dp"
                 android:text="Book Now"
                 android:textColor="@color/white"
                 android:textSize="12sp"
-                app:cornerRadius="8dp"
-                android:paddingHorizontal="12dp" />
+                android:textStyle="bold"
+                app:cornerRadius="10dp" />
         </LinearLayout>
 
     </LinearLayout>
