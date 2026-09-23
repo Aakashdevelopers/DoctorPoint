@@ -790,10 +790,12 @@
             <div class="stat-card" style="border-left: 4px solid var(--success);">
                 <div class="stat-title">Today's Earnings</div>
                 <div class="stat-value" id="stat-today-earning" style="color: var(--success);">₹0</div>
+                <div style="font-size: 0.725rem; color: var(--text-secondary); margin-top: 4px;">📅 Net earnings today</div>
             </div>
             <div class="stat-card" style="border-left: 4px solid var(--primary);">
-                <div class="stat-title">Total Lifetime Earnings</div>
+                <div class="stat-title">Available Wallet Balance</div>
                 <div class="stat-value" id="stat-total-earning" style="color: var(--primary);">₹0</div>
+                <div style="font-size: 0.725rem; color: var(--success); margin-top: 4px; font-weight: 600;">💳 Current Money (Withdrawable)</div>
             </div>
         </div>
 
@@ -1718,11 +1720,11 @@
                     return Math.max(0, gross - commDeducted);
                 }
 
-                // Today's Earnings calculation (Net of platform commission)
+                // Today's Earnings calculation (ONLY Completed appointments count towards earnings)
                 let todayEarnings = 0;
                 (todayAppts || []).forEach(a => {
-                    const st = (a.status || 'confirmed').toLowerCase();
-                    if (!st.includes('cancel') && !st.includes('reject')) {
+                    const st = (a.status || '').toLowerCase().trim();
+                    if (st.includes('completed') || st.includes('complete')) {
                         const isFollowUp = a.appointment_type === 'followup' || a.is_followup === true;
                         todayEarnings += calcNetEarning(a.fee, isFollowUp);
                     }
@@ -1747,11 +1749,11 @@
                 const uniquePatients = new Set(doctorAllAppts.map(a => a.patient_id).filter(Boolean));
                 document.getElementById('stat-patients').textContent = uniquePatients.size;
 
-                // Total Lifetime Earnings calculation (Net of platform commission)
+                // Available Wallet Balance calculation (ONLY Completed appointments count towards earnings)
                 let totalEarnings = 0;
                 doctorAllAppts.forEach(a => {
-                    const st = (a.status || 'confirmed').toLowerCase();
-                    if (!st.includes('cancel') && !st.includes('reject')) {
+                    const st = (a.status || '').toLowerCase().trim();
+                    if (st.includes('completed') || st.includes('complete')) {
                         const isFollowUp = a.appointment_type === 'followup' || a.is_followup === true;
                         totalEarnings += calcNetEarning(a.fee, isFollowUp);
                     }
@@ -1759,11 +1761,13 @@
                 const statTotalEarning = document.getElementById('stat-total-earning');
                 if (statTotalEarning) statTotalEarning.textContent = `₹${Math.round(totalEarnings).toLocaleString('en-IN')}`;
 
-                // Sync calculated earnings to doctors table in Supabase
+                // Sync calculated earnings & wallet balance to doctors table in Supabase
                 try {
                     await supabase.from('doctors').update({
                         today_earning: Math.round(todayEarnings),
-                        total_earning: Math.round(totalEarnings)
+                        total_earning: Math.round(totalEarnings),
+                        wallet_balance: Math.round(totalEarnings),
+                        current_balance: Math.round(totalEarnings)
                     }).eq('id', doctorId);
                 } catch (syncErr) {
                     console.warn("Earnings sync note:", syncErr);
