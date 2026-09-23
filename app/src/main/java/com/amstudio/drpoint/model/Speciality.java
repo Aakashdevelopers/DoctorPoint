@@ -9,12 +9,12 @@ public class Speciality {
     @SerializedName("id")
     private String id;
 
-    @SerializedName("title")
+    @SerializedName(value = "title", alternate = {"name", "specialization", "specialty"})
     private String name;
 
     private int iconRes = R.drawable.ic_stethoscope;
 
-    @SerializedName("icon_url")
+    @SerializedName(value = "icon_url", alternate = {"imageUrl", "image_url", "iconUrl", "url"})
     private String iconUrl;
 
     public Speciality() {}

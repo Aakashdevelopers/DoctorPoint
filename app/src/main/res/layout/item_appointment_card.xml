@@ -6,8 +6,8 @@
     android:layout_marginHorizontal="16dp"
     android:layout_marginVertical="8dp"
     app:cardBackgroundColor="@color/surface_white"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="2dp"
+    app:cardCornerRadius="18dp"
+    app:cardElevation="3dp"
     app:strokeColor="@color/card_stroke"
     app:strokeWidth="1dp">
 
@@ -24,8 +24,8 @@
 
             <!-- Date Block -->
             <LinearLayout
-                android:layout_width="60dp"
-                android:layout_height="64dp"
+                android:layout_width="64dp"
+                android:layout_height="68dp"
                 android:background="@drawable/bg_date_chip_selected"
                 android:gravity="center"
                 android:orientation="vertical">
@@ -36,7 +36,7 @@
                     android:layout_height="wrap_content"
                     android:text="05"
                     android:textColor="@color/white"
-                    android:textSize="18sp"
+                    android:textSize="20sp"
                     android:textStyle="bold" />
 
                 <TextView
@@ -104,7 +104,7 @@
                     android:maxLines="1"
                     android:text="Dermatologist"
                     android:textColor="@color/text_secondary"
-                    android:textSize="13sp" />
+                    android:textSize="12.5sp" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -152,7 +152,7 @@
                 android:layout_height="16dp"
                 android:contentDescription="Location icon"
                 android:src="@drawable/ic_location"
-                app:tint="@color/text_secondary" />
+                app:tint="@color/primary" />
 
             <TextView
                 android:id="@+id/tv_appt_location"
@@ -187,7 +187,7 @@
                 android:text="Reschedule"
                 android:textColor="@color/primary"
                 android:textSize="12sp"
-                app:cornerRadius="10dp"
+                app:cornerRadius="12dp"
                 app:strokeColor="@color/primary"
                 app:strokeWidth="1dp" />
 
@@ -203,7 +203,7 @@
                 android:text="Cancel"
                 android:textColor="@color/error_red"
                 android:textSize="12sp"
-                app:cornerRadius="10dp"
+                app:cornerRadius="12dp"
                 app:strokeColor="@color/error_light"
                 app:strokeWidth="1dp" />
         </LinearLayout>

@@ -2,13 +2,13 @@
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/card_speciality"
-    android:layout_width="94dp"
+    android:layout_width="match_parent"
     android:layout_height="110dp"
-    android:layout_margin="4dp"
+    android:layout_margin="3dp"
     android:clickable="true"
     android:focusable="true"
     android:foreground="?attr/selectableItemBackground"
-    app:cardBackgroundColor="#F8FAFC"
+    app:cardBackgroundColor="@color/surface_white"
     app:cardCornerRadius="16dp"
     app:cardElevation="2dp"
     app:strokeColor="@color/card_stroke"
@@ -24,7 +24,7 @@
             android:layout_height="match_parent"
             android:contentDescription="Speciality Image"
             android:scaleType="centerCrop"
-            android:src="@drawable/ic_user" />
+            android:src="@drawable/banner_1" />
 
         <View
             android:layout_width="match_parent"
@@ -43,7 +43,7 @@
             android:gravity="center"
             android:maxLines="2"
             android:text="General Physician"
-            android:textColor="#0F172A"
+            android:textColor="@color/white"
             android:textSize="11sp"
             android:textStyle="bold" />
 

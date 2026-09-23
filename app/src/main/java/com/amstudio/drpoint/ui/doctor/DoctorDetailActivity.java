@@ -24,6 +24,7 @@ import com.amstudio.drpoint.util.AvailabilityHelper;
 import com.amstudio.drpoint.util.DummyDataProvider;
 import com.amstudio.drpoint.util.PreferenceManager;
 import com.bumptech.glide.Glide;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.tabs.TabLayout;
 
 import java.text.SimpleDateFormat;
@@ -114,6 +115,43 @@ public class DoctorDetailActivity extends AppCompatActivity {
 
         if (doctor.getAbout() != null && !doctor.getAbout().isEmpty()) {
             binding.tvAboutDesc.setText(doctor.getAbout());
+        }
+
+        // Contact Information (Doctor Phone & Reception Phone)
+        if (binding.cardContactInfo != null) {
+            String docPhone = doctor.getDoctorPhone();
+            String recPhone = doctor.getReceptionPhone();
+
+            boolean hasDocPhone = docPhone != null && !docPhone.trim().isEmpty();
+            boolean hasRecPhone = recPhone != null && !recPhone.trim().isEmpty();
+
+            if (!hasDocPhone && !hasRecPhone) {
+                binding.cardContactInfo.setVisibility(View.GONE);
+            } else {
+                binding.cardContactInfo.setVisibility(View.VISIBLE);
+
+                if (hasDocPhone) {
+                    binding.llDoctorPhone.setVisibility(View.VISIBLE);
+                    binding.tvDoctorPhone.setText(docPhone);
+                    binding.btnCallDoctor.setOnClickListener(v -> makePhoneCall(docPhone));
+                } else {
+                    binding.llDoctorPhone.setVisibility(View.GONE);
+                }
+
+                if (hasDocPhone && hasRecPhone) {
+                    binding.dividerPhone.setVisibility(View.VISIBLE);
+                } else {
+                    binding.dividerPhone.setVisibility(View.GONE);
+                }
+
+                if (hasRecPhone) {
+                    binding.llReceptionPhone.setVisibility(View.VISIBLE);
+                    binding.tvReceptionPhone.setText(recPhone);
+                    binding.btnCallReception.setOnClickListener(v -> makePhoneCall(recPhone));
+                } else {
+                    binding.llReceptionPhone.setVisibility(View.GONE);
+                }
+            }
         }
 
         Object imageSource = (doctor.getImageUrl() != null && !doctor.getImageUrl().isEmpty())
@@ -287,16 +325,50 @@ public class DoctorDetailActivity extends AppCompatActivity {
         return String.format(Locale.getDefault(), "%02d:%02d:00", h, m);
     }
 
+    private void makePhoneCall(String phoneNumber) {
+        if (phoneNumber == null || phoneNumber.trim().isEmpty()) {
+            Toast.makeText(this, "Phone number not available", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        try {
+            Intent intent = new Intent(Intent.ACTION_DIAL);
+            intent.setData(Uri.parse("tel:" + phoneNumber.trim()));
+            startActivity(intent);
+        } catch (Exception e) {
+            Toast.makeText(this, "Unable to make call", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void showCallSelectionDialog() {
+        String docPhone = doctor != null ? doctor.getDoctorPhone() : null;
+        String recPhone = doctor != null ? doctor.getReceptionPhone() : null;
+
+        boolean hasDocPhone = docPhone != null && !docPhone.trim().isEmpty();
+        boolean hasRecPhone = recPhone != null && !recPhone.trim().isEmpty();
+
+        if (hasDocPhone && hasRecPhone) {
+            String[] options = new String[]{"Call Doctor Direct (" + docPhone + ")", "Call Clinic Reception (" + recPhone + ")"};
+            new MaterialAlertDialogBuilder(this)
+                    .setTitle("Select Contact Number")
+                    .setItems(options, (dialog, which) -> {
+                        if (which == 0) {
+                            makePhoneCall(docPhone);
+                        } else {
+                            makePhoneCall(recPhone);
+                        }
+                    })
+                    .show();
+        } else if (hasDocPhone) {
+            makePhoneCall(docPhone);
+        } else if (hasRecPhone) {
+            makePhoneCall(recPhone);
+        } else {
+            makePhoneCall("9876543210");
+        }
+    }
+
     private void setupActionButtons() {
-        binding.btnActionCall.setOnClickListener(v -> {
-            try {
-                Intent intent = new Intent(Intent.ACTION_DIAL);
-                intent.setData(Uri.parse("tel:9876543210"));
-                startActivity(intent);
-            } catch (Exception e) {
-                Toast.makeText(this, "Calling clinic...", Toast.LENGTH_SHORT).show();
-            }
-        });
+        binding.btnActionCall.setOnClickListener(v -> showCallSelectionDialog());
 
         binding.btnActionDirections.setOnClickListener(v ->
                 Toast.makeText(this, "Opening directions to " + doctor.getClinicName(), Toast.LENGTH_SHORT).show()
@@ -351,12 +423,14 @@ public class DoctorDetailActivity extends AppCompatActivity {
 
         if (binding.btnEmergencyCallClinic != null) {
             binding.btnEmergencyCallClinic.setOnClickListener(v -> {
-                try {
-                    Intent intent = new Intent(Intent.ACTION_DIAL);
-                    intent.setData(Uri.parse("tel:9876543210"));
-                    startActivity(intent);
-                } catch (Exception e) {
-                    Toast.makeText(this, "Calling Clinic Reception...", Toast.LENGTH_SHORT).show();
+                String recPhone = doctor != null ? doctor.getReceptionPhone() : null;
+                String docPhone = doctor != null ? doctor.getDoctorPhone() : null;
+                if (recPhone != null && !recPhone.trim().isEmpty()) {
+                    makePhoneCall(recPhone);
+                } else if (docPhone != null && !docPhone.trim().isEmpty()) {
+                    makePhoneCall(docPhone);
+                } else {
+                    makePhoneCall("9876543210");
                 }
             });
         }
@@ -406,6 +480,11 @@ public class DoctorDetailActivity extends AppCompatActivity {
 
     private void renderCurrentMonthCalendar() {
         if (binding == null || calendarDayAdapter == null) return;
+
+        if (binding.shimmerDetail != null) {
+            binding.shimmerDetail.stopShimmer();
+            binding.shimmerDetail.setVisibility(View.GONE);
+        }
 
         SimpleDateFormat monthSdf = new SimpleDateFormat("MMMM yyyy", Locale.getDefault());
         if (binding.tvMonthYear != null) {

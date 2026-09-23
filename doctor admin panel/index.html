@@ -647,8 +647,13 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label" for="signup-phone">Phone Number *</label>
+                        <label class="form-label" for="signup-phone">Doctor Contact Number *</label>
                         <input type="text" id="signup-phone" class="form-control" required placeholder="+91 9876543210">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="signup-reception-phone">Reception Contact Number *</label>
+                        <input type="text" id="signup-reception-phone" class="form-control" required placeholder="+91 9876543211">
                     </div>
 
                     <div class="form-group">
@@ -780,17 +785,29 @@
             </div>
             <div class="stat-card">
                 <div class="stat-title">Consultation Fee</div>
-                <div class="stat-value" id="stat-fee" style="color: var(--success);">₹0</div>
+                <div class="stat-value" id="stat-fee" style="color: var(--secondary);">₹0</div>
+            </div>
+            <div class="stat-card" style="border-left: 4px solid var(--success);">
+                <div class="stat-title">Today's Earnings</div>
+                <div class="stat-value" id="stat-today-earning" style="color: var(--success);">₹0</div>
+            </div>
+            <div class="stat-card" style="border-left: 4px solid var(--primary);">
+                <div class="stat-title">Total Lifetime Earnings</div>
+                <div class="stat-value" id="stat-total-earning" style="color: var(--primary);">₹0</div>
             </div>
         </div>
 
         <div class="card">
-            <div class="card-header">
+            <div class="card-header" style="flex-wrap: wrap; gap: 0.75rem;">
                 <div>
                     <h3 style="font-size: 1.125rem;">Today's Patient Schedule</h3>
                     <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">Manage live queue and appointment statuses</p>
                 </div>
-                <a href="#appointments" class="btn btn-outline btn-sm">View All Appointments →</a>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                    <button class="btn btn-success btn-sm" onclick="window.bulkConfirmTodayAppointments()">⚡ Confirm All Today</button>
+                    <button class="btn btn-outline btn-sm" style="color: var(--error); border-color: var(--error);" onclick="window.bulkCancelTodayAppointments()">🚫 Cancel All Today</button>
+                    <a href="#appointments" class="btn btn-outline btn-sm">View All Appointments →</a>
+                </div>
             </div>
             <div class="table-container">
                 <table>
@@ -800,6 +817,7 @@
                             <th>Patient Name</th>
                             <th>Type</th>
                             <th>Token #</th>
+                            <th>Earning</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -848,6 +866,8 @@
                     </div>
 
                     <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                        <button class="btn btn-success btn-sm" onclick="window.bulkConfirmSelectedDateAppointments()">⚡ Confirm All Patients</button>
+                        <button class="btn btn-outline btn-sm" style="color: var(--error); border-color: var(--error);" onclick="window.bulkCancelSelectedDateAppointments()">🚫 Cancel All Patients</button>
                         <button class="btn btn-outline btn-sm" id="tab-today" onclick="window.setApptFilter('today', this)">Today</button>
                         <button class="btn btn-outline btn-sm" id="tab-upcoming" onclick="window.setApptFilter('upcoming', this)">Upcoming</button>
                         <button class="btn btn-outline btn-sm" id="tab-completed" onclick="window.setApptFilter('completed', this)">Completed</button>
@@ -867,12 +887,13 @@
                                 <th>Patient</th>
                                 <th>Clinic / Location</th>
                                 <th>Token #</th>
+                                <th>Earning</th>
                                 <th>Status</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
                         <tbody id="appointments-body">
-                            <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading patient appointments...</td></tr>
+                            <tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading patient appointments...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -1082,6 +1103,16 @@
                     <div class="form-group">
                         <label class="form-label" for="prof-name">Doctor Full Name</label>
                         <input type="text" id="prof-name" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="prof-phone">Doctor Contact Number *</label>
+                        <input type="text" id="prof-phone" class="form-control" required placeholder="+91 9876543210">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="prof-reception-phone">Reception Contact Number *</label>
+                        <input type="text" id="prof-reception-phone" class="form-control" placeholder="+91 9876543211">
                     </div>
 
                     <div class="form-group">
@@ -1297,11 +1328,15 @@
                         name: fallbackName,
                         email: fallbackEmail,
                         phone: fallbackPhone,
+                        doctor_phone: fallbackPhone,
+                        reception_phone: '',
                         specialization: 'General Physician',
                         qualification: 'MBBS, MD',
                         clinic_name: 'Care Clinic',
                         location: 'Main City Branch',
                         fee: 500,
+                        today_earning: 0,
+                        total_earning: 0,
                         gender: 'Doctor',
                         is_available_today: true,
                         is_nearby: true,
@@ -1411,6 +1446,7 @@
             const email = document.getElementById('signup-email').value.trim();
             const password = document.getElementById('signup-password').value;
             const phone = document.getElementById('signup-phone').value.trim();
+            const receptionPhone = document.getElementById('signup-reception-phone')?.value.trim() || '';
             const profilePic = document.getElementById('signup-profile-pic').value.trim();
             const experience = document.getElementById('signup-experience').value.trim();
             const spec = document.getElementById('signup-spec').value.trim();
@@ -1461,13 +1497,15 @@
                 }
 
                 if (userId) {
-                    // 2. Insert Doctor record in doctors table
+                    // 2. Insert Doctor record in doctors table with 0 Initial Earnings
                     try {
                         await supabase.from('doctors').upsert([{
                             id: userId,
                             name: name,
                             email: email,
                             phone: phone,
+                            doctor_phone: phone,
+                            reception_phone: receptionPhone || null,
                             image_url: profilePic || null,
                             experience: experience || '5+ Years',
                             specialization: spec || 'General Physician',
@@ -1476,6 +1514,8 @@
                             clinic_photos: clinicPhotos || null,
                             qualification: qualification || 'MBBS',
                             fee: fee,
+                            today_earning: 0,
+                            total_earning: 0,
                             about: about || null,
                             gender: 'Doctor',
                             is_available_today: true,
@@ -1622,6 +1662,74 @@
 
                 document.getElementById('stat-today').textContent = todayAppts ? todayAppts.length : 0;
 
+                // Fetch Global Commission Settings from public.commission_settings
+                let commSetting = null;
+                try {
+                    let { data: commData } = await supabase
+                        .from('commission_settings')
+                        .select('*')
+                        .eq('setting_key', 'global_default')
+                        .maybeSingle();
+                    if (!commData) {
+                        let { data: fallbackComm } = await supabase.from('commission_settings').select('*').limit(1);
+                        if (fallbackComm && fallbackComm.length > 0) commSetting = fallbackComm[0];
+                    } else {
+                        commSetting = commData;
+                    }
+                } catch (e) {
+                    console.warn("Commission settings load note:", e);
+                }
+
+                function calcNetEarning(fee, isFollowUp) {
+                    const gross = parseInt(fee) || parseInt(window.doctorContext ? window.doctorContext.fee : 500) || 500;
+
+                    // Priority 1: Check Doctor-Specific Custom Commission Override
+                    const doc = window.doctorContext;
+                    const docHasCustom = doc && (
+                        (doc.new_patient_commission !== undefined && doc.new_patient_commission !== null && parseFloat(doc.new_patient_commission) > 0) ||
+                        (doc.followup_commission !== undefined && doc.followup_commission !== null && parseFloat(doc.followup_commission) > 0)
+                    );
+
+                    if (docHasCustom) {
+                        const commVal = isFollowUp ? (parseFloat(doc.followup_commission) || 0) : (parseFloat(doc.new_patient_commission) || 0);
+                        const commType = (doc.commission_type || 'FLAT').toLowerCase();
+
+                        let commDeducted = 0;
+                        if (commType.includes('percent') || commType.includes('%')) {
+                            commDeducted = (gross * commVal) / 100.0;
+                        } else {
+                            commDeducted = commVal;
+                        }
+                        return Math.max(0, gross - commDeducted);
+                    }
+
+                    // Priority 2: Fallback to Global Commission Settings
+                    if (!commSetting) return gross;
+
+                    const commVal = isFollowUp ? (commSetting.followup_commission ?? 5) : (commSetting.new_patient_commission ?? 10);
+                    const commType = (isFollowUp ? (commSetting.followup_type || 'percentage') : (commSetting.new_patient_type || 'percentage')).toLowerCase();
+
+                    let commDeducted = 0;
+                    if (commType.includes('percent') || commType.includes('%')) {
+                        commDeducted = (gross * commVal) / 100.0;
+                    } else {
+                        commDeducted = commVal;
+                    }
+                    return Math.max(0, gross - commDeducted);
+                }
+
+                // Today's Earnings calculation (Net of platform commission)
+                let todayEarnings = 0;
+                (todayAppts || []).forEach(a => {
+                    const st = (a.status || 'confirmed').toLowerCase();
+                    if (!st.includes('cancel') && !st.includes('reject')) {
+                        const isFollowUp = a.appointment_type === 'followup' || a.is_followup === true;
+                        todayEarnings += calcNetEarning(a.fee, isFollowUp);
+                    }
+                });
+                const statTodayEarning = document.getElementById('stat-today-earning');
+                if (statTodayEarning) statTodayEarning.textContent = `₹${Math.round(todayEarnings).toLocaleString('en-IN')}`;
+
                 // Pending approvals query
                 let { data: pendingAppts } = await supabase
                     .from('appointments')
@@ -1633,30 +1741,59 @@
                 // Unique patients count query
                 let { data: allAppts } = await supabase
                     .from('appointments')
-                    .select('patient_id');
+                    .select('patient_id, fee, status, doctor_id, appointment_type, is_followup');
 
-                const uniquePatients = new Set((allAppts || []).map(a => a.patient_id).filter(Boolean));
+                const doctorAllAppts = (allAppts || []).filter(a => !a.doctor_id || a.doctor_id === doctorId);
+                const uniquePatients = new Set(doctorAllAppts.map(a => a.patient_id).filter(Boolean));
                 document.getElementById('stat-patients').textContent = uniquePatients.size;
+
+                // Total Lifetime Earnings calculation (Net of platform commission)
+                let totalEarnings = 0;
+                doctorAllAppts.forEach(a => {
+                    const st = (a.status || 'confirmed').toLowerCase();
+                    if (!st.includes('cancel') && !st.includes('reject')) {
+                        const isFollowUp = a.appointment_type === 'followup' || a.is_followup === true;
+                        totalEarnings += calcNetEarning(a.fee, isFollowUp);
+                    }
+                });
+                const statTotalEarning = document.getElementById('stat-total-earning');
+                if (statTotalEarning) statTotalEarning.textContent = `₹${Math.round(totalEarnings).toLocaleString('en-IN')}`;
+
+                // Sync calculated earnings to doctors table in Supabase
+                try {
+                    await supabase.from('doctors').update({
+                        today_earning: Math.round(todayEarnings),
+                        total_earning: Math.round(totalEarnings)
+                    }).eq('id', doctorId);
+                } catch (syncErr) {
+                    console.warn("Earnings sync note:", syncErr);
+                }
 
                 // Today Schedule Table
                 const tbody = document.getElementById('today-schedule-body');
                 if (!todayAppts || todayAppts.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No patient appointments scheduled for today.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No patient appointments scheduled for today.</td></tr>`;
                     return;
                 }
 
                 let html = '';
                 todayAppts.forEach(appt => {
                     const pName = (appt.patient && appt.patient.full_name) ? appt.patient.full_name : ('Patient #' + (appt.id ? appt.id.substring(0, 5) : '01'));
+                    const apptFee = appt.fee || window.doctorContext.fee || 500;
 
-                    let actions = '';
-                    if (appt.status === 'Pending' || appt.status === 'pending') {
-                        actions = `<button class="btn btn-primary btn-sm" onclick="window.updateApptStatus('${appt.id}', 'Confirmed')">Confirm</button>`;
-                    } else if (appt.status === 'Confirmed' || appt.status === 'confirmed') {
-                        actions = `<button class="btn btn-outline btn-sm" onclick="window.updateApptStatus('${appt.id}', 'In Consultation')">Start Consult</button>`;
-                    } else if (appt.status === 'In Consultation' || appt.status === 'in_consultation') {
-                        actions = `<button class="btn btn-success btn-sm" onclick="window.updateApptStatus('${appt.id}', 'Completed')">Complete</button>`;
+                    let actions = `<div style="display: flex; gap: 0.25rem; align-items: center; flex-wrap: wrap;">`;
+                    const st = (appt.status || 'Confirmed').toLowerCase();
+                    if (st.includes('pending')) {
+                        actions += `<button class="btn btn-primary btn-sm" onclick="window.updateApptStatus('${appt.id}', 'Confirmed')">Confirm</button>`;
+                    } else if (st.includes('confirm')) {
+                        actions += `<button class="btn btn-outline btn-sm" onclick="window.updateApptStatus('${appt.id}', 'In Consultation')">Start Consult</button>`;
+                    } else if (st.includes('consultation')) {
+                        actions += `<button class="btn btn-success btn-sm" onclick="window.updateApptStatus('${appt.id}', 'Completed')">Complete</button>`;
                     }
+                    if (!st.includes('cancel')) {
+                        actions += `<button class="btn btn-outline btn-sm" style="color: var(--warning); border-color: var(--warning);" title="Cancel Appointment" onclick="window.updateApptStatus('${appt.id}', 'Cancelled')">🚫 Cancel</button>`;
+                    }
+                    actions += `<button class="btn btn-outline btn-sm" style="color: var(--error); border-color: var(--error);" title="Delete Appointment" onclick="window.deleteAppointment('${appt.id}')">🗑️ Delete</button></div>`;
 
                     let badgeClass = 'badge-info';
                     if (appt.status === 'Confirmed' || appt.status === 'confirmed') badgeClass = 'badge-success';
@@ -1669,6 +1806,7 @@
                             <td style="font-weight: 500;">${pName}</td>
                             <td style="text-transform: capitalize;">${appt.appointment_type || 'Clinic'}</td>
                             <td style="font-weight: 700; color: var(--primary);">#${String(appt.token_number || 1).padStart(2, '0')}</td>
+                            <td style="font-weight: 700; color: var(--success);">₹${apptFee}</td>
                             <td><span class="badge ${badgeClass}">${appt.status || 'Confirmed'}</span></td>
                             <td>${actions}</td>
                         </tr>
@@ -1859,7 +1997,7 @@
             }
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No appointments found for selected date/filter.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No appointments found for selected date/filter.</td></tr>`;
                 return;
             }
 
@@ -1867,15 +2005,20 @@
             filtered.forEach(appt => {
                 const pName = (appt.patient && appt.patient.full_name) ? appt.patient.full_name : ('Patient #' + (appt.id ? appt.id.substring(0, 5) : '01'));
                 const st = (appt.status || 'Confirmed').toLowerCase();
+                const apptFee = appt.fee || window.doctorContext.fee || 500;
 
-                let actions = '';
+                let actions = `<div style="display: flex; gap: 0.25rem; align-items: center; flex-wrap: wrap;">`;
                 if (st.includes('pending')) {
-                    actions = `<button class="btn btn-primary btn-sm" onclick="window.updateApptStatus('${appt.id}', 'Confirmed')">Confirm</button>`;
+                    actions += `<button class="btn btn-primary btn-sm" onclick="window.updateApptStatus('${appt.id}', 'Confirmed')">Confirm</button>`;
                 } else if (st.includes('confirm')) {
-                    actions = `<button class="btn btn-outline btn-sm" onclick="window.updateApptStatus('${appt.id}', 'In Consultation')">Start Consult</button>`;
+                    actions += `<button class="btn btn-outline btn-sm" onclick="window.updateApptStatus('${appt.id}', 'In Consultation')">Start Consult</button>`;
                 } else if (st.includes('consultation')) {
-                    actions = `<button class="btn btn-success btn-sm" onclick="window.updateApptStatus('${appt.id}', 'Completed')">Complete</button>`;
+                    actions += `<button class="btn btn-success btn-sm" onclick="window.updateApptStatus('${appt.id}', 'Completed')">Complete</button>`;
                 }
+                if (!st.includes('cancel')) {
+                    actions += `<button class="btn btn-outline btn-sm" style="color: var(--warning); border-color: var(--warning);" title="Cancel Appointment" onclick="window.updateApptStatus('${appt.id}', 'Cancelled')">🚫 Cancel</button>`;
+                }
+                actions += `<button class="btn btn-outline btn-sm" style="color: var(--error); border-color: var(--error);" title="Delete Appointment" onclick="window.deleteAppointment('${appt.id}')">🗑️ Delete</button></div>`;
 
                 let badgeClass = 'badge-info';
                 if (st.includes('confirm')) badgeClass = 'badge-success';
@@ -1891,6 +2034,7 @@
                         <td style="font-weight: 500;">${pName}</td>
                         <td>${appt.clinic_name || window.doctorContext.clinic_name || 'Main Clinic'}</td>
                         <td style="font-weight: 700; color: var(--primary);">#${String(appt.token_number || 1).padStart(2, '0')}</td>
+                        <td style="font-weight: 700; color: var(--success);">₹${apptFee}</td>
                         <td><span class="badge ${badgeClass}">${appt.status || 'Confirmed'}</span></td>
                         <td>${actions}</td>
                     </tr>
@@ -1907,9 +2051,116 @@
                     .eq('id', appointmentId);
 
                 if (error) throw error;
-                await loadAppointmentsData();
+                if (window.showToast) window.showToast(`✅ Status updated to ${newStatus}!`, "success", 2000);
+
+                if (window.location.hash.includes('dashboard')) {
+                    initDashboard();
+                } else {
+                    await loadAppointmentsData();
+                }
             } catch (err) {
                 alert("Failed to update status: " + err.message);
+            }
+        };
+
+        window.bulkConfirmTodayAppointments = async () => {
+            if (!window.doctorContext) return;
+            const doctorId = window.doctorContext.id;
+            const today = new Date().toISOString().split('T')[0];
+
+            try {
+                const { error } = await supabase
+                    .from('appointments')
+                    .update({ status: 'Confirmed' })
+                    .eq('appointment_date', today);
+
+                if (error) throw error;
+                if (window.showToast) window.showToast("✅ All today's appointments confirmed together!", "success", 3000);
+                initDashboard();
+            } catch (err) {
+                alert("Failed to confirm appointments: " + err.message);
+            }
+        };
+
+        window.bulkCancelTodayAppointments = async () => {
+            if (!window.doctorContext) return;
+            const doctorId = window.doctorContext.id;
+            const today = new Date().toISOString().split('T')[0];
+
+            if (!confirm("⚠️ Are you sure you want to CANCEL ALL patient appointments for TODAY? All patients for today will be cancelled together.")) return;
+
+            try {
+                const { error } = await supabase
+                    .from('appointments')
+                    .update({ status: 'Cancelled' })
+                    .eq('appointment_date', today);
+
+                if (error) throw error;
+                if (window.showToast) window.showToast("🚫 All today's appointments cancelled together!", "warning", 4000);
+                initDashboard();
+            } catch (err) {
+                alert("Failed to cancel appointments: " + err.message);
+            }
+        };
+
+        window.bulkConfirmSelectedDateAppointments = async () => {
+            if (!window.doctorContext) return;
+            const targetDate = selectedApptDate || new Date().toISOString().split('T')[0];
+
+            try {
+                let query = supabase.from('appointments').update({ status: 'Confirmed' });
+                if (selectedApptDate) {
+                    query = query.eq('appointment_date', selectedApptDate);
+                }
+                const { error } = await query;
+
+                if (error) throw error;
+                if (window.showToast) window.showToast(`✅ All appointments for ${targetDate} confirmed together!`, "success", 3000);
+                await loadAppointmentsData();
+            } catch (err) {
+                alert("Failed to confirm date appointments: " + err.message);
+            }
+        };
+
+        window.bulkCancelSelectedDateAppointments = async () => {
+            if (!window.doctorContext) return;
+            const targetDateLabel = selectedApptDate ? `date ${selectedApptDate}` : 'all scheduled dates';
+
+            if (!confirm(`⚠️ Are you sure you want to CANCEL ALL patient appointments for ${targetDateLabel}? All patients will be cancelled together.`)) return;
+
+            try {
+                let query = supabase.from('appointments').update({ status: 'Cancelled' });
+                if (selectedApptDate) {
+                    query = query.eq('appointment_date', selectedApptDate);
+                }
+                const { error } = await query;
+
+                if (error) throw error;
+                if (window.showToast) window.showToast(`🚫 All appointments for ${targetDateLabel} cancelled together!`, "warning", 4000);
+                await loadAppointmentsData();
+            } catch (err) {
+                alert("Failed to cancel date appointments: " + err.message);
+            }
+        };
+
+        window.deleteAppointment = async (appointmentId) => {
+            if (!confirm("Are you sure you want to delete this patient appointment?")) return;
+            try {
+                const { error } = await supabase
+                    .from('appointments')
+                    .delete()
+                    .eq('id', appointmentId);
+
+                if (error) throw error;
+                if (window.showToast) window.showToast("✅ Appointment deleted successfully!", "success", 3000);
+
+                if (window.location.hash.includes('dashboard')) {
+                    initDashboard();
+                } else {
+                    await loadAppointmentsData();
+                }
+            } catch (err) {
+                alert("Failed to delete appointment: " + err.message);
             }
         };
 
@@ -2076,7 +2327,7 @@
             if (!startTimeStr || !endTimeStr) return [];
             let start = timeToMinutes(startTimeStr);
             let end = timeToMinutes(endTimeStr);
-            if (start >= end) return [];
+            if (isNaN(start) || isNaN(end) || start >= end) return [];
 
             const pairs = [];
             while (start + durationMins <= end) {
@@ -2093,10 +2344,10 @@
             if (!window.doctorContext) return;
 
             const doc = window.doctorContext;
-            if (doc.morning_start && document.getElementById('slot-morning-start')) document.getElementById('slot-morning-start').value = doc.morning_start;
-            if (doc.morning_end && document.getElementById('slot-morning-end')) document.getElementById('slot-morning-end').value = doc.morning_end;
-            if (doc.evening_start && document.getElementById('slot-evening-start')) document.getElementById('slot-evening-start').value = doc.evening_start;
-            if (doc.evening_end && document.getElementById('slot-evening-end')) document.getElementById('slot-evening-end').value = doc.evening_end;
+            if (doc.morning_start && document.getElementById('slot-morning-start')) document.getElementById('slot-morning-start').value = doc.morning_start.substring(0, 5);
+            if (doc.morning_end && document.getElementById('slot-morning-end')) document.getElementById('slot-morning-end').value = doc.morning_end.substring(0, 5);
+            if (doc.evening_start && document.getElementById('slot-evening-start')) document.getElementById('slot-evening-start').value = doc.evening_start.substring(0, 5);
+            if (doc.evening_end && document.getElementById('slot-evening-end')) document.getElementById('slot-evening-end').value = doc.evening_end.substring(0, 5);
             if (doc.fee && document.getElementById('slot-consult-fee')) document.getElementById('slot-consult-fee').value = doc.fee;
             if (doc.followup_fee && document.getElementById('slot-followup-fee')) document.getElementById('slot-followup-fee').value = doc.followup_fee;
 
@@ -2142,70 +2393,108 @@
         async function loadSlotsData() {
             if (!window.doctorContext) return;
             const doctorId = window.doctorContext.id;
-            const today = new Date().toISOString().split('T')[0];
 
             try {
                 let schedules = [];
-                let { data, error } = await supabase
-                    .from('doctor_schedules')
-                    .select('*')
-                    .eq('doctor_id', doctorId);
 
-                if (!error && data && data.length > 0) {
-                    schedules = data;
-                } else {
-                    const { data: fallbackData } = await supabase
-                        .from('doctor_schedules')
-                        .select('*');
-                    if (fallbackData && fallbackData.length > 0) {
-                        schedules = fallbackData;
-                    } else {
-                        const { data: slotsData } = await supabase.from('doctor_slots').select('*');
-                        if (slotsData && slotsData.length > 0) {
-                            const groupedByDate = new Map();
-                            slotsData.forEach(s => {
-                                if (!groupedByDate.has(s.slot_date)) {
-                                    groupedByDate.set(s.slot_date, {
-                                        id: s.id,
-                                        slot_date: s.slot_date,
-                                        morning_start: s.start_time < '12:00:00' ? s.start_time : '09:00:00',
-                                        morning_end: s.start_time < '12:00:00' ? s.end_time : '13:00:00',
-                                        evening_start: s.start_time >= '12:00:00' ? s.start_time : '17:00:00',
-                                        evening_end: s.start_time >= '12:00:00' ? s.end_time : '20:00:00',
-                                        slot_duration: 20
-                                    });
-                                }
+                // 1. Primary Query: Read slots from doctor_slots
+                let { data: slotsData } = await supabase
+                    .from('doctor_slots')
+                    .select('*')
+                    .eq('doctor_id', doctorId)
+                    .order('slot_date', { ascending: true })
+                    .order('start_time', { ascending: true });
+
+                if (!slotsData || slotsData.length === 0) {
+                    const { data: fallbackSlots } = await supabase
+                        .from('doctor_slots')
+                        .select('*')
+                        .order('slot_date', { ascending: true })
+                        .order('start_time', { ascending: true });
+                    slotsData = fallbackSlots || [];
+                }
+
+                if (currentSlotDateFilter && slotsData) {
+                    slotsData = slotsData.filter(s => s.slot_date === currentSlotDateFilter);
+                }
+
+                if (slotsData && slotsData.length > 0) {
+                    const groupedByDate = new Map();
+                    slotsData.forEach(s => {
+                        if (!groupedByDate.has(s.slot_date)) {
+                            groupedByDate.set(s.slot_date, {
+                                slot_date: s.slot_date,
+                                total_slots: 0,
+                                morning_slots: [],
+                                evening_slots: []
                             });
-                            schedules = Array.from(groupedByDate.values());
                         }
+                        const entry = groupedByDate.get(s.slot_date);
+                        entry.total_slots++;
+                        const timeLabel = `${formatTime(s.start_time)} - ${formatTime(s.end_time)}`;
+                        if (s.session === 'morning' || (s.start_time && s.start_time < '14:00:00')) {
+                            entry.morning_slots.push(timeLabel);
+                        } else {
+                            entry.evening_slots.push(timeLabel);
+                        }
+                    });
+
+                    schedules = Array.from(groupedByDate.values()).map(item => ({
+                        id: item.slot_date,
+                        slot_date: item.slot_date,
+                        morning_start: item.morning_slots.length > 0 ? item.morning_slots[0].split(' - ')[0] : '09:00 AM',
+                        morning_end: item.morning_slots.length > 0 ? item.morning_slots[item.morning_slots.length - 1].split(' - ')[1] : '01:00 PM',
+                        evening_start: item.evening_slots.length > 0 ? item.evening_slots[0].split(' - ')[0] : '05:00 PM',
+                        evening_end: item.evening_slots.length > 0 ? item.evening_slots[item.evening_slots.length - 1].split(' - ')[1] : '08:00 PM',
+                        total_slots: item.total_slots
+                    }));
+
+                } else {
+                    // 2. Fallback Query: Read from doctor_schedules table
+                    let { data: schedData } = await supabase
+                        .from('doctor_schedules')
+                        .select('*')
+                        .eq('doctor_id', doctorId)
+                        .order('slot_date', { ascending: true });
+
+                    if (currentSlotDateFilter && schedData) {
+                        schedData = schedData.filter(s => s.slot_date === currentSlotDateFilter);
                     }
+
+                    schedules = (schedData || []).map(s => ({
+                        id: s.slot_date,
+                        slot_date: s.slot_date,
+                        morning_start: formatTime(s.morning_start || '09:00:00'),
+                        morning_end: formatTime(s.morning_end || '13:00:00'),
+                        evening_start: formatTime(s.evening_start || '17:00:00'),
+                        evening_end: formatTime(s.evening_end || '20:00:00'),
+                        total_slots: 'Active'
+                    }));
                 }
 
                 const tbody = document.getElementById('slots-body');
                 if (!tbody) return;
 
                 if (!schedules || schedules.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No schedules found for selected date(s). Set Morning and Evening session times above and click save!</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No slots found for selected date(s). Set Morning and Evening session times above and click save!</td></tr>`;
                     return;
                 }
 
                 let html = '';
                 schedules.forEach(sched => {
-                    const morningText = `${formatTime(sched.morning_start || '09:00:00')} - ${formatTime(sched.morning_end || '13:00:00')}`;
-                    const eveningText = (sched.evening_start && sched.evening_end) ? `${formatTime(sched.evening_start)} - ${formatTime(sched.evening_end)}` : 'Off / Closed';
-                    const consultMins = sched.consult_duration || 15;
-                    const bufferMins = (sched.buffer_gap !== undefined && sched.buffer_gap !== null) ? sched.buffer_gap : 5;
-                    const gapText = `${consultMins}m Consult + ${bufferMins}m Gap`;
+                    const morningText = `${sched.morning_start} - ${sched.morning_end}`;
+                    const eveningText = (sched.evening_start && sched.evening_end) ? `${sched.evening_start} - ${sched.evening_end}` : 'Off / Closed';
+                    const slotCountText = typeof sched.total_slots === 'number' ? `${sched.total_slots} Slots Generated` : 'Active Schedule';
 
                     html += `
                         <tr>
                             <td style="font-weight: 700; color: var(--primary);">${sched.slot_date}</td>
                             <td><span class="badge" style="background: #EBF1FF; color: #152C69; font-size: 0.85rem;">☀️ ${morningText}</span></td>
                             <td><span class="badge" style="background: #FEF3C7; color: #D97706; font-size: 0.85rem;">🌙 ${eveningText}</span></td>
-                            <td style="font-weight: 600;">${gapText}</td>
-                            <td><span class="badge badge-success">ACTIVE SCHEDULE</span></td>
+                            <td style="font-weight: 600;"><span class="badge badge-info">${slotCountText}</span></td>
+                            <td><span class="badge badge-success">ACTIVE SLOTS</span></td>
                             <td>
-                                <button class="btn btn-outline btn-sm" style="color: var(--error); border-color: var(--error);" onclick="window.deleteSchedule('${sched.id}')">Delete Schedule</button>
+                                <button class="btn btn-outline btn-sm" style="color: var(--error); border-color: var(--error);" onclick="window.deleteSchedule('${sched.slot_date}')">Delete Slots</button>
                             </td>
                         </tr>
                     `;
@@ -2217,10 +2506,17 @@
             }
         }
 
-        window.deleteSchedule = async (schedId) => {
-            if (!confirm("Are you sure you want to delete this date schedule?")) return;
+        window.deleteSchedule = async (slotDate) => {
+            if (!confirm(`Are you sure you want to delete all slots for date ${slotDate}?`)) return;
             try {
-                await supabase.from('doctor_schedules').delete().eq('id', schedId);
+                if (window.doctorContext) {
+                    await supabase.from('doctor_slots').delete().eq('doctor_id', window.doctorContext.id).eq('slot_date', slotDate);
+                    await supabase.from('doctor_schedules').delete().eq('doctor_id', window.doctorContext.id).eq('slot_date', slotDate);
+                } else {
+                    await supabase.from('doctor_slots').delete().eq('slot_date', slotDate);
+                    await supabase.from('doctor_schedules').delete().eq('slot_date', slotDate);
+                }
+                if (window.showToast) window.showToast("✅ Slots deleted successfully!", "success", 3000);
                 await loadSlotsData();
             } catch (err) {
                 alert("Failed to delete schedule: " + err.message);
@@ -2278,47 +2574,97 @@
             btn.textContent = 'Saving Schedule...';
 
             try {
-                const schedulesToInsert = dates.map(dateStr => ({
-                    doctor_id: doctorId,
-                    slot_date: dateStr,
-                    morning_start: morningStart || '09:00:00',
-                    morning_end: morningEnd || '13:00:00',
-                    evening_start: eveningStart || '17:00:00',
-                    evening_end: eveningEnd || '20:00:00',
-                    consult_duration: consultTime,
-                    buffer_gap: bufferGap,
-                    slot_duration: duration,
-                    max_patients: maxPatients
-                }));
+                // Generate individual time pairs
+                const morningPairs = generateTimePairs(morningStart, morningEnd, consultTime, bufferGap).map(pair => ({ ...pair, session: 'morning' }));
+                const eveningPairs = generateTimePairs(eveningStart, eveningEnd, consultTime, bufferGap).map(pair => ({ ...pair, session: 'evening' }));
+                const allPairs = [...morningPairs, ...eveningPairs];
 
-                // 1. Try upserting into doctor_schedules table
-                const { error } = await supabase.from('doctor_schedules').upsert(schedulesToInsert);
-
-                if (error) {
-                    console.warn("doctor_schedules upsert notice:", error.message);
-                    // Fallback: Populate doctor_slots table so old schema works seamlessly
-                    const morningPairs = generateTimePairs(morningStart, morningEnd, duration, 5).map(pair => ({ ...pair, session: 'morning' }));
-                    const eveningPairs = generateTimePairs(eveningStart, eveningEnd, duration, 5).map(pair => ({ ...pair, session: 'evening' }));
-                    const allPairs = [...morningPairs, ...eveningPairs];
-
-                    const slotsToInsert = [];
-                    dates.forEach(dateStr => {
-                        allPairs.forEach(pair => {
-                            slotsToInsert.push({
-                                doctor_id: doctorId,
-                                slot_date: dateStr,
-                                start_time: pair.start_time,
-                                end_time: pair.end_time,
-                                session: pair.session,
-                                status: 'available',
-                                max_patients: maxPatients
-                            });
-                        });
-                    });
-                    await supabase.from('doctor_slots').upsert(slotsToInsert);
+                if (allPairs.length === 0) {
+                    msgEl.style.color = 'var(--error)';
+                    msgEl.textContent = '⚠️ No valid time slots could be generated. Please check your Morning / Evening start & end times.';
+                    msgEl.style.display = 'block';
+                    btn.disabled = false;
+                    btn.textContent = '⚡ Save Daily Practice Schedule';
+                    return;
                 }
 
-                // 2. Persist doctor's fee, followup_fee, morning and evening working schedule in doctors table
+                const slotsToInsert = [];
+                dates.forEach(dateStr => {
+                    allPairs.forEach(pair => {
+                        slotsToInsert.push({
+                            doctor_id: doctorId,
+                            slot_date: dateStr,
+                            start_time: pair.start_time,
+                            end_time: pair.end_time,
+                            session: pair.session,
+                            status: 'available',
+                            max_patients: maxPatients
+                        });
+                    });
+                });
+
+                // 0. Ensure Doctor record exists in 'doctors' table to satisfy Foreign Key constraint
+                try {
+                    let { data: existingDoc } = await supabase
+                        .from('doctors')
+                        .select('id')
+                        .eq('id', doctorId)
+                        .maybeSingle();
+
+                    if (!existingDoc) {
+                        await supabase.from('doctors').upsert([{
+                            id: doctorId,
+                            name: window.doctorContext?.name || 'Dr. Medical Specialist',
+                            email: window.doctorContext?.email || '',
+                            phone: window.doctorContext?.phone || '',
+                            doctor_phone: window.doctorContext?.doctor_phone || '',
+                            reception_phone: window.doctorContext?.reception_phone || '',
+                            specialization: window.doctorContext?.specialization || 'General Physician',
+                            clinic_name: window.doctorContext?.clinic_name || 'Care Clinic',
+                            location: window.doctorContext?.location || 'Main Branch',
+                            fee: parseInt(document.getElementById('slot-consult-fee')?.value) || 500,
+                            today_earning: 0,
+                            total_earning: 0
+                        }]);
+                    }
+                } catch (docEnsErr) {
+                    console.warn("Doctor row ensure note:", docEnsErr);
+                }
+
+                // 1. Delete existing slots for these dates to prevent duplicates
+                for (const d of dates) {
+                    try {
+                        await supabase.from('doctor_slots').delete().eq('doctor_id', doctorId).eq('slot_date', d);
+                    } catch(e) {}
+                }
+
+                // 2. Insert generated slots into doctor_slots table
+                if (slotsToInsert.length > 0) {
+                    const { error: slotErr } = await supabase.from('doctor_slots').insert(slotsToInsert);
+                    if (slotErr) {
+                        console.error("doctor_slots insert error:", slotErr);
+                        throw new Error("Supabase doctor_slots table error: " + (slotErr.message || JSON.stringify(slotErr)));
+                    }
+                }
+
+                // 3. Upsert summary schedule into doctor_schedules table
+                try {
+                    const schedulesToInsert = dates.map(dateStr => ({
+                        doctor_id: doctorId,
+                        slot_date: dateStr,
+                        morning_start: morningStart || '09:00:00',
+                        morning_end: morningEnd || '13:00:00',
+                        evening_start: eveningStart || '17:00:00',
+                        evening_end: eveningEnd || '20:00:00',
+                        consult_duration: consultTime,
+                        buffer_gap: bufferGap,
+                        slot_duration: duration,
+                        max_patients: maxPatients
+                    }));
+                    await supabase.from('doctor_schedules').upsert(schedulesToInsert);
+                } catch(e) {}
+
+                // 4. Update doctors table fees & default working hours
                 try {
                     const consultFee = parseInt(document.getElementById('slot-consult-fee')?.value) || 500;
                     const followupFee = parseInt(document.getElementById('slot-followup-fee')?.value) || 300;
@@ -2340,14 +2686,15 @@
                 } catch (ignored) {}
 
                 msgEl.style.color = 'var(--success)';
-                msgEl.textContent = `Success! Saved schedule (1 row per date, ${schedulesToInsert.length} date(s) recorded).`;
+                msgEl.textContent = `⚡ Success! Generated ${slotsToInsert.length} slots across ${dates.length} date(s) successfully!`;
                 msgEl.style.display = 'block';
 
                 await loadSlotsData();
 
             } catch (err) {
+                console.error("Slot generation error:", err);
                 msgEl.style.color = 'var(--error)';
-                msgEl.textContent = "Failed to save schedule: " + err.message;
+                msgEl.textContent = "Failed to save slots: " + (err.message || String(err));
                 msgEl.style.display = 'block';
             } finally {
                 btn.disabled = false;
@@ -2512,6 +2859,8 @@
             const doc = window.doctorContext;
 
             document.getElementById('prof-name').value = doc.name || '';
+            if (document.getElementById('prof-phone')) document.getElementById('prof-phone').value = doc.doctor_phone || doc.phone || '';
+            if (document.getElementById('prof-reception-phone')) document.getElementById('prof-reception-phone').value = doc.reception_phone || '';
             document.getElementById('prof-spec').value = doc.specialization || '';
             document.getElementById('prof-experience').value = doc.experience || '';
             document.getElementById('prof-qualification').value = doc.qualification || '';
@@ -2547,6 +2896,8 @@
             document.getElementById('profile-edit-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const name = document.getElementById('prof-name').value.trim();
+                const doctorPhone = document.getElementById('prof-phone')?.value.trim() || '';
+                const receptionPhone = document.getElementById('prof-reception-phone')?.value.trim() || '';
                 const spec = document.getElementById('prof-spec').value.trim();
                 const experience = document.getElementById('prof-experience').value.trim();
                 const qualification = document.getElementById('prof-qualification').value.trim();
@@ -2571,6 +2922,9 @@
                 try {
                     const { error } = await supabase.from('doctors').update({
                         name: name,
+                        phone: doctorPhone,
+                        doctor_phone: doctorPhone,
+                        reception_phone: receptionPhone || null,
                         specialization: spec,
                         experience: experience,
                         qualification: qualification,
@@ -2590,6 +2944,9 @@
                     if (error) throw error;
 
                     window.doctorContext.name = name;
+                    window.doctorContext.phone = doctorPhone;
+                    window.doctorContext.doctor_phone = doctorPhone;
+                    window.doctorContext.reception_phone = receptionPhone;
                     window.doctorContext.specialization = spec;
                     window.doctorContext.experience = experience;
                     window.doctorContext.qualification = qualification;

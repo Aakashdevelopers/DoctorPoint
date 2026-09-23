@@ -48,13 +48,14 @@
 
             <FrameLayout
                 android:id="@+id/fl_settings"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
                 android:background="@drawable/bg_squircle_icon"
                 android:clickable="true"
-                android:focusable="true">
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackgroundBorderless">
 
                 <ImageView
                     android:id="@+id/iv_settings"
@@ -73,13 +74,14 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fillViewport="true">
+        android:fillViewport="true"
+        android:overScrollMode="never">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingBottom="32dp">
+            android:paddingBottom="36dp">
 
             <!-- User Profile Card -->
             <com.google.android.material.card.MaterialCardView
@@ -88,8 +90,8 @@
                 android:layout_marginHorizontal="16dp"
                 android:layout_marginTop="16dp"
                 app:cardBackgroundColor="@color/surface_white"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="2dp"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="3dp"
                 app:strokeColor="@color/card_stroke"
                 app:strokeWidth="1dp">
 
@@ -105,8 +107,8 @@
 
                         <com.google.android.material.imageview.ShapeableImageView
                             android:id="@+id/iv_user_avatar"
-                            android:layout_width="72dp"
-                            android:layout_height="72dp"
+                            android:layout_width="76dp"
+                            android:layout_height="76dp"
                             android:layout_alignParentStart="true"
                             android:layout_centerVertical="true"
                             android:contentDescription="User profile picture"
@@ -115,7 +117,7 @@
                             android:src="@drawable/ic_user"
                             app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.Circle"
                             app:strokeColor="@color/primary"
-                            app:strokeWidth="2dp" />
+                            app:strokeWidth="2.5dp" />
 
                         <LinearLayout
                             android:layout_width="wrap_content"
@@ -131,7 +133,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="Aakash Mishra"
                                 android:textColor="@color/text_primary"
-                                android:textSize="19sp"
+                                android:textSize="20sp"
                                 android:textStyle="bold" />
 
                             <TextView
@@ -141,7 +143,7 @@
                                 android:layout_marginTop="2dp"
                                 android:text="aakash.mishra@example.com"
                                 android:textColor="@color/text_secondary"
-                                android:textSize="12sp" />
+                                android:textSize="12.5sp" />
 
                             <TextView
                                 android:id="@+id/tv_edit_profile"
@@ -154,7 +156,7 @@
                                 android:padding="2dp"
                                 android:text="Edit Profile ›"
                                 android:textColor="@color/secondary"
-                                android:textSize="12sp"
+                                android:textSize="12.5sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
 
@@ -186,7 +188,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="3"
                                 android:textColor="@color/primary"
-                                android:textSize="16sp"
+                                android:textSize="17sp"
                                 android:textStyle="bold" />
 
                             <TextView
@@ -215,7 +217,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="2"
                                 android:textColor="@color/primary"
-                                android:textSize="16sp"
+                                android:textSize="17sp"
                                 android:textStyle="bold" />
 
                             <TextView
@@ -268,8 +270,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="16dp"
                 android:layout_marginTop="16dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="2dp"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="3dp"
                 app:strokeWidth="0dp">
 
                 <RelativeLayout
@@ -295,10 +297,10 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
+                            android:layout_marginTop="3dp"
                             android:text="Free Consultations &amp; Priority Care Active"
                             android:textColor="@color/white"
-                            android:textSize="13sp"
+                            android:textSize="14sp"
                             android:textStyle="bold" />
                     </LinearLayout>
 
@@ -307,15 +309,28 @@
             </com.google.android.material.card.MaterialCardView>
 
             <!-- Section Title -->
-            <TextView
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="20dp"
                 android:layout_marginTop="22dp"
-                android:text="Account &amp; Health Preferences"
-                android:textColor="@color/text_primary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <View
+                    android:layout_width="4dp"
+                    android:layout_height="18dp"
+                    android:background="@drawable/bg_section_indicator" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="Account &amp; Health Preferences"
+                    android:textColor="@color/text_primary"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <!-- Menu List Card -->
             <com.google.android.material.card.MaterialCardView
@@ -324,8 +339,8 @@
                 android:layout_marginHorizontal="16dp"
                 android:layout_marginTop="10dp"
                 app:cardBackgroundColor="@color/surface_white"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="2dp"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="3dp"
                 app:strokeColor="@color/card_stroke"
                 app:strokeWidth="1dp">
 

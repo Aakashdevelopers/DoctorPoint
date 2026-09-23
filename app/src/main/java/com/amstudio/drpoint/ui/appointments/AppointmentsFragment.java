@@ -197,6 +197,11 @@ public class AppointmentsFragment extends Fragment {
             }
         }
 
+        if (binding != null && binding.shimmerAppointments != null) {
+            binding.shimmerAppointments.stopShimmer();
+            binding.shimmerAppointments.setVisibility(View.GONE);
+        }
+
         if (displayed.isEmpty()) {
             binding.llEmptyState.setVisibility(View.VISIBLE);
             binding.rvAppointments.setVisibility(View.GONE);

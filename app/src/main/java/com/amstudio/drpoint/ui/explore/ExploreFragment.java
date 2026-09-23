@@ -38,17 +38,7 @@ public class ExploreFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // AI Symptom Checker Click
-        View.OnClickListener openAiSymptomListener = v -> {
-            Intent intent = new Intent(requireContext(), DoctorListActivity.class);
-            intent.putExtra("category_name", "General Physician");
-            startActivity(intent);
-            Toast.makeText(requireContext(), "Connecting to AI Doctor Assistant...", Toast.LENGTH_SHORT).show();
-        };
 
-        if (binding.cardAiSymptom != null) {
-            binding.cardAiSymptom.setOnClickListener(openAiSymptomListener);
-        }
 
         if (binding.tvLocationChip != null) {
             binding.tvLocationChip.setOnClickListener(v ->
@@ -81,7 +71,15 @@ public class ExploreFragment extends Fragment {
             startActivity(intent);
         });
         binding.rvSpecialities.setAdapter(specialitiesAdapter);
-        DummyDataProvider.fetchSpecialitiesFromSupabase(specialitiesAdapter::submitList);
+        DummyDataProvider.fetchSpecialitiesFromSupabase(list -> {
+            if (binding == null) return;
+            specialitiesAdapter.submitList(list);
+            if (binding.shimmerSpecialities != null) {
+                binding.shimmerSpecialities.stopShimmer();
+                binding.shimmerSpecialities.setVisibility(View.GONE);
+            }
+            binding.rvSpecialities.setVisibility(View.VISIBLE);
+        });
 
         // Top Doctors Grid (2 Columns)
         binding.rvTopDoctors.setLayoutManager(new GridLayoutManager(requireContext(), 2));
@@ -103,8 +101,12 @@ public class ExploreFragment extends Fragment {
             @Override
             public void onCallClick(Doctor doctor) {
                 try {
+                    String phone = doctor.getDoctorPhone() != null && !doctor.getDoctorPhone().trim().isEmpty()
+                            ? doctor.getDoctorPhone().trim()
+                            : (doctor.getReceptionPhone() != null && !doctor.getReceptionPhone().trim().isEmpty()
+                            ? doctor.getReceptionPhone().trim() : "9876543210");
                     Intent intent = new Intent(Intent.ACTION_DIAL);
-                    intent.setData(Uri.parse("tel:9876543210"));
+                    intent.setData(Uri.parse("tel:" + phone));
                     startActivity(intent);
                 } catch (Exception e) {
                     Toast.makeText(requireContext(), "Calling Dr. " + doctor.getName(), Toast.LENGTH_SHORT).show();
@@ -116,7 +118,15 @@ public class ExploreFragment extends Fragment {
         });
         binding.rvTopDoctors.setAdapter(doctorListAdapter);
 
-        DummyDataProvider.fetchDoctorsFromSupabase(doctorListAdapter::submitList);
+        DummyDataProvider.fetchDoctorsFromSupabase(list -> {
+            if (binding == null) return;
+            doctorListAdapter.submitList(list);
+            if (binding.shimmerTopDoctors != null) {
+                binding.shimmerTopDoctors.stopShimmer();
+                binding.shimmerTopDoctors.setVisibility(View.GONE);
+            }
+            binding.rvTopDoctors.setVisibility(View.VISIBLE);
+        });
 
         binding.tvSeeAllDoctors.setOnClickListener(v -> {
             Intent intent = new Intent(requireContext(), DoctorListActivity.class);

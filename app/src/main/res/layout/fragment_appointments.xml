@@ -58,6 +58,7 @@
         android:background="@color/surface_white"
         app:tabIndicatorColor="@color/primary"
         app:tabIndicatorHeight="3dp"
+        app:tabRippleColor="@color/primary_light"
         app:tabSelectedTextColor="@color/primary"
         app:tabTextColor="@color/text_secondary">
 
@@ -77,17 +78,42 @@
             android:text="Cancelled" />
     </com.google.android.material.tabs.TabLayout>
 
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/divider" />
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
+
+        <!-- Shimmer Placeholder for Appointments -->
+        <com.facebook.shimmer.ShimmerFrameLayout
+            android:id="@+id/shimmer_appointments"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingVertical="8dp"
+            app:shimmer_auto_start="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <include layout="@layout/shimmer_appointment_card" />
+                <include layout="@layout/shimmer_appointment_card" />
+                <include layout="@layout/shimmer_appointment_card" />
+            </LinearLayout>
+        </com.facebook.shimmer.ShimmerFrameLayout>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rv_appointments"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
-            android:paddingVertical="8dp" />
+            android:paddingVertical="8dp"
+            android:visibility="gone" />
 
         <!-- Empty State Container -->
         <LinearLayout
@@ -101,13 +127,13 @@
             android:visibility="gone">
 
             <FrameLayout
-                android:layout_width="80dp"
-                android:layout_height="80dp"
+                android:layout_width="84dp"
+                android:layout_height="84dp"
                 android:background="@drawable/bg_squircle_icon">
 
                 <ImageView
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
                     android:layout_gravity="center"
                     android:contentDescription="Empty state icon"
                     android:src="@drawable/ic_calendar"
@@ -120,7 +146,7 @@
                 android:layout_marginTop="16dp"
                 android:text="No Appointments Found"
                 android:textColor="@color/text_primary"
-                android:textSize="17sp"
+                android:textSize="18sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -135,16 +161,15 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_book_now_empty"
                 android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:layout_marginTop="16dp"
+                android:layout_height="42dp"
+                android:layout_marginTop="18dp"
                 android:backgroundTint="@color/primary"
-                android:elevation="2dp"
-                android:paddingHorizontal="16dp"
+                android:paddingHorizontal="20dp"
                 android:text="Find &amp; Book Doctor →"
                 android:textColor="@color/white"
                 android:textSize="12sp"
                 android:textStyle="bold"
-                app:cornerRadius="20dp" />
+                app:cornerRadius="21dp" />
 
         </LinearLayout>
     </FrameLayout>
@@ -156,8 +181,8 @@
         android:layout_marginHorizontal="16dp"
         android:layout_marginVertical="12dp"
         app:cardBackgroundColor="@color/surface_white"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="2dp"
+        app:cardCornerRadius="18dp"
+        app:cardElevation="3dp"
         app:strokeColor="@color/card_stroke"
         app:strokeWidth="1dp">
 
@@ -168,20 +193,28 @@
 
             <FrameLayout
                 android:id="@+id/fl_bell_icon"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
                 android:layout_alignParentStart="true"
                 android:layout_centerVertical="true"
                 android:background="@drawable/bg_squircle_icon">
 
                 <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
                     android:layout_gravity="center"
                     android:contentDescription="Bell icon"
                     android:src="@drawable/ic_bell"
                     app:tint="@color/primary" />
             </FrameLayout>
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/sw_reminders"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:checked="true" />
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -209,13 +242,6 @@
                     android:textSize="11sp" />
             </LinearLayout>
 
-            <com.google.android.material.materialswitch.MaterialSwitch
-                android:id="@+id/sw_reminders"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:checked="true" />
         </RelativeLayout>
 
     </com.google.android.material.card.MaterialCardView>

@@ -77,8 +77,12 @@ public class FindDoctorsActivity extends AppCompatActivity {
             @Override
             public void onCallClick(Doctor doctor) {
                 try {
+                    String phone = doctor.getDoctorPhone() != null && !doctor.getDoctorPhone().trim().isEmpty()
+                            ? doctor.getDoctorPhone().trim()
+                            : (doctor.getReceptionPhone() != null && !doctor.getReceptionPhone().trim().isEmpty()
+                            ? doctor.getReceptionPhone().trim() : "9876543210");
                     Intent intent = new Intent(Intent.ACTION_DIAL);
-                    intent.setData(Uri.parse("tel:9876543210"));
+                    intent.setData(Uri.parse("tel:" + phone));
                     startActivity(intent);
                 } catch (Exception e) {
                     Toast.makeText(FindDoctorsActivity.this, "Calling Dr. " + doctor.getName(), Toast.LENGTH_SHORT).show();
@@ -98,10 +102,6 @@ public class FindDoctorsActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        binding.btnTryAi.setOnClickListener(v -> {
-            Intent intent = new Intent(FindDoctorsActivity.this, DoctorListActivity.class);
-            intent.putExtra("category_name", "AI Recommended Doctors");
-            startActivity(intent);
-        });
+
     }
 }

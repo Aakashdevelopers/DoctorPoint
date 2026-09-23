@@ -4,13 +4,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background_light"
-    android:fillViewport="true">
+    android:fillViewport="true"
+    android:overScrollMode="never">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingBottom="32dp">
+        android:paddingBottom="36dp">
 
         <!-- Top App Bar Card -->
         <com.google.android.material.card.MaterialCardView
@@ -62,6 +63,7 @@
                     android:background="@drawable/bg_squircle_icon"
                     android:clickable="true"
                     android:focusable="true"
+                    android:foreground="?attr/selectableItemBackgroundBorderless"
                     android:paddingHorizontal="12dp"
                     android:paddingVertical="8dp"
                     android:text="📍 Bangalore ▾"
@@ -105,16 +107,7 @@
                 android:textSize="13sp" />
         </LinearLayout>
 
-        <!-- AI Symptom Assistant Banner Card -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/card_ai_symptom"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="16dp"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="3dp"
-            app:strokeWidth="0dp"/>
+
 
         <!-- Popular Specialities Section Header -->
         <RelativeLayout
@@ -128,26 +121,116 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
                 android:layout_centerVertical="true"
-                android:orientation="vertical">
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-                <TextView
+                <View
+                    android:layout_width="4dp"
+                    android:layout_height="18dp"
+                    android:background="@drawable/bg_section_indicator" />
+
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Popular Specialities"
-                    android:textColor="@color/text_primary"
-                    android:textSize="17sp"
-                    android:textStyle="bold" />
+                    android:layout_marginStart="8dp"
+                    android:orientation="vertical">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="1dp"
-                    android:text="Browse trusted doctors by department"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="11sp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Popular Specialities"
+                        android:textColor="@color/text_primary"
+                        android:textSize="17sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
+                        android:text="Browse trusted doctors by department"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
             </LinearLayout>
 
         </RelativeLayout>
+
+        <!-- Shimmer Placeholder for Specialities Grid -->
+        <com.facebook.shimmer.ShimmerFrameLayout
+            android:id="@+id/shimmer_specialities"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="10dp"
+            android:layout_marginTop="10dp"
+            app:shimmer_auto_start="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <include
+                        layout="@layout/shimmer_speciality_item"
+                        android:layout_width="0dp"
+                        android:layout_height="110dp"
+                        android:layout_weight="1" />
+
+                    <include
+                        layout="@layout/shimmer_speciality_item"
+                        android:layout_width="0dp"
+                        android:layout_height="110dp"
+                        android:layout_weight="1" />
+
+                    <include
+                        layout="@layout/shimmer_speciality_item"
+                        android:layout_width="0dp"
+                        android:layout_height="110dp"
+                        android:layout_weight="1" />
+
+                    <include
+                        layout="@layout/shimmer_speciality_item"
+                        android:layout_width="0dp"
+                        android:layout_height="110dp"
+                        android:layout_weight="1" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <include
+                        layout="@layout/shimmer_speciality_item"
+                        android:layout_width="0dp"
+                        android:layout_height="110dp"
+                        android:layout_weight="1" />
+
+                    <include
+                        layout="@layout/shimmer_speciality_item"
+                        android:layout_width="0dp"
+                        android:layout_height="110dp"
+                        android:layout_weight="1" />
+
+                    <include
+                        layout="@layout/shimmer_speciality_item"
+                        android:layout_width="0dp"
+                        android:layout_height="110dp"
+                        android:layout_weight="1" />
+
+                    <include
+                        layout="@layout/shimmer_speciality_item"
+                        android:layout_width="0dp"
+                        android:layout_height="110dp"
+                        android:layout_weight="1" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.facebook.shimmer.ShimmerFrameLayout>
 
         <!-- Grid RecyclerView for Specialities (4 columns) -->
         <androidx.recyclerview.widget.RecyclerView
@@ -157,7 +240,8 @@
             android:layout_marginHorizontal="10dp"
             android:layout_marginTop="10dp"
             android:clipToPadding="false"
-            android:nestedScrollingEnabled="false" />
+            android:nestedScrollingEnabled="false"
+            android:visibility="gone" />
 
         <!-- Top Doctors Section Header -->
         <RelativeLayout
@@ -171,23 +255,37 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
                 android:layout_centerVertical="true"
-                android:orientation="vertical">
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-                <TextView
+                <View
+                    android:layout_width="4dp"
+                    android:layout_height="18dp"
+                    android:background="@drawable/bg_section_indicator" />
+
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Top Doctors Near You"
-                    android:textColor="@color/text_primary"
-                    android:textSize="17sp"
-                    android:textStyle="bold" />
+                    android:layout_marginStart="8dp"
+                    android:orientation="vertical">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="1dp"
-                    android:text="Verified specialists with high ratings"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="11sp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Top Doctors Near You"
+                        android:textColor="@color/text_primary"
+                        android:textSize="17sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
+                        android:text="Verified specialists with high ratings"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
             </LinearLayout>
 
             <TextView
@@ -199,12 +297,64 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:clickable="true"
                 android:focusable="true"
-                android:padding="2dp"
+                android:padding="4dp"
                 android:text="See All →"
                 android:textColor="@color/secondary"
                 android:textSize="13sp"
                 android:textStyle="bold" />
         </RelativeLayout>
+
+        <!-- Shimmer Placeholder for Top Doctors Grid -->
+        <com.facebook.shimmer.ShimmerFrameLayout
+            android:id="@+id/shimmer_top_doctors"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="10dp"
+            android:layout_marginTop="10dp"
+            app:shimmer_auto_start="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <include
+                        layout="@layout/shimmer_doctor_preview"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1" />
+
+                    <include
+                        layout="@layout/shimmer_doctor_preview"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <include
+                        layout="@layout/shimmer_doctor_preview"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1" />
+
+                    <include
+                        layout="@layout/shimmer_doctor_preview"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.facebook.shimmer.ShimmerFrameLayout>
 
         <!-- Grid RecyclerView for Doctor Previews (2 columns) -->
         <androidx.recyclerview.widget.RecyclerView
@@ -214,7 +364,8 @@
             android:layout_marginHorizontal="10dp"
             android:layout_marginTop="10dp"
             android:clipToPadding="false"
-            android:nestedScrollingEnabled="false" />
+            android:nestedScrollingEnabled="false"
+            android:visibility="gone" />
 
     </LinearLayout>
 

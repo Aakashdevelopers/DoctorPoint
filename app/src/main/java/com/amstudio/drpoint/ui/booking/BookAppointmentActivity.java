@@ -22,6 +22,7 @@ import com.amstudio.drpoint.network.SupabaseClient;
 import com.amstudio.drpoint.network.model.BookAppointmentRpcRequest;
 import com.amstudio.drpoint.network.model.BookAppointmentRpcResponse;
 import com.amstudio.drpoint.util.AvailabilityHelper;
+import com.amstudio.drpoint.util.CommissionHelper;
 import com.amstudio.drpoint.util.DummyDataProvider;
 import com.amstudio.drpoint.util.PreferenceManager;
 import com.bumptech.glide.Glide;
@@ -777,6 +778,13 @@ public class BookAppointmentActivity extends AppCompatActivity {
         int activeFee = isReturningPatientUser ? doctor.getFollowUpFee() : doctor.getFee();
         if (availableSlotsList != null && !availableSlotsList.isEmpty()) {
             activeFee = isReturningPatientUser ? availableSlotsList.get(0).getFollowUpFee() : availableSlotsList.get(0).getFee();
+        }
+
+        // Process Doctor Earnings and Commission Deduction in Supabase
+        if (doctor != null && doctor.getId() != null) {
+            CommissionHelper.processBookingEarningsAndCommission(doctor.getId(), activeFee, isReturningPatientUser, (doctorEarning, commissionDeducted) -> {
+                Log.d("BookAppointment", "Commission Processed! Doctor Net Earning: " + doctorEarning + ", Platform Commission Deducted: " + commissionDeducted);
+            });
         }
 
         String feeTypeLabel = isReturningPatientUser ? "Follow-up Fee (Repeat Visit)" : "New Patient Fee (First Visit)";

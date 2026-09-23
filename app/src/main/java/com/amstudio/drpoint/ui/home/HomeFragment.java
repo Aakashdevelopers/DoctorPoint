@@ -22,6 +22,7 @@ import com.amstudio.drpoint.model.Doctor;
 import com.amstudio.drpoint.model.NotificationItem;
 import com.amstudio.drpoint.network.SupabaseClient;
 import com.amstudio.drpoint.ui.doctor.DoctorDetailActivity;
+import com.amstudio.drpoint.ui.doctor.DoctorListActivity;
 import com.amstudio.drpoint.ui.explore.FindDoctorsActivity;
 import com.amstudio.drpoint.util.DummyDataProvider;
 import com.amstudio.drpoint.util.PreferenceManager;
@@ -87,14 +88,22 @@ public class HomeFragment extends Fragment {
 
         // Explore Specialities Horizontal Carousel
         if (binding.rvSpecialities != null) {
-            binding.rvSpecialities.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
+            binding.rvSpecialities.setLayoutManager(new GridLayoutManager(requireContext(), 4));
             SpecialitiesAdapter specialitiesAdapter = new SpecialitiesAdapter(speciality -> {
-                Intent intent = new Intent(requireContext(), FindDoctorsActivity.class);
-                intent.putExtra("category", speciality.getName());
+                Intent intent = new Intent(requireContext(), DoctorListActivity.class);
+                intent.putExtra("category_name", speciality.getName());
                 startActivity(intent);
             });
             binding.rvSpecialities.setAdapter(specialitiesAdapter);
-            DummyDataProvider.fetchSpecialitiesFromSupabase(specialitiesAdapter::submitList);
+            DummyDataProvider.fetchSpecialitiesFromSupabase(list -> {
+                if (binding == null) return;
+                specialitiesAdapter.submitList(list);
+                if (binding.shimmerSpecialities != null) {
+                    binding.shimmerSpecialities.stopShimmer();
+                    binding.shimmerSpecialities.setVisibility(View.GONE);
+                }
+                binding.rvSpecialities.setVisibility(View.VISIBLE);
+            });
         }
 
         // Available Today Section (Horizontal Carousel)
@@ -102,7 +111,7 @@ public class HomeFragment extends Fragment {
             binding.tvSeeAllAvailable.setOnClickListener(v -> openFindDoctors());
         }
 
-        binding.rvAvailableToday.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
+        binding.rvAvailableToday.setLayoutManager(new GridLayoutManager(requireContext(), 2));
         DoctorListAdapter availableAdapter = new DoctorListAdapter(true, new DoctorListAdapter.OnDoctorClickListener() {
             @Override
             public void onDoctorClick(Doctor doctor) {
@@ -121,8 +130,12 @@ public class HomeFragment extends Fragment {
             @Override
             public void onCallClick(Doctor doctor) {
                 try {
+                    String phone = doctor.getDoctorPhone() != null && !doctor.getDoctorPhone().trim().isEmpty()
+                            ? doctor.getDoctorPhone().trim()
+                            : (doctor.getReceptionPhone() != null && !doctor.getReceptionPhone().trim().isEmpty()
+                            ? doctor.getReceptionPhone().trim() : "9876543210");
                     Intent intent = new Intent(Intent.ACTION_DIAL);
-                    intent.setData(Uri.parse("tel:9876543210"));
+                    intent.setData(Uri.parse("tel:" + phone));
                     startActivity(intent);
                 } catch (Exception e) {
                     Toast.makeText(requireContext(), "Calling Dr. " + doctor.getName(), Toast.LENGTH_SHORT).show();
@@ -154,8 +167,12 @@ public class HomeFragment extends Fragment {
             @Override
             public void onCallClick(Doctor doctor) {
                 try {
+                    String phone = doctor.getDoctorPhone() != null && !doctor.getDoctorPhone().trim().isEmpty()
+                            ? doctor.getDoctorPhone().trim()
+                            : (doctor.getReceptionPhone() != null && !doctor.getReceptionPhone().trim().isEmpty()
+                            ? doctor.getReceptionPhone().trim() : "9876543210");
                     Intent intent = new Intent(Intent.ACTION_DIAL);
-                    intent.setData(Uri.parse("tel:9876543210"));
+                    intent.setData(Uri.parse("tel:" + phone));
                     startActivity(intent);
                 } catch (Exception e) {
                     Toast.makeText(requireContext(), "Calling Dr. " + doctor.getName(), Toast.LENGTH_SHORT).show();
@@ -168,6 +185,7 @@ public class HomeFragment extends Fragment {
         binding.rvTopDoctors.setAdapter(doctorAdapter);
 
         DummyDataProvider.fetchDoctorsFromSupabase(doctors -> {
+            if (binding == null) return;
             List<Doctor> availableTodayList = new ArrayList<>();
             for (Doctor d : doctors) {
                 if (d.isAvailableToday()) {
@@ -179,6 +197,17 @@ public class HomeFragment extends Fragment {
             }
             availableAdapter.submitList(availableTodayList);
             doctorAdapter.submitList(doctors);
+
+            if (binding.shimmerAvailableToday != null) {
+                binding.shimmerAvailableToday.stopShimmer();
+                binding.shimmerAvailableToday.setVisibility(View.GONE);
+            }
+            if (binding.shimmerTopDoctors != null) {
+                binding.shimmerTopDoctors.stopShimmer();
+                binding.shimmerTopDoctors.setVisibility(View.GONE);
+            }
+            binding.rvAvailableToday.setVisibility(View.VISIBLE);
+            binding.rvTopDoctors.setVisibility(View.VISIBLE);
         });
     }
 

@@ -1,11 +1,13 @@
 package com.amstudio.drpoint.ui.doctor;
 
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -17,10 +19,12 @@ import com.amstudio.drpoint.R;
 import com.amstudio.drpoint.adapter.DoctorListAdapter;
 import com.amstudio.drpoint.databinding.ActivityDoctorListBinding;
 import com.amstudio.drpoint.model.Doctor;
+import com.amstudio.drpoint.model.Speciality;
 import com.amstudio.drpoint.ui.booking.BookAppointmentActivity;
 import com.amstudio.drpoint.util.DummyDataProvider;
 import com.amstudio.drpoint.util.PreferenceManager;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class DoctorListActivity extends AppCompatActivity {
@@ -39,6 +43,8 @@ public class DoctorListActivity extends AppCompatActivity {
 
         if (getIntent().hasExtra("category_name")) {
             categoryName = getIntent().getStringExtra("category_name");
+        } else if (getIntent().hasExtra("category")) {
+            categoryName = getIntent().getStringExtra("category");
         }
         if (getIntent().hasExtra("search_query")) {
             searchQuery = getIntent().getStringExtra("search_query");
@@ -103,8 +109,12 @@ public class DoctorListActivity extends AppCompatActivity {
             @Override
             public void onCallClick(Doctor doctor) {
                 try {
+                    String phone = doctor.getDoctorPhone() != null && !doctor.getDoctorPhone().trim().isEmpty()
+                            ? doctor.getDoctorPhone().trim()
+                            : (doctor.getReceptionPhone() != null && !doctor.getReceptionPhone().trim().isEmpty()
+                            ? doctor.getReceptionPhone().trim() : "9876543210");
                     Intent callIntent = new Intent(Intent.ACTION_DIAL);
-                    callIntent.setData(Uri.parse("tel:9876543210"));
+                    callIntent.setData(Uri.parse("tel:" + phone));
                     startActivity(callIntent);
                 } catch (Exception e) {
                     Toast.makeText(DoctorListActivity.this, "Calling Dr. " + doctor.getName(), Toast.LENGTH_SHORT).show();
@@ -122,29 +132,94 @@ public class DoctorListActivity extends AppCompatActivity {
     }
 
     private void setupFilterChips() {
-        TextView[] chips = new TextView[]{binding.chipAll, binding.chipFemale, binding.chipAvailable, binding.chipNearby};
-        String[] chipKeys = new String[]{"ALL", "FEMALE", "AVAILABLE", "NEARBY"};
+        if (binding.llChipContainer == null) return;
 
-        for (int i = 0; i < chips.length; i++) {
-            final int index = i;
-            TextView chip = chips[i];
-            if (chip == null) continue;
+        DummyDataProvider.fetchSpecialitiesFromSupabase(specialities -> {
+            if (!isFinishing() && binding != null && binding.llChipContainer != null) {
+                populateSpecialityChips(specialities);
+            }
+        });
+    }
 
-            chip.setOnClickListener(v -> {
-                selectedChip = chipKeys[index];
-                for (int j = 0; j < chips.length; j++) {
-                    if (chips[j] == null) continue;
-                    if (j == index) {
-                        chips[j].setBackgroundResource(R.drawable.bg_chip_selected);
-                        chips[j].setTextColor(ContextCompat.getColor(DoctorListActivity.this, R.color.white));
-                    } else {
-                        chips[j].setBackgroundResource(R.drawable.bg_chip_unselected);
-                        chips[j].setTextColor(ContextCompat.getColor(DoctorListActivity.this, R.color.text_primary));
+    private void populateSpecialityChips(List<Speciality> specialities) {
+        binding.llChipContainer.removeAllViews();
+
+        List<String> categories = new ArrayList<>();
+        categories.add("All Doctors");
+        if (specialities != null) {
+            for (Speciality s : specialities) {
+                if (s != null && s.getName() != null && !s.getName().trim().isEmpty()) {
+                    if (!categories.contains(s.getName())) {
+                        categories.add(s.getName());
                     }
                 }
+            }
+        }
+
+        List<TextView> chipViews = new ArrayList<>();
+
+        for (String catName : categories) {
+            TextView chip = new TextView(this);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            lp.setMargins(0, 0, dpToPx(8), 0);
+            chip.setLayoutParams(lp);
+
+            chip.setPadding(dpToPx(16), dpToPx(8), dpToPx(16), dpToPx(8));
+            chip.setTextSize(13);
+            chip.setClickable(true);
+            chip.setFocusable(true);
+
+            String displayName = "All Doctors".equalsIgnoreCase(catName) ? "All" : catName;
+            chip.setText(displayName);
+
+            boolean isSelected = isCategoryMatching(categoryName, catName);
+            if (isSelected) {
+                chip.setBackgroundResource(R.drawable.bg_chip_selected);
+                chip.setTextColor(ContextCompat.getColor(this, R.color.white));
+                chip.setTypeface(null, Typeface.BOLD);
+            } else {
+                chip.setBackgroundResource(R.drawable.bg_chip_unselected);
+                chip.setTextColor(ContextCompat.getColor(this, R.color.text_primary));
+                chip.setTypeface(null, Typeface.NORMAL);
+            }
+
+            chip.setOnClickListener(v -> {
+                categoryName = catName;
+                binding.tvCategoryTitle.setText("All Doctors".equalsIgnoreCase(catName) ? "All Doctors" : catName);
+
+                for (TextView cv : chipViews) {
+                    cv.setBackgroundResource(R.drawable.bg_chip_unselected);
+                    cv.setTextColor(ContextCompat.getColor(DoctorListActivity.this, R.color.text_primary));
+                    cv.setTypeface(null, Typeface.NORMAL);
+                }
+                chip.setBackgroundResource(R.drawable.bg_chip_selected);
+                chip.setTextColor(ContextCompat.getColor(DoctorListActivity.this, R.color.white));
+                chip.setTypeface(null, Typeface.BOLD);
+
                 filterAndDisplayDoctors();
             });
+
+            binding.llChipContainer.addView(chip);
+            chipViews.add(chip);
         }
+    }
+
+    private boolean isCategoryMatching(String cat1, String cat2) {
+        if (cat1 == null || cat2 == null) return false;
+        if (cat1.equalsIgnoreCase(cat2)) return true;
+        if ("All Doctors".equalsIgnoreCase(cat1) && ("All".equalsIgnoreCase(cat2) || "All Doctors".equalsIgnoreCase(cat2))) return true;
+        if ("All".equalsIgnoreCase(cat1) && ("All".equalsIgnoreCase(cat2) || "All Doctors".equalsIgnoreCase(cat2))) return true;
+
+        Doctor dummyDoc = new Doctor();
+        dummyDoc.setSpecialization(cat1);
+        return DummyDataProvider.isDoctorMatchingCategory(dummyDoc, cat2);
+    }
+
+    private int dpToPx(int dp) {
+        return Math.round(dp * getResources().getDisplayMetrics().density);
     }
 
     private void loadDoctorsAndFilter() {
@@ -156,6 +231,11 @@ public class DoctorListActivity extends AppCompatActivity {
     }
 
     private void filterAndDisplayDoctors() {
+        if (binding.shimmerDoctorList != null) {
+            binding.shimmerDoctorList.stopShimmer();
+            binding.shimmerDoctorList.setVisibility(View.GONE);
+        }
+
         List<Doctor> filtered = DummyDataProvider.getFilteredDoctors(searchQuery, categoryName, selectedChip);
 
         if (filtered.isEmpty()) {

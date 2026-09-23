@@ -2,10 +2,13 @@ package com.amstudio.drpoint.adapter;
 
 import android.content.Context;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DiffUtil;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -65,13 +68,24 @@ public class SpecialitiesAdapter extends ListAdapter<Speciality, SpecialitiesAda
             Context context = itemView.getContext();
             binding.tvSpecialityName.setText(speciality.getName());
 
+            // Adjust layout width dynamically based on parent LayoutManager
+            ViewGroup.LayoutParams lp = itemView.getLayoutParams();
+            if (lp != null) {
+                if (isParentHorizontalLinear(itemView)) {
+                    lp.width = dpToPx(context, 92);
+                } else {
+                    lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+                }
+                itemView.setLayoutParams(lp);
+            }
+
             String imageUrl = getPhotoUrlForSpeciality(speciality);
 
             Glide.with(context)
                     .load(imageUrl)
                     .centerCrop()
-                    .placeholder(R.drawable.ic_user)
-                    .error(R.drawable.ic_user)
+                    .placeholder(R.drawable.banner_1)
+                    .error(R.drawable.banner_1)
                     .into(binding.ivSpecialityImage);
 
             itemView.setOnClickListener(v -> {
@@ -80,14 +94,34 @@ public class SpecialitiesAdapter extends ListAdapter<Speciality, SpecialitiesAda
                 }
             });
         }
+
+        private static boolean isParentHorizontalLinear(View view) {
+            if (view.getParent() instanceof RecyclerView) {
+                RecyclerView rv = (RecyclerView) view.getParent();
+                RecyclerView.LayoutManager lm = rv.getLayoutManager();
+                if (lm instanceof LinearLayoutManager && !(lm instanceof GridLayoutManager)) {
+                    return ((LinearLayoutManager) lm).getOrientation() == LinearLayoutManager.HORIZONTAL;
+                }
+            }
+            return false;
+        }
+
+        private static int dpToPx(Context context, float dp) {
+            return Math.round(dp * context.getResources().getDisplayMetrics().density);
+        }
     }
 
     private static String getPhotoUrlForSpeciality(Speciality speciality) {
-        if (speciality.getIconUrl() != null && !speciality.getIconUrl().trim().isEmpty() && speciality.getIconUrl().startsWith("http")) {
-            return speciality.getIconUrl();
+        if (speciality != null && speciality.getIconUrl() != null && !speciality.getIconUrl().trim().isEmpty()) {
+            String url = speciality.getIconUrl().trim();
+            if (url.startsWith("http://") || url.startsWith("https://")) {
+                return url;
+            } else if (url.startsWith("//")) {
+                return "https:" + url;
+            }
         }
 
-        String name = (speciality.getName() != null) ? speciality.getName().toLowerCase().trim() : "";
+        String name = (speciality != null && speciality.getName() != null) ? speciality.getName().toLowerCase().trim() : "";
 
         if (name.contains("general") || name.contains("physician") || name.contains("fever")) {
             return "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=400";

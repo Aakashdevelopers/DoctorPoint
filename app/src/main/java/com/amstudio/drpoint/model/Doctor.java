@@ -51,6 +51,27 @@ public class Doctor implements Serializable {
     @SerializedName("about")
     private String about;
 
+    @SerializedName(value = "doctor_phone", alternate = {"doctorPhone", "doctor_number", "phone"})
+    private String doctorPhone;
+
+    @SerializedName(value = "reception_phone", alternate = {"receptionPhone", "reception_number", "clinic_phone"})
+    private String receptionPhone;
+
+    @SerializedName("today_earning")
+    private double todayEarning = 0;
+
+    @SerializedName("total_earning")
+    private double totalEarning = 0;
+
+    @SerializedName("new_patient_commission")
+    private Double newPatientCommission;
+
+    @SerializedName("followup_commission")
+    private Double followupCommission;
+
+    @SerializedName("commission_type")
+    private String commissionType;
+
     private int imageRes;
 
     @SerializedName(value = "is_verified", alternate = {"is_popular"})
@@ -143,6 +164,32 @@ public class Doctor implements Serializable {
 
     public String getAbout() { return about; }
     public void setAbout(String about) { this.about = about; }
+
+    public String getDoctorPhone() { return doctorPhone; }
+    public void setDoctorPhone(String doctorPhone) { this.doctorPhone = doctorPhone; }
+
+    public String getReceptionPhone() { return receptionPhone; }
+    public void setReceptionPhone(String receptionPhone) { this.receptionPhone = receptionPhone; }
+
+    public double getTodayEarning() { return todayEarning; }
+    public void setTodayEarning(double todayEarning) { this.todayEarning = todayEarning; }
+
+    public double getTotalEarning() { return totalEarning; }
+    public void setTotalEarning(double totalEarning) { this.totalEarning = totalEarning; }
+
+    public Double getNewPatientCommission() { return newPatientCommission; }
+    public void setNewPatientCommission(Double newPatientCommission) { this.newPatientCommission = newPatientCommission; }
+
+    public Double getFollowupCommission() { return followupCommission; }
+    public void setFollowupCommission(Double followupCommission) { this.followupCommission = followupCommission; }
+
+    public String getCommissionType() { return commissionType; }
+    public void setCommissionType(String commissionType) { this.commissionType = commissionType; }
+
+    public boolean hasCustomCommission() {
+        return (newPatientCommission != null && newPatientCommission > 0) ||
+               (followupCommission != null && followupCommission > 0);
+    }
 
     public int getImageRes() { return imageRes; }
     public void setImageRes(int imageRes) { this.imageRes = imageRes; }

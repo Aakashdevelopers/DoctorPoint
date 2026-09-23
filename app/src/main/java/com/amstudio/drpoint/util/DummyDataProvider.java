@@ -1,5 +1,6 @@
 package com.amstudio.drpoint.util;
 
+import com.amstudio.drpoint.DoctorPointApp;
 import com.amstudio.drpoint.R;
 import com.amstudio.drpoint.model.Appointment;
 import com.amstudio.drpoint.model.Doctor;
@@ -146,7 +147,7 @@ public class DummyDataProvider {
     public static synchronized List<Doctor> getDoctors() {
         if (doctors == null) {
             doctors = new ArrayList<>();
-            doctors.add(new Doctor(
+            Doctor d1 = new Doctor(
                     "doc_1",
                     "Dr. Priya Sharma",
                     "MBBS, MD - Dermatology",
@@ -161,8 +162,12 @@ public class DummyDataProvider {
                     "Female",
                     true,
                     true
-            ));
-            doctors.add(new Doctor(
+            );
+            d1.setDoctorPhone("+91 9876543210");
+            d1.setReceptionPhone("+91 9876543211");
+            doctors.add(d1);
+
+            Doctor d2 = new Doctor(
                     "doc_2",
                     "Dr. Rajesh Kumar",
                     "MBBS, MS - Cardiology",
@@ -177,8 +182,12 @@ public class DummyDataProvider {
                     "Male",
                     true,
                     false
-            ));
-            doctors.add(new Doctor(
+            );
+            d2.setDoctorPhone("+91 9123456789");
+            d2.setReceptionPhone("+91 9123456790");
+            doctors.add(d2);
+
+            Doctor d3 = new Doctor(
                     "doc_3",
                     "Dr. Ananya Rao",
                     "MBBS, DGO - Gynaecology",
@@ -193,8 +202,12 @@ public class DummyDataProvider {
                     "Female",
                     false,
                     true
-            ));
-            doctors.add(new Doctor(
+            );
+            d3.setDoctorPhone("+91 9988776655");
+            d3.setReceptionPhone("+91 9988776656");
+            doctors.add(d3);
+
+            Doctor d4 = new Doctor(
                     "doc_4",
                     "Dr. Vikram Malhotra",
                     "BDS, MDS - Orthodontics",
@@ -209,8 +222,12 @@ public class DummyDataProvider {
                     "Male",
                     true,
                     true
-            ));
-            doctors.add(new Doctor(
+            );
+            d4.setDoctorPhone("+91 9811223344");
+            d4.setReceptionPhone("+91 9811223345");
+            doctors.add(d4);
+
+            Doctor d5 = new Doctor(
                     "doc_5",
                     "Dr. Sunita Patel",
                     "MD - Pediatrics",
@@ -225,7 +242,10 @@ public class DummyDataProvider {
                     "Female",
                     true,
                     false
-            ));
+            );
+            d5.setDoctorPhone("+91 9766554433");
+            d5.setReceptionPhone("+91 9766554434");
+            doctors.add(d5);
         }
         return new ArrayList<>(doctors);
     }
@@ -326,19 +346,62 @@ public class DummyDataProvider {
         });
     }
 
+    public static boolean isDoctorMatchingCategory(Doctor d, String category) {
+        if (category == null || category.trim().isEmpty() || "All Doctors".equalsIgnoreCase(category) || "AI Recommended Doctors".equalsIgnoreCase(category)) {
+            return true;
+        }
+        String cat = category.toLowerCase().trim();
+        String spec = (d.getSpecialization() != null ? d.getSpecialization() : "").toLowerCase();
+        String qual = (d.getQualification() != null ? d.getQualification() : "").toLowerCase();
+        String specStr = d.getSpecializationString().toLowerCase();
+
+        String allDocText = spec + " " + qual + " " + specStr;
+
+        if (allDocText.contains(cat)) {
+            return true;
+        }
+
+        if (cat.contains("skin") || cat.contains("derma")) {
+            return allDocText.contains("derma") || allDocText.contains("skin");
+        }
+        if (cat.contains("women") || cat.contains("gynaec") || cat.contains("maternity")) {
+            return allDocText.contains("gynaec") || allDocText.contains("women") || allDocText.contains("obstetric");
+        }
+        if (cat.contains("child") || cat.contains("pediatr") || cat.contains("baby")) {
+            return allDocText.contains("pediatr") || allDocText.contains("child") || allDocText.contains("baby");
+        }
+        if (cat.contains("heart") || cat.contains("cardio")) {
+            return allDocText.contains("cardio") || allDocText.contains("heart");
+        }
+        if (cat.contains("eye") || cat.contains("optom") || cat.contains("ophthalm")) {
+            return allDocText.contains("eye") || allDocText.contains("optom") || allDocText.contains("ophthalm");
+        }
+        if (cat.contains("ent") || cat.contains("ear") || cat.contains("nose") || cat.contains("throat")) {
+            return allDocText.contains("ent") || allDocText.contains("ear") || allDocText.contains("nose") || allDocText.contains("throat") || allDocText.contains("otolaryng");
+        }
+        if (cat.contains("dent") || cat.contains("teeth")) {
+            return allDocText.contains("dent") || allDocText.contains("teeth") || allDocText.contains("orthodont") || allDocText.contains("bds") || allDocText.contains("mds");
+        }
+        if (cat.contains("general") || cat.contains("physician") || cat.contains("fever")) {
+            return allDocText.contains("general") || allDocText.contains("physician") || allDocText.contains("mbbs") || allDocText.contains("md");
+        }
+
+        return false;
+    }
+
     public static synchronized List<Doctor> getFilteredDoctors(String query, String category, String filterChip) {
         List<Doctor> all = getDoctors();
         List<Doctor> result = new ArrayList<>();
 
         for (Doctor d : all) {
-            // Category / Specialty check
-            if (category != null && !category.isEmpty() && !"All Doctors".equalsIgnoreCase(category) && !"AI Recommended Doctors".equalsIgnoreCase(category)) {
-                boolean matchesCategory = (d.getSpecialization() != null && d.getSpecialization().toLowerCase().contains(category.toLowerCase())) ||
-                        (d.getQualification() != null && d.getQualification().toLowerCase().contains(category.toLowerCase())) ||
-                        d.getSpecializationString().toLowerCase().contains(category.toLowerCase());
-                if (!matchesCategory) {
+            // Category / Specialty / Saved check
+            if ("Saved Doctors".equalsIgnoreCase(category) || "Saved".equalsIgnoreCase(category)) {
+                DoctorPointApp app = DoctorPointApp.getInstance();
+                if (app != null && !PreferenceManager.getInstance(app).isFavoriteDoctor(d.getId())) {
                     continue;
                 }
+            } else if (!isDoctorMatchingCategory(d, category)) {
+                continue;
             }
 
             // Chip filter check
@@ -498,14 +561,8 @@ public class DummyDataProvider {
     public static synchronized List<MenuItem> getProfileMenuItems() {
         List<MenuItem> items = new ArrayList<>();
         items.add(new MenuItem("My Appointments", R.drawable.ic_appointments, R.color.text_primary));
-        items.add(new MenuItem("Video Consultations", R.drawable.ic_chat, R.color.text_primary));
-        items.add(new MenuItem("Test Bookings", R.drawable.ic_flask, R.color.text_primary));
-        items.add(new MenuItem("Medicine Orders", R.drawable.ic_pill, R.color.text_primary));
-        items.add(new MenuItem("Health Records", R.drawable.ic_file, R.color.text_primary));
-        items.add(new MenuItem("My Doctors", R.drawable.ic_stethoscope, R.color.text_primary));
-        items.add(new MenuItem("Payments & Wallet", R.drawable.ic_wallet, R.color.text_primary));
-        items.add(new MenuItem("Help & Support", R.drawable.ic_help, R.color.text_primary));
-        items.add(new MenuItem("Settings", R.drawable.ic_settings, R.color.text_primary));
+        items.add(new MenuItem("Saved Doctors", R.drawable.ic_heart_filled, R.color.text_primary));
+        items.add(new MenuItem("Apply for Doctor", R.drawable.ic_stethoscope, R.color.text_primary));
         items.add(new MenuItem("Logout", R.drawable.ic_logout, R.color.error_red));
         return items;
     }

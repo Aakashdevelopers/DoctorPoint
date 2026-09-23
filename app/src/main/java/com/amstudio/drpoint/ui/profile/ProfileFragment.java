@@ -21,6 +21,7 @@ import com.amstudio.drpoint.model.MenuItem;
 import com.amstudio.drpoint.model.PatientProfile;
 import com.amstudio.drpoint.network.SupabaseClient;
 import com.amstudio.drpoint.ui.auth.LoginActivity;
+import com.amstudio.drpoint.ui.doctor.DoctorListActivity;
 import com.amstudio.drpoint.ui.main.MainActivity;
 import com.amstudio.drpoint.util.DummyDataProvider;
 import com.amstudio.drpoint.util.PreferenceManager;
@@ -71,13 +72,16 @@ public class ProfileFragment extends Fragment {
                 if (getActivity() != null) {
                     getActivity().finish();
                 }
-            } else if ("My Appointments".equalsIgnoreCase(title)) {
+            } else if (title != null && title.toLowerCase().contains("appointment")) {
                 if (getActivity() instanceof MainActivity) {
                     ((MainActivity) getActivity()).selectTab(MainActivity.TAB_APPOINTMENTS);
                 }
-            } else if ("Health Records".equalsIgnoreCase(title) || "Prescriptions".equalsIgnoreCase(title) || title.toLowerCase().contains("record")) {
-                Intent intent = new Intent(requireContext(), MedicalRecordsActivity.class);
+            } else if (title != null && (title.toLowerCase().contains("saved") || title.toLowerCase().contains("favorite"))) {
+                Intent intent = new Intent(requireContext(), DoctorListActivity.class);
+                intent.putExtra("category_name", "Saved Doctors");
                 startActivity(intent);
+            } else if (title != null && (title.toLowerCase().contains("apply") || title.toLowerCase().contains("doctor"))) {
+                Toast.makeText(requireContext(), "Thank you for your interest! Doctor onboarding form will open shortly.", Toast.LENGTH_LONG).show();
             } else {
                 Toast.makeText(requireContext(), title + " clicked", Toast.LENGTH_SHORT).show();
             }

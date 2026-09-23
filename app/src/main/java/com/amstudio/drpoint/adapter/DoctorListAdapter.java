@@ -7,6 +7,8 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DiffUtil;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -91,6 +93,19 @@ public class DoctorListAdapter extends ListAdapter<Doctor, RecyclerView.ViewHold
         }
 
         void bind(Doctor doctor, OnDoctorClickListener listener) {
+            Context context = itemView.getContext();
+
+            // Adjust width dynamically for horizontal scroll vs 2-column grid
+            ViewGroup.LayoutParams lp = itemView.getLayoutParams();
+            if (lp != null) {
+                if (isParentHorizontalLinear(itemView)) {
+                    lp.width = dpToPx(context, 160);
+                } else {
+                    lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+                }
+                itemView.setLayoutParams(lp);
+            }
+
             binding.tvDoctorNamePreview.setText(doctor.getName() != null ? doctor.getName() : "Dr. Medical Specialist");
             
             String spec = doctor.getSpecializationString();
@@ -105,13 +120,13 @@ public class DoctorListAdapter extends ListAdapter<Doctor, RecyclerView.ViewHold
 
             Object imageSource = (doctor.getImageUrl() != null && !doctor.getImageUrl().trim().isEmpty())
                     ? doctor.getImageUrl().trim()
-                    : (doctor.getImageRes() != 0 ? doctor.getImageRes() : R.drawable.ic_user);
+                    : (doctor.getImageRes() != 0 ? doctor.getImageRes() : R.drawable.banner_1);
 
             Glide.with(itemView.getContext())
                     .load(imageSource)
                     .centerCrop()
-                    .placeholder(R.drawable.ic_user)
-                    .error(R.drawable.ic_user)
+                    .placeholder(R.drawable.banner_1)
+                    .error(R.drawable.banner_1)
                     .into(binding.ivDoctorPreview);
 
             itemView.setOnClickListener(v -> {
@@ -122,6 +137,21 @@ public class DoctorListAdapter extends ListAdapter<Doctor, RecyclerView.ViewHold
                     if (listener != null) listener.onBookClick(doctor);
                 });
             }
+        }
+
+        private static boolean isParentHorizontalLinear(View view) {
+            if (view.getParent() instanceof RecyclerView) {
+                RecyclerView rv = (RecyclerView) view.getParent();
+                RecyclerView.LayoutManager lm = rv.getLayoutManager();
+                if (lm instanceof LinearLayoutManager && !(lm instanceof GridLayoutManager)) {
+                    return ((LinearLayoutManager) lm).getOrientation() == LinearLayoutManager.HORIZONTAL;
+                }
+            }
+            return false;
+        }
+
+        private static int dpToPx(Context context, float dp) {
+            return Math.round(dp * context.getResources().getDisplayMetrics().density);
         }
     }
 
@@ -175,13 +205,13 @@ public class DoctorListAdapter extends ListAdapter<Doctor, RecyclerView.ViewHold
 
             Object imageSource = (doctor.getImageUrl() != null && !doctor.getImageUrl().trim().isEmpty())
                     ? doctor.getImageUrl().trim()
-                    : (doctor.getImageRes() != 0 ? doctor.getImageRes() : R.drawable.ic_user);
+                    : (doctor.getImageRes() != 0 ? doctor.getImageRes() : R.drawable.banner_1);
 
             Glide.with(context)
                     .load(imageSource)
                     .centerCrop()
-                    .placeholder(R.drawable.ic_user)
-                    .error(R.drawable.ic_user)
+                    .placeholder(R.drawable.banner_1)
+                    .error(R.drawable.banner_1)
                     .into(binding.ivDoctor);
 
             // Favorite state
@@ -200,11 +230,6 @@ public class DoctorListAdapter extends ListAdapter<Doctor, RecyclerView.ViewHold
             binding.btnBookNow.setOnClickListener(v -> {
                 if (listener != null) listener.onBookClick(doctor);
             });
-            if (binding.btnCall != null) {
-                binding.btnCall.setOnClickListener(v -> {
-                    if (listener != null) listener.onCallClick(doctor);
-                });
-            }
         }
     }
 }
