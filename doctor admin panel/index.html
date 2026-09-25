@@ -488,8 +488,94 @@
             box-shadow: var(--shadow-md);
         }
 
-        /* Responsive */
+        /* Dropdown Action Menu Styles */
+        .dropdown-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            margin-top: 4px;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-md);
+            z-index: 1000;
+            min-width: 170px;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .dropdown-wrapper.open .dropdown-menu {
+            display: flex;
+        }
+
+        .dropdown-item {
+            padding: 8px 14px;
+            font-size: 0.825rem;
+            color: var(--text-primary);
+            background: none;
+            border: none;
+            text-align: left;
+            width: 100%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.15s ease;
+        }
+
+        .dropdown-item:hover {
+            background: var(--bg-light);
+            color: var(--primary);
+        }
+
+        .dropdown-item.danger {
+            color: var(--error);
+        }
+
+        .dropdown-item.danger:hover {
+            background: var(--error-light);
+        }
+
+        /* Large Prominent Token Badge */
+        .token-badge-lg {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--primary);
+            background: var(--primary-light);
+            padding: 4px 10px;
+            border-radius: 8px;
+            display: inline-block;
+            letter-spacing: -0.5px;
+        }
+
+        /* Responsive Mobile Queue View */
+        .mobile-queue-container {
+            display: none;
+            flex-direction: column;
+            gap: 0.875rem;
+        }
+
+        .mobile-queue-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1rem;
+            box-shadow: var(--shadow-sm);
+        }
+
         @media (max-width: 768px) {
+            .desktop-queue-table {
+                display: none !important;
+            }
+            .mobile-queue-container {
+                display: flex !important;
+            }
             .sidebar {
                 position: fixed;
                 transform: translateX(-100%);
@@ -771,87 +857,98 @@
     <!-- ========================================== -->
     <!-- TEMPLATES FOR PAGES -->
     <!-- ========================================== -->
-
     <!-- Dashboard Template -->
     <template id="tpl-dashboard">
-        <div class="grid-stats">
-            <div class="stat-card">
-                <div class="stat-title">Today's Appointments</div>
-                <div class="stat-value" id="stat-today">0</div>
+        <!-- TOP QUICK STATISTICS SUMMARY HEADER CARDS -->
+        <div class="grid-stats" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+            <div class="stat-card" style="padding: 1rem 1.25rem; border-left: 4px solid #3b82f6;">
+                <div class="stat-title" style="font-size: 0.8rem; font-weight: 600;">👥 Waiting Queue</div>
+                <div class="stat-value" id="stat-queue-waiting" style="font-size: 1.6rem; color: #1e40af;">0</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">In waiting room</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-title">Pending Approvals</div>
-                <div class="stat-value" id="stat-pending" style="color: var(--warning);">0</div>
+            <div class="stat-card" style="padding: 1rem 1.25rem; border-left: 4px solid #22c55e;">
+                <div class="stat-title" style="font-size: 0.8rem; font-weight: 600;">🟢 Current Patient</div>
+                <div class="stat-value" id="stat-queue-current" style="font-size: 1.6rem; color: #166534;">#--</div>
+                <div style="font-size: 0.7rem; color: #16a34a; margin-top: 2px; font-weight: 600;">Live in consultation</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-title">Total Patients</div>
-                <div class="stat-value" id="stat-patients">0</div>
+            <div class="stat-card" style="padding: 1rem 1.25rem; border-left: 4px solid #6366f1;">
+                <div class="stat-title" style="font-size: 0.8rem; font-weight: 600;">✓ Completed</div>
+                <div class="stat-value" id="stat-queue-completed" style="font-size: 1.6rem; color: #3730a3;">0</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Consultations done</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-title">Consultation Fee</div>
-                <div class="stat-value" id="stat-fee" style="color: var(--secondary);">₹0</div>
-            </div>
-            <div class="stat-card" style="border-left: 4px solid var(--success);">
-                <div class="stat-title">Today's Earnings</div>
-                <div class="stat-value" id="stat-today-earning" style="color: var(--success);">₹0</div>
-                <div style="font-size: 0.725rem; color: var(--text-secondary); margin-top: 4px;">📅 Net earnings today</div>
-            </div>
-            <div class="stat-card" style="border-left: 4px solid var(--primary);">
-                <div class="stat-title">Available Wallet Balance</div>
-                <div class="stat-value" id="stat-total-earning" style="color: var(--primary);">₹0</div>
-                <div style="font-size: 0.725rem; color: var(--success); margin-top: 4px; font-weight: 600;">💳 Current Money (Withdrawable)</div>
+            <div class="stat-card" style="padding: 1rem 1.25rem; border-left: 4px solid #10b981;">
+                <div class="stat-title" style="font-size: 0.8rem; font-weight: 600;">₹ Today's Net Earnings</div>
+                <div class="stat-value" id="stat-today-earning" style="font-size: 1.6rem; color: #047857;">₹0</div>
+                <div style="font-size: 0.7rem; color: #059669; margin-top: 2px; font-weight: 600;">Net credited to wallet</div>
             </div>
         </div>
 
-        <!-- LIVE PATIENT CONSULTATION QUEUE CARD -->
-        <div id="live-consultation-card" class="card" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, #152C69 0%, #1e3a8a 100%); color: #ffffff; display: none; box-shadow: 0 10px 25px -5px rgba(21, 44, 105, 0.3);">
+        <!-- TOP PROMINENT CURRENT CONSULTATION BANNER -->
+        <div id="live-consultation-card" class="card" style="margin-bottom: 1.25rem; background: linear-gradient(135deg, #152C69 0%, #1e3a8a 100%); color: #ffffff; display: none; box-shadow: 0 10px 25px -5px rgba(21, 44, 105, 0.3); border: none; padding: 1.25rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
                 <div style="display: flex; align-items: center; gap: 1rem;">
-                    <div style="width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 1.75rem;">
-                        🟢
+                    <div style="width: 56px; height: 52px; border-radius: 12px; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 900; color: #ffffff;" id="live-token-badge">
+                        #01
                     </div>
                     <div>
-                        <div style="font-size: 0.725rem; text-transform: uppercase; letter-spacing: 1px; color: #60a5fa; font-weight: 700;">🟢 LIVE CONSULTATION IN PROGRESS</div>
-                        <h3 id="live-patient-name" style="font-size: 1.25rem; font-weight: 800; color: #ffffff; margin-top: 2px;">Patient Name</h3>
-                        <p id="live-patient-sub" style="font-size: 0.85rem; color: #dbeafe; margin-top: 2px;">Token #01 &bull; 09:00 AM - 09:15 AM &bull; Clinic Consult</p>
+                        <div style="font-size: 0.725rem; text-transform: uppercase; letter-spacing: 1px; color: #86efac; font-weight: 800;">🟢 NOW IN CONSULTATION</div>
+                        <h3 id="live-patient-name" style="font-size: 1.35rem; font-weight: 800; color: #ffffff; margin-top: 2px;">Patient Name</h3>
+                        <p id="live-patient-sub" style="font-size: 0.85rem; color: #dbeafe; margin-top: 2px;">9:00 AM &bull; New Patient &bull; Fee ₹123</p>
                     </div>
                 </div>
 
                 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
-                    <button class="btn btn-success btn-sm" id="btn-complete-live" style="background: #22c55e; border-color: #22c55e; font-size: 0.875rem; padding: 8px 16px; font-weight: 700; color: #ffffff;" onclick="window.completeLiveAndNext()">✅ Complete &amp; Call Next Patient →</button>
+                    <button class="btn btn-outline btn-sm" style="color: #ffffff; border-color: rgba(255,255,255,0.5); font-weight: 600;" onclick="window.openConsultationModeForActiveLive()">📋 Open Consultation Mode</button>
+                    <button class="btn btn-success btn-sm" id="btn-complete-live" style="background: #22c55e; border-color: #22c55e; font-size: 0.875rem; padding: 8px 16px; font-weight: 700; color: #ffffff;" onclick="window.completeLiveAndNext()">Complete Consultation ✓</button>
                 </div>
+            </div>
+
+            <!-- NEXT PATIENT PREVIEW BAR -->
+            <div id="next-patient-bar" style="margin-top: 1rem; padding-top: 0.875rem; border-top: 1px solid rgba(255,255,255,0.15); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; font-size: 0.85rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; color: #e0e7ff;">
+                    <strong style="color: #fde047; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px;">NEXT PATIENT:</strong>
+                    <span id="next-patient-info" style="font-weight: 600;">Token #02 &bull; Rahul &bull; 9:20 AM &bull; Waiting 5 min</span>
+                </div>
+                <button class="btn btn-sm" style="background: rgba(255,255,255,0.2); color: #ffffff; border: 1px solid rgba(255,255,255,0.4); font-size: 0.775rem; font-weight: 700; padding: 4px 12px;" onclick="window.callNextPatientDirectly()">Call Next →</button>
             </div>
         </div>
 
         <div class="card">
             <div class="card-header" style="flex-wrap: wrap; gap: 0.75rem;">
                 <div>
-                    <h3 style="font-size: 1.125rem;">Today's Patient Schedule</h3>
-                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">Manage live queue and appointment statuses</p>
+                    <h3 style="font-size: 1.125rem; font-weight: 800; color: var(--primary);">Today's Patient Schedule</h3>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">Sequential time &amp; token queue order for today</p>
                 </div>
                 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
-                    <button class="btn btn-success btn-sm" onclick="window.bulkConfirmTodayAppointments()">⚡ Confirm All Today</button>
-                    <button class="btn btn-outline btn-sm" style="color: var(--error); border-color: var(--error);" onclick="window.bulkCancelTodayAppointments()">🚫 Cancel All Today</button>
-                    <a href="#appointments" class="btn btn-outline btn-sm">View All Appointments →</a>
+                    <button class="btn btn-outline btn-sm" onclick="window.openAddAppointmentModal()">+ Add Appointment</button>
+                    <a href="#appointments" class="btn btn-primary btn-sm">View All Dates Queue →</a>
                 </div>
             </div>
-            <div class="table-container">
+
+            <!-- Desktop Queue Table -->
+            <div class="table-container desktop-queue-table">
                 <table>
                     <thead>
                         <tr>
+                            <th>Token #</th>
                             <th>Time</th>
                             <th>Patient Name</th>
                             <th>Type</th>
-                            <th>Token #</th>
+                            <th>Clinic / Branch</th>
                             <th>Earning</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="today-schedule-body">
-                        <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading today's schedule...</td></tr>
+                        <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading today's schedule...</td></tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Mobile/Tablet Queue Cards -->
+            <div class="mobile-queue-container" id="today-mobile-queue">
+                <!-- Populated dynamically for mobile screens -->
             </div>
         </div>
     </template>
@@ -864,11 +961,11 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
                     <div>
                         <h3 style="font-size: 1.125rem; font-weight: 700;">📅 Appointment Dates Calendar</h3>
-                        <p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 2px;">Select any date below to view patient appointments for that day.</p>
+                        <p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 2px;">Select any date below to view patient queue for that day.</p>
                     </div>
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
                         <input type="date" id="date-folder-picker" class="form-control" style="width: auto;" onchange="window.openDateFolder(this.value)">
-                        <button class="btn btn-primary btn-sm" onclick="window.openAllDatesFolder()">Show All Appointments</button>
+                        <button class="btn btn-primary btn-sm" onclick="window.openAllDatesFolder()">Show All Queue</button>
                     </div>
                 </div>
             </div>
@@ -892,34 +989,35 @@
                     </div>
 
                     <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                        <div style="position: relative; width: 200px;">
-                            <input type="text" id="appt-search" class="form-control" style="height: 38px; font-size: 0.85rem;" placeholder="🔍 Search patient / token..." onkeyup="window.searchAppointments(this.value)">
+                        <div style="position: relative; width: 220px;">
+                            <input type="text" id="appt-search" class="form-control" style="height: 38px; font-size: 0.85rem;" placeholder="🔍 Search patient, token or phone..." onkeyup="window.searchAppointments(this.value)">
                         </div>
-                        <button class="btn btn-success btn-sm" style="height: 38px; font-weight: 600;" onclick="window.bulkConfirmSelectedDateAppointments()">⚡ Confirm All Queue</button>
-                        <button class="btn btn-outline btn-sm" style="height: 38px; color: var(--error); border-color: var(--error); font-weight: 600;" onclick="window.bulkCancelSelectedDateAppointments()">🚫 Cancel All Queue</button>
+                        <button class="btn btn-outline btn-sm" style="height: 38px; font-weight: 600;" onclick="window.openAddAppointmentModal()">+ Add Appointment</button>
+                        <button class="btn btn-outline btn-sm" style="height: 38px; font-weight: 600;" onclick="window.toggleBulkMenu(event)">⋮ Bulk Actions</button>
                     </div>
                 </div>
 
                 <!-- Clean Queue Status Pills -->
                 <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.875rem; flex-wrap: wrap;">
-                    <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-right: 0.25rem;">Filter Queue:</span>
+                    <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-right: 0.25rem;">Queue Filter:</span>
+                    <button class="btn btn-outline btn-sm" id="tab-waiting" style="border-radius: 20px; padding: 4px 14px; font-size: 0.8rem;" onclick="window.setApptFilter('waiting', this)">Waiting (<span id="cnt-waiting">0</span>)</button>
+                    <button class="btn btn-outline btn-sm" id="tab-consultation" style="border-radius: 20px; padding: 4px 14px; font-size: 0.8rem;" onclick="window.setApptFilter('consultation', this)">🟢 In Consultation (<span id="cnt-consultation">0</span>)</button>
+                    <button class="btn btn-outline btn-sm" id="tab-completed" style="border-radius: 20px; padding: 4px 14px; font-size: 0.8rem;" onclick="window.setApptFilter('completed', this)">Completed (<span id="cnt-completed">0</span>)</button>
+                    <button class="btn btn-outline btn-sm" id="tab-cancelled" style="border-radius: 20px; padding: 4px 14px; font-size: 0.8rem;" onclick="window.setApptFilter('cancelled', this)">Cancelled (<span id="cnt-cancelled">0</span>)</button>
                     <button class="btn btn-primary btn-sm" id="tab-all" style="border-radius: 20px; padding: 4px 14px; font-size: 0.8rem;" onclick="window.setApptFilter('all', this)">All Queue</button>
-                    <button class="btn btn-outline btn-sm" id="tab-confirmed" style="border-radius: 20px; padding: 4px 14px; font-size: 0.8rem;" onclick="window.setApptFilter('confirmed', this)">Confirmed</button>
-                    <button class="btn btn-outline btn-sm" id="tab-consultation" style="border-radius: 20px; padding: 4px 14px; font-size: 0.8rem;" onclick="window.setApptFilter('consultation', this)">🟢 In Consultation</button>
-                    <button class="btn btn-outline btn-sm" id="tab-completed" style="border-radius: 20px; padding: 4px 14px; font-size: 0.8rem;" onclick="window.setApptFilter('completed', this)">Completed</button>
-                    <button class="btn btn-outline btn-sm" id="tab-cancelled" style="border-radius: 20px; padding: 4px 14px; font-size: 0.8rem;" onclick="window.setApptFilter('cancelled', this)">Cancelled</button>
                 </div>
             </div>
 
-            <div class="card">
+            <!-- Desktop Table View -->
+            <div class="card desktop-queue-table">
                 <div class="table-container">
                     <table>
                         <thead>
                             <tr>
+                                <th>Token #</th>
                                 <th>Time &amp; Date</th>
                                 <th>Patient Name</th>
                                 <th>Clinic / Branch</th>
-                                <th>Token #</th>
                                 <th>Earning</th>
                                 <th>Status</th>
                                 <th>Actions</th>
@@ -931,7 +1029,13 @@
                     </table>
                 </div>
             </div>
+
+            <!-- Mobile/Tablet Queue Cards View -->
+            <div class="mobile-queue-container" id="date-mobile-queue">
+                <!-- Dynamic cards for mobile -->
+            </div>
         </div>
+    </template>
     </template>
 
     <!-- Patients Template -->
@@ -1774,7 +1878,7 @@
         }
 
         // ----------------------------------------------------
-        // UTILS
+        // UTILS & QUEUE HELPERS
         // ----------------------------------------------------
         function formatTime(timeStr) {
             if (!timeStr) return '';
@@ -1789,6 +1893,221 @@
                 return timeStr;
             }
         }
+
+        function calcWaitingTime(startTimeStr, dateStr) {
+            if (!startTimeStr) return '0 min';
+            try {
+                const now = new Date();
+                const todayStr = now.toISOString().split('T')[0];
+                if (dateStr && dateStr !== todayStr) return 'Scheduled';
+
+                const [h, m] = startTimeStr.split(':').map(Number);
+                const slotTime = new Date();
+                slotTime.setHours(h, m, 0, 0);
+
+                const diffMins = Math.floor((now - slotTime) / (1000 * 60));
+                if (diffMins <= 0) return '0 min';
+                return `${diffMins} min`;
+            } catch(e) {
+                return '5 min';
+            }
+        }
+
+        window.toggleRowDropdown = (evt, apptId) => {
+            if (evt) evt.stopPropagation();
+            const wrapper = document.getElementById(`drop-${apptId}`);
+            if (!wrapper) return;
+
+            const isOpen = wrapper.classList.contains('open');
+            document.querySelectorAll('.dropdown-wrapper').forEach(w => w.classList.remove('open'));
+            if (!isOpen) wrapper.classList.add('open');
+        };
+
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.dropdown-wrapper').forEach(w => w.classList.remove('open'));
+        });
+
+        window.callNextPatientDirectly = async () => {
+            if (!window.nextQueueApptId) return;
+            await window.updateApptStatus(window.nextQueueApptId, 'In Consultation');
+        };
+
+        window.openConsultationModeForActiveLive = () => {
+            if (window.activeLiveAppt) {
+                window.openConsultationMode(window.activeLiveAppt.id);
+            }
+        };
+
+        window.openConsultationMode = (apptId) => {
+            const appt = (window.todayApptsList || []).find(a => a.id === apptId) || (cachedAppointments || []).find(a => a.id === apptId);
+            if (!appt) return;
+
+            const pName = (appt.patient && appt.patient.full_name) ? appt.patient.full_name : 'Patient Name';
+            const tokenStr = `#${String(appt.token_number || 1).padStart(2, '0')}`;
+            const timeStr = formatTime(appt.start_time);
+            const feeVal = appt.fee || window.doctorContext.fee || 500;
+            const apptType = (appt.appointment_type === 'followup' || appt.is_followup) ? 'Follow-up Patient' : 'New Patient';
+
+            const modalContainer = document.getElementById('modal-container');
+            modalContainer.innerHTML = `
+                <div class="modal-overlay">
+                    <div class="modal-content" style="max-width: 680px; padding: 0; overflow: hidden; border-radius: 16px;">
+                        <div style="background: linear-gradient(135deg, #152C69 0%, #1e3a8a 100%); color: #fff; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <button class="btn btn-outline btn-sm" style="color: #fff; border-color: rgba(255,255,255,0.4);" onclick="document.getElementById('modal-container').innerHTML=''">← Queue</button>
+                                <div>
+                                    <h3 style="font-size: 1.2rem; font-weight: 800; color: #fff; margin: 0;">📋 Consultation Mode</h3>
+                                    <span style="font-size: 0.775rem; color: #86efac; font-weight: 700;">LIVE CONSULTATION SESSION</span>
+                                </div>
+                            </div>
+                            <span class="token-badge-lg" style="background: rgba(255,255,255,0.2); color: #fff; font-size: 1.25rem;">Token ${tokenStr}</span>
+                        </div>
+
+                        <div style="padding: 1.5rem; max-height: 75vh; overflow-y: auto;">
+                            <!-- Patient Info Card -->
+                            <div style="background: #f8fafc; padding: 1rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 1.25rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <div>
+                                        <h4 style="font-size: 1.15rem; font-weight: 800; color: var(--primary);">${pName}</h4>
+                                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">${apptType} &bull; Scheduled Time: <strong>${timeStr}</strong></p>
+                                    </div>
+                                    <span class="badge badge-success" style="font-size: 0.85rem; padding: 6px 12px;">Fee: ₹${feeVal}</span>
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 0.75rem; font-size: 0.8rem; border-top: 1px solid var(--border); padding-top: 0.5rem;">
+                                    <div><strong>Phone:</strong> ${appt.patient?.phone || 'N/A'}</div>
+                                    <div><strong>Gender:</strong> ${appt.patient?.gender || 'Patient'}</div>
+                                    <div><strong>Age:</strong> ${appt.patient?.age || '25'} Yrs</div>
+                                </div>
+                            </div>
+
+                            <!-- Clinical Symptoms & Notes -->
+                            <div class="form-group" style="margin-bottom: 1.25rem;">
+                                <label class="form-label" style="font-weight: 700; color: var(--text-primary);">Symptoms / Clinical Notes</label>
+                                <textarea id="consult-symptoms-input" class="form-control" rows="3" placeholder="Enter patient symptoms, diagnosis or clinical findings...">${appt.notes || appt.patient_reason || ''}</textarea>
+                            </div>
+
+                            <!-- Prescription Input -->
+                            <div class="form-group">
+                                <label class="form-label" style="font-weight: 700; color: var(--text-primary);">Prescription &amp; Medicines</label>
+                                <textarea id="consult-prescription-input" class="form-control" rows="3" placeholder="e.g. Paracetamol 500mg (1-0-1, 3 days), Rest and drink water">${appt.prescription || ''}</textarea>
+                            </div>
+                        </div>
+
+                        <div style="padding: 1rem 1.5rem; background: #f8fafc; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+                            <button class="btn btn-outline" onclick="window.saveConsultationNotesOnly('${appt.id}')">💾 Save Notes</button>
+                            <button class="btn btn-success" style="padding: 10px 20px; font-weight: 800; font-size: 0.95rem;" onclick="window.completeConsultationFromModal('${appt.id}')">Complete Consultation ✓</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        window.saveConsultationNotesOnly = async (apptId) => {
+            const symptoms = document.getElementById('consult-symptoms-input')?.value.trim();
+            const prescription = document.getElementById('consult-prescription-input')?.value.trim();
+
+            try {
+                await supabase.from('appointments').update({
+                    notes: symptoms,
+                    prescription: prescription
+                }).eq('id', apptId);
+
+                if (window.showToast) window.showToast("💾 Clinical notes & prescription saved!", "success", 2500);
+            } catch (err) {
+                alert("Failed to save notes: " + err.message);
+            }
+        };
+
+        window.completeConsultationFromModal = async (apptId) => {
+            await window.saveConsultationNotesOnly(apptId);
+            await window.updateApptStatus(apptId, 'Completed');
+            document.getElementById('modal-container').innerHTML = '';
+            if (window.showToast) window.showToast("✅ Consultation Completed!", "success", 3000);
+        };
+
+        window.openAddAppointmentModal = () => {
+            const today = new Date().toISOString().split('T')[0];
+            const modalContainer = document.getElementById('modal-container');
+            modalContainer.innerHTML = `
+                <div class="modal-overlay">
+                    <div class="modal-content" style="max-width: 520px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                            <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--primary);">+ Add Direct Appointment</h3>
+                            <button class="btn btn-outline btn-sm" onclick="document.getElementById('modal-container').innerHTML=''">✕</button>
+                        </div>
+                        <form id="add-direct-appt-form">
+                            <div class="form-group">
+                                <label class="form-label">Patient Full Name *</label>
+                                <input type="text" id="add-patient-name" class="form-control" required placeholder="e.g. Rahul Sharma">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Phone Number *</label>
+                                <input type="text" id="add-patient-phone" class="form-control" required placeholder="e.g. +91 9876543210">
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Appointment Date *</label>
+                                    <input type="date" id="add-appt-date" class="form-control" value="${selectedApptDate || today}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Slot Start Time *</label>
+                                    <input type="time" id="add-appt-time" class="form-control" value="09:00" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Consultation Fee (₹)</label>
+                                <input type="number" id="add-appt-fee" class="form-control" value="${window.doctorContext?.fee || 500}">
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">Save &amp; Add to Queue →</button>
+                        </form>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('add-direct-appt-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const pName = document.getElementById('add-patient-name').value.trim();
+                const pPhone = document.getElementById('add-patient-phone').value.trim();
+                const apptDate = document.getElementById('add-appt-date').value;
+                const apptTime = document.getElementById('add-appt-time').value;
+                const feeVal = parseInt(document.getElementById('add-appt-fee').value) || 500;
+
+                try {
+                    let patientId = crypto.randomUUID();
+                    await supabase.from('profiles').insert([{
+                        id: patientId,
+                        full_name: pName,
+                        phone: pPhone,
+                        role: 'patient'
+                    }]);
+
+                    let nextToken = 1;
+                    const existingAppts = (cachedAppointments || []).filter(a => a.appointment_date === apptDate);
+                    if (existingAppts.length > 0) {
+                        nextToken = Math.max(...existingAppts.map(a => a.token_number || 1)) + 1;
+                    }
+
+                    await supabase.from('appointments').insert([{
+                        doctor_id: window.doctorContext.id,
+                        patient_id: patientId,
+                        doctor_name: window.doctorContext.name,
+                        appointment_date: apptDate,
+                        start_time: apptTime + ":00",
+                        token_number: nextToken,
+                        fee: feeVal,
+                        status: 'Confirmed'
+                    }]);
+
+                    if (window.showToast) window.showToast(`✅ Added ${pName} to Queue (Token #${nextToken})!`, "success", 3000);
+                    modalContainer.innerHTML = '';
+                    await loadAppointmentsData();
+                    if (window.location.hash.includes('dashboard')) initDashboard();
+
+                } catch (err) {
+                    alert("Failed to add appointment: " + err.message);
+                }
+            });
+        };
 
         // ----------------------------------------------------
         // DASHBOARD MODULE
@@ -1938,11 +2257,27 @@
                     return (a.token_number || 1) - (b.token_number || 1);
                 });
 
+                // Calculate Queue Stats for Header Cards
+                let waitingCount = 0;
+                let completedCount = 0;
+                todayAppts.forEach(a => {
+                    const st = (a.status || '').toLowerCase().trim();
+                    if (st.includes('completed') || st.includes('complete')) completedCount++;
+                    else if (!st.includes('cancel') && !st.includes('reject')) waitingCount++;
+                });
+
+                if (document.getElementById('stat-queue-waiting')) document.getElementById('stat-queue-waiting').textContent = waitingCount;
+                if (document.getElementById('stat-queue-completed')) document.getElementById('stat-queue-completed').textContent = completedCount;
+
                 // Detect Active Live Consultation Patient
                 window.activeLiveAppt = todayAppts.find(a => {
                     const st = (a.status || '').toLowerCase().trim();
                     return st.includes('consultation') || st.includes('in_consultation');
                 });
+
+                if (document.getElementById('stat-queue-current')) {
+                    document.getElementById('stat-queue-current').textContent = window.activeLiveAppt ? `#${String(window.activeLiveAppt.token_number || 1).padStart(2, '0')}` : '#--';
+                }
 
                 window.todayApptsList = todayAppts;
 
@@ -1953,59 +2288,133 @@
                         const livePName = (window.activeLiveAppt.patient && window.activeLiveAppt.patient.full_name) ? window.activeLiveAppt.patient.full_name : ('Patient #' + (window.activeLiveAppt.id ? window.activeLiveAppt.id.substring(0, 5) : '01'));
                         const tokenStr = `#${String(window.activeLiveAppt.token_number || 1).padStart(2, '0')}`;
                         const timeStr = formatTime(window.activeLiveAppt.start_time);
-                        const typeStr = window.activeLiveAppt.appointment_type || 'Clinic Consult';
+                        const apptType = (window.activeLiveAppt.appointment_type === 'followup' || window.activeLiveAppt.is_followup) ? 'Follow-up Patient' : 'New Patient';
+                        const feeVal = window.activeLiveAppt.fee || window.doctorContext.fee || 500;
 
-                        document.getElementById('live-patient-name').textContent = livePName;
-                        document.getElementById('live-patient-sub').textContent = `Token ${tokenStr} • Slot ${timeStr} • ${typeStr}`;
+                        if (document.getElementById('live-token-badge')) document.getElementById('live-token-badge').textContent = tokenStr;
+                        if (document.getElementById('live-patient-name')) document.getElementById('live-patient-name').textContent = livePName;
+                        if (document.getElementById('live-patient-sub')) document.getElementById('live-patient-sub').textContent = `${timeStr} &bull; ${apptType} &bull; Fee ₹${feeVal}`;
                     } else {
                         liveCard.style.display = 'none';
                     }
                 }
 
+                // Next Patient Preview Bar Calculation
+                const nextPatient = todayAppts.find(a => {
+                    if (window.activeLiveAppt && a.id === window.activeLiveAppt.id) return false;
+                    const st = (a.status || '').toLowerCase().trim();
+                    return st.includes('confirm') || st.includes('pending') || st.includes('waiting');
+                });
+
+                const nextBar = document.getElementById('next-patient-bar');
+                const nextInfo = document.getElementById('next-patient-info');
+                if (nextBar && nextInfo) {
+                    if (nextPatient) {
+                        nextBar.style.display = 'flex';
+                        const nextPName = (nextPatient.patient && nextPatient.patient.full_name) ? nextPatient.patient.full_name : ('Patient #' + (nextPatient.id ? nextPatient.id.substring(0, 5) : '01'));
+                        const waitTimeStr = calcWaitingTime(nextPatient.start_time, today);
+                        nextInfo.textContent = `Token #${String(nextPatient.token_number || 1).padStart(2, '0')} • ${nextPName} • ${formatTime(nextPatient.start_time)} • Waiting ${waitTimeStr}`;
+                        window.nextQueueApptId = nextPatient.id;
+                    } else {
+                        nextBar.style.display = 'none';
+                    }
+                }
+
                 const tbody = document.getElementById('today-schedule-body');
+                const mobileContainer = document.getElementById('today-mobile-queue');
+
                 if (!todayAppts || todayAppts.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No patient appointments scheduled for today.</td></tr>`;
+                    if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">No patient appointments scheduled for today.</td></tr>`;
+                    if (mobileContainer) mobileContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem;">No appointments scheduled for today.</div>`;
                     return;
                 }
 
                 let html = '';
+                let mobileHtml = '';
+
                 todayAppts.forEach(appt => {
                     const pName = (appt.patient && appt.patient.full_name) ? appt.patient.full_name : ('Patient #' + (appt.id ? appt.id.substring(0, 5) : '01'));
                     const apptFee = appt.fee || window.doctorContext.fee || 500;
+                    const tokenStr = `#${String(appt.token_number || 1).padStart(2, '0')}`;
+                    const waitTime = calcWaitingTime(appt.start_time, today);
 
-                    let actions = `<div style="display: flex; gap: 0.25rem; align-items: center; flex-wrap: wrap;">`;
-                    const st = (appt.status || 'Confirmed').toLowerCase();
-                    if (st.includes('pending')) {
-                        actions += `<button class="btn btn-primary btn-sm" onclick="window.updateApptStatus('${appt.id}', 'Confirmed')">Confirm</button>`;
-                    } else if (st.includes('confirm')) {
-                        actions += `<button class="btn btn-outline btn-sm" onclick="window.updateApptStatus('${appt.id}', 'In Consultation')">▶️ Start Consult</button>`;
-                    } else if (st.includes('consultation')) {
-                        actions += `<button class="btn btn-success btn-sm" onclick="window.updateApptStatus('${appt.id}', 'Completed')">✅ Complete</button>`;
+                    const st = (appt.status || 'Confirmed').toLowerCase().trim();
+
+                    // Clean Dropdown Menu Actions
+                    let mainActionBtn = '';
+                    if (st.includes('consultation')) {
+                        mainActionBtn = `<button class="btn btn-success btn-sm" style="font-weight:700;" onclick="window.completeLiveAndNext()">Complete ✓</button>`;
+                    } else if (st.includes('confirm') || st.includes('pending')) {
+                        mainActionBtn = `<button class="btn btn-primary btn-sm" style="font-weight:600;" onclick="window.updateApptStatus('${appt.id}', 'In Consultation')">Start</button>`;
+                    } else {
+                        mainActionBtn = `<button class="btn btn-outline btn-sm" style="font-weight:600;" onclick="window.openConsultationMode('${appt.id}')">View</button>`;
                     }
-                    if (!st.includes('cancel')) {
-                        actions += `<button class="btn btn-outline btn-sm" style="color: var(--warning); border-color: var(--warning);" title="Cancel Appointment" onclick="window.updateApptStatus('${appt.id}', 'Cancelled')">🚫 Cancel</button>`;
-                    }
-                    actions += `<button class="btn btn-outline btn-sm" style="color: var(--error); border-color: var(--error);" title="Delete Appointment" onclick="window.deleteAppointment('${appt.id}')">🗑️ Delete</button></div>`;
+
+                    let dropdownMenuHtml = `
+                        <div class="dropdown-wrapper" id="drop-${appt.id}">
+                            <button class="btn btn-outline btn-sm" onclick="window.toggleRowDropdown(event, '${appt.id}')">⋮ More</button>
+                            <div class="dropdown-menu">
+                                <button class="dropdown-item" onclick="window.openConsultationMode('${appt.id}')">📋 Open Consultation Mode</button>
+                                ${!st.includes('consultation') ? `<button class="dropdown-item" onclick="window.updateApptStatus('${appt.id}', 'In Consultation')">▶️ Start Consultation</button>` : ''}
+                                ${!st.includes('completed') ? `<button class="dropdown-item" onclick="window.updateApptStatus('${appt.id}', 'Completed')">✅ Complete</button>` : ''}
+                                ${!st.includes('cancel') ? `<button class="dropdown-item danger" onclick="window.updateApptStatus('${appt.id}', 'Cancelled')">🚫 Cancel</button>` : ''}
+                                <button class="dropdown-item danger" onclick="window.deleteAppointment('${appt.id}')">🗑️ Delete</button>
+                            </div>
+                        </div>
+                    `;
 
                     let badgeClass = 'badge-info';
-                    if (st.includes('consultation')) badgeClass = 'badge-verified';
-                    else if (st.includes('confirm')) badgeClass = 'badge-success';
-                    else if (st.includes('pending')) badgeClass = 'badge-warning';
-                    else if (st.includes('cancel')) badgeClass = 'badge-error';
+                    let statusLabel = appt.status || 'Confirmed';
+                    if (st.includes('consultation')) { badgeClass = 'badge-verified'; statusLabel = '🟢 In Consultation'; }
+                    else if (st.includes('confirm')) { badgeClass = 'badge-success'; statusLabel = 'Waiting'; }
+                    else if (st.includes('pending')) { badgeClass = 'badge-warning'; statusLabel = 'Pending'; }
+                    else if (st.includes('cancel')) { badgeClass = 'badge-error'; statusLabel = 'Cancelled'; }
 
                     html += `
                         <tr style="${st.includes('consultation') ? 'background: #f0fdf4; border-left: 4px solid #22c55e;' : ''}">
-                            <td style="font-weight: 600;">${formatTime(appt.start_time)}</td>
-                            <td style="font-weight: 500;">${pName} ${st.includes('consultation') ? '🟢 <small style="color:#166534; font-weight:700;">(Live)</small>' : ''}</td>
+                            <td><span class="token-badge-lg">${tokenStr}</span></td>
+                            <td>
+                                <div style="font-weight: 700; color: var(--primary);">${formatTime(appt.start_time)}</div>
+                                <div style="font-size: 0.725rem; color: var(--text-secondary);">⏱ Waiting ${waitTime}</div>
+                            </td>
+                            <td style="font-weight: 600;">${pName} ${st.includes('consultation') ? '🟢 <small style="color:#166534; font-weight:700;">(Live)</small>' : ''}</td>
                             <td style="text-transform: capitalize;">${appt.appointment_type || 'Clinic'}</td>
-                            <td style="font-weight: 700; color: var(--primary);">#${String(appt.token_number || 1).padStart(2, '0')}</td>
+                            <td>${appt.clinic_name || window.doctorContext.clinic_name || 'Main Clinic'}</td>
                             <td style="font-weight: 700; color: var(--success);">₹${apptFee}</td>
-                            <td><span class="badge ${badgeClass}">${appt.status || 'Confirmed'}</span></td>
-                            <td>${actions}</td>
+                            <td><span class="badge ${badgeClass}">${statusLabel}</span></td>
+                            <td>
+                                <div style="display: flex; gap: 0.35rem; align-items: center;">
+                                    ${mainActionBtn}
+                                    ${dropdownMenuHtml}
+                                </div>
+                            </td>
                         </tr>
                     `;
+
+                    // Mobile Card HTML
+                    mobileHtml += `
+                        <div class="mobile-queue-card" style="${st.includes('consultation') ? 'border-left: 5px solid #22c55e; background: #f0fdf4;' : ''}">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                                <div>
+                                    <span class="token-badge-lg">${tokenStr}</span>
+                                    <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--primary); margin-top: 4px;">${pName}</h4>
+                                </div>
+                                <span class="badge ${badgeClass}">${statusLabel}</span>
+                            </div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.75rem; display: flex; justify-content: space-between;">
+                                <span>🕒 ${formatTime(appt.start_time)} (⏱ ${waitTime})</span>
+                                <span style="font-weight: 700; color: var(--success);">Fee: ₹${apptFee}</span>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem; justify-content: flex-end; align-items: center;">
+                                ${mainActionBtn}
+                                ${dropdownMenuHtml}
+                            </div>
+                        </div>
+                    `;
                 });
-                tbody.innerHTML = html;
+
+                if (tbody) tbody.innerHTML = html;
+                if (mobileContainer) mobileContainer.innerHTML = mobileHtml;
 
             } catch (err) {
                 console.error("Dashboard error:", err);
@@ -2164,15 +2573,28 @@
 
         function renderAppointmentsTable(searchQuery = '') {
             const tbody = document.getElementById('appointments-body');
-            if (!tbody) return;
+            const mobileContainer = document.getElementById('date-mobile-queue');
+
+            // Calculate Counts for Date Queue Filter Pills
+            const dateAppts = cachedAppointments.filter(a => !selectedApptDate || a.appointment_date === selectedApptDate);
+            let wCnt = 0, cCnt = 0, compCnt = 0, cancCnt = 0;
+            dateAppts.forEach(a => {
+                const st = (a.status || '').toLowerCase().trim();
+                if (st.includes('consultation')) cCnt++;
+                else if (st.includes('completed') || st.includes('complete')) compCnt++;
+                else if (st.includes('cancel') || st.includes('reject')) cancCnt++;
+                else wCnt++;
+            });
+
+            if (document.getElementById('cnt-waiting')) document.getElementById('cnt-waiting').textContent = wCnt;
+            if (document.getElementById('cnt-consultation')) document.getElementById('cnt-consultation').textContent = cCnt;
+            if (document.getElementById('cnt-completed')) document.getElementById('cnt-completed').textContent = compCnt;
+            if (document.getElementById('cnt-cancelled')) document.getElementById('cnt-cancelled').textContent = cancCnt;
 
             // 1. Filter appointments for selected date and status pill
-            let filtered = cachedAppointments.filter(appt => {
-                if (selectedApptDate && appt.appointment_date !== selectedApptDate) {
-                    return false;
-                }
-
+            let filtered = dateAppts.filter(appt => {
                 const st = (appt.status || 'confirmed').toLowerCase().trim();
+                if (currentApptFilter === 'waiting') return !st.includes('consultation') && !st.includes('completed') && !st.includes('cancel') && !st.includes('reject');
                 if (currentApptFilter === 'confirmed') return st.includes('confirm') && !st.includes('consultation');
                 if (currentApptFilter === 'consultation') return st.includes('consultation');
                 if (currentApptFilter === 'completed') return st.includes('completed') || st.includes('complete');
@@ -2180,17 +2602,20 @@
                 return true;
             });
 
-            // 2. Search filter
+            // 2. Smart Search (Patient Name, Token Number #01, Phone)
             if (searchQuery.trim() !== '') {
-                const q = searchQuery.toLowerCase().trim();
+                const q = searchQuery.toLowerCase().trim().replace('#', '');
                 filtered = filtered.filter(a => {
                     const pName = (a.patient && a.patient.full_name) ? a.patient.full_name.toLowerCase() : '';
-                    return pName.includes(q) || String(a.token_number).includes(q) || (a.start_time || '').includes(q);
+                    const phone = (a.patient && a.patient.phone) ? a.patient.phone.toLowerCase() : '';
+                    const tokenStr = String(a.token_number || 1);
+                    return pName.includes(q) || tokenStr.includes(q) || phone.includes(q) || (a.start_time || '').includes(q);
                 });
             }
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">No patient appointments found for selected queue filter.</td></tr>`;
+                if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">No patient appointments found for selected queue filter.</td></tr>`;
+                if (mobileContainer) mobileContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem;">No appointments found in queue.</div>`;
                 return;
             }
 
@@ -2203,46 +2628,87 @@
             });
 
             let html = '';
+            let mobileHtml = '';
+
             filtered.forEach(appt => {
                 const pName = (appt.patient && appt.patient.full_name) ? appt.patient.full_name : ('Patient #' + (appt.id ? appt.id.substring(0, 5) : '01'));
                 const st = (appt.status || 'Confirmed').toLowerCase().trim();
                 const apptFee = appt.fee || window.doctorContext.fee || 500;
+                const tokenStr = `#${String(appt.token_number || 1).padStart(2, '0')}`;
+                const waitTime = calcWaitingTime(appt.start_time, appt.appointment_date);
 
-                let actions = `<div style="display: flex; gap: 0.25rem; align-items: center; flex-wrap: wrap;">`;
-                if (st.includes('pending')) {
-                    actions += `<button class="btn btn-primary btn-sm" onclick="window.updateApptStatus('${appt.id}', 'Confirmed')">Confirm</button>`;
-                } else if (st.includes('confirm')) {
-                    actions += `<button class="btn btn-outline btn-sm" onclick="window.updateApptStatus('${appt.id}', 'In Consultation')">▶️ Start Consult</button>`;
-                } else if (st.includes('consultation')) {
-                    actions += `<button class="btn btn-success btn-sm" onclick="window.updateApptStatus('${appt.id}', 'Completed')">✅ Complete</button>`;
+                let mainActionBtn = '';
+                if (st.includes('consultation')) {
+                    mainActionBtn = `<button class="btn btn-success btn-sm" style="font-weight:700;" onclick="window.completeLiveAndNext()">Complete ✓</button>`;
+                } else if (st.includes('confirm') || st.includes('pending')) {
+                    mainActionBtn = `<button class="btn btn-primary btn-sm" style="font-weight:600;" onclick="window.updateApptStatus('${appt.id}', 'In Consultation')">Start</button>`;
+                } else {
+                    mainActionBtn = `<button class="btn btn-outline btn-sm" style="font-weight:600;" onclick="window.openConsultationMode('${appt.id}')">View</button>`;
                 }
-                if (!st.includes('cancel')) {
-                    actions += `<button class="btn btn-outline btn-sm" style="color: var(--warning); border-color: var(--warning);" title="Cancel Appointment" onclick="window.updateApptStatus('${appt.id}', 'Cancelled')">🚫 Cancel</button>`;
-                }
-                actions += `<button class="btn btn-outline btn-sm" style="color: var(--error); border-color: var(--error);" title="Delete Appointment" onclick="window.deleteAppointment('${appt.id}')">🗑️ Delete</button></div>`;
+
+                let dropdownMenuHtml = `
+                    <div class="dropdown-wrapper" id="drop-${appt.id}">
+                        <button class="btn btn-outline btn-sm" onclick="window.toggleRowDropdown(event, '${appt.id}')">⋮ More</button>
+                        <div class="dropdown-menu">
+                            <button class="dropdown-item" onclick="window.openConsultationMode('${appt.id}')">📋 Open Consultation Mode</button>
+                            ${!st.includes('consultation') ? `<button class="dropdown-item" onclick="window.updateApptStatus('${appt.id}', 'In Consultation')">▶️ Start Consultation</button>` : ''}
+                            ${!st.includes('completed') ? `<button class="dropdown-item" onclick="window.updateApptStatus('${appt.id}', 'Completed')">✅ Complete</button>` : ''}
+                            ${!st.includes('cancel') ? `<button class="dropdown-item danger" onclick="window.updateApptStatus('${appt.id}', 'Cancelled')">🚫 Cancel</button>` : ''}
+                            <button class="dropdown-item danger" onclick="window.deleteAppointment('${appt.id}')">🗑️ Delete</button>
+                        </div>
+                    </div>
+                `;
 
                 let badgeClass = 'badge-info';
-                if (st.includes('consultation')) badgeClass = 'badge-verified';
-                else if (st.includes('confirm')) badgeClass = 'badge-success';
-                else if (st.includes('pending')) badgeClass = 'badge-warning';
-                else if (st.includes('cancel')) badgeClass = 'badge-error';
+                let statusLabel = appt.status || 'Confirmed';
+                if (st.includes('consultation')) { badgeClass = 'badge-verified'; statusLabel = '🟢 In Consultation'; }
+                else if (st.includes('confirm')) { badgeClass = 'badge-success'; statusLabel = 'Waiting'; }
+                else if (st.includes('pending')) { badgeClass = 'badge-warning'; statusLabel = 'Pending'; }
+                else if (st.includes('cancel')) { badgeClass = 'badge-error'; statusLabel = 'Cancelled'; }
 
                 html += `
                     <tr style="${st.includes('consultation') ? 'background: #f0fdf4; border-left: 4px solid #22c55e;' : ''}">
+                        <td><span class="token-badge-lg">${tokenStr}</span></td>
                         <td>
                             <div style="font-weight: 700; color: var(--primary);">${formatTime(appt.start_time)}</div>
-                            <div style="font-size: 0.75rem; color: var(--text-secondary);">${appt.appointment_date}</div>
+                            <div style="font-size: 0.725rem; color: var(--text-secondary);">${appt.appointment_date} &bull; ⏱ Waiting ${waitTime}</div>
                         </td>
                         <td style="font-weight: 600;">${pName} ${st.includes('consultation') ? '🟢 <small style="color:#166534; font-weight:700;">(Live)</small>' : ''}</td>
                         <td>${appt.clinic_name || window.doctorContext.clinic_name || 'Main Clinic'}</td>
-                        <td style="font-weight: 800; color: var(--primary); font-size: 1rem;">#${String(appt.token_number || 1).padStart(2, '0')}</td>
                         <td style="font-weight: 700; color: var(--success);">₹${apptFee}</td>
-                        <td><span class="badge ${badgeClass}">${appt.status || 'Confirmed'}</span></td>
-                        <td>${actions}</td>
+                        <td><span class="badge ${badgeClass}">${statusLabel}</span></td>
+                        <td>
+                            <div style="display: flex; gap: 0.35rem; align-items: center;">
+                                ${mainActionBtn}
+                                ${dropdownMenuHtml}
+                            </div>
+                        </td>
                     </tr>
                 `;
+
+                mobileHtml += `
+                    <div class="mobile-queue-card" style="${st.includes('consultation') ? 'border-left: 5px solid #22c55e; background: #f0fdf4;' : ''}">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                            <div>
+                                <span class="token-badge-lg">${tokenStr}</span>
+                                <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--primary); margin-top: 4px;">${pName}</h4>
+                            </div>
+                            <span class="badge ${badgeClass}">${statusLabel}</span>
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.75rem; display: flex; justify-content: space-between;">
+                            <span>🕒 ${formatTime(appt.start_time)} (⏱ Waiting ${waitTime})</span>
+                            <span style="font-weight: 700; color: var(--success);">Fee: ₹${apptFee}</span>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; justify-content: flex-end; align-items: center;">
+                            ${mainActionBtn}
+                            ${dropdownMenuHtml}
+                        </div>
+                    </div>
+                `;
             });
-            tbody.innerHTML = html;
+
+            if (tbody) tbody.innerHTML = html;
+            if (mobileContainer) mobileContainer.innerHTML = mobileHtml;
         }
 
         window.updateApptStatus = async (appointmentId, newStatus) => {
