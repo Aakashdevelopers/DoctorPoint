@@ -15,6 +15,7 @@ import com.amstudio.drpoint.R;
 import com.amstudio.drpoint.databinding.ItemAppointmentCardBinding;
 import com.amstudio.drpoint.model.Appointment;
 
+import java.util.Locale;
 import java.util.Objects;
 
 public class AppointmentListAdapter extends ListAdapter<Appointment, AppointmentListAdapter.ViewHolder> {
@@ -92,18 +93,28 @@ public class AppointmentListAdapter extends ListAdapter<Appointment, Appointment
             }
 
             String st = appointment.getStatus() != null ? appointment.getStatus().toLowerCase() : "";
+            int token = appointment.getTokenNumber();
+            String tokenPrefix = token > 0 ? "Token #" + String.format(Locale.US, "%02d", token) + " • " : "";
 
-            if ("completed".equals(st) || "cancelled".equals(st) || "rejected".equals(st) || "no_show".equals(st)) {
+            if (st.contains("consultation") || st.contains("in_consultation")) {
+                binding.tvStatusText.setText("🟢 " + tokenPrefix + "IN CONSULTATION (LIVE)");
+                binding.tvStatusText.setTextColor(ContextCompat.getColor(context, R.color.success_green));
+                binding.llStatusBadge.setBackgroundResource(R.drawable.bg_badge_verified);
+                binding.llActionButtons.setVisibility(View.GONE);
+            } else if ("completed".equals(st) || "cancelled".equals(st) || "rejected".equals(st) || "no_show".equals(st)) {
                 binding.llActionButtons.setVisibility(View.GONE);
                 if ("cancelled".equals(st) || "rejected".equals(st) || "no_show".equals(st)) {
+                    binding.tvStatusText.setText(tokenPrefix + appointment.getUserFriendlyStatus());
                     binding.tvStatusText.setTextColor(ContextCompat.getColor(context, R.color.error_red));
                     binding.llStatusBadge.setBackgroundResource(R.drawable.bg_date_chip_unselected);
                 } else {
+                    binding.tvStatusText.setText(tokenPrefix + "Completed");
                     binding.tvStatusText.setTextColor(ContextCompat.getColor(context, R.color.primary));
                     binding.llStatusBadge.setBackgroundResource(R.drawable.bg_badge_verified);
                 }
             } else {
                 binding.llActionButtons.setVisibility(View.VISIBLE);
+                binding.tvStatusText.setText(tokenPrefix + appointment.getUserFriendlyStatus());
                 binding.tvStatusText.setTextColor(ContextCompat.getColor(context, R.color.success_green));
                 binding.llStatusBadge.setBackgroundResource(R.drawable.bg_badge_verified);
             }

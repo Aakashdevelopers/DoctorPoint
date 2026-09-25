@@ -17,7 +17,7 @@ import retrofit2.http.Query;
 
 public interface SupabaseDoctorService {
 
-    @GET("rest/v1/doctors?select=*")
+    @GET("rest/v1/doctors?select=*&is_verified=eq.true")
     Call<List<Doctor>> getDoctors();
 
     @GET("rest/v1/doctors?select=*")

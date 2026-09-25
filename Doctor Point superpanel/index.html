@@ -545,6 +545,7 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
+            overflow-y: auto;
         }
 
         .modal-backdrop.show {
@@ -556,6 +557,9 @@
             border-radius: 16px;
             width: 100%;
             max-width: 520px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
             overflow: hidden;
             animation: modalSlideUp 0.25s ease-out;
@@ -572,6 +576,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-shrink: 0;
         }
 
         .modal-header h3 {
@@ -590,8 +595,8 @@
 
         .modal-body {
             padding: 24px;
-            max-height: 70vh;
             overflow-y: auto;
+            flex: 1;
         }
 
         .form-group {
@@ -701,6 +706,9 @@
             <li data-tab="commissions">
                 <a href="#"><i class='bx bx-money'></i> Commission Settings</a>
             </li>
+            <li data-tab="withdrawals">
+                <a href="#"><i class='bx bx-wallet'></i> Doctor Withdrawals</a>
+            </li>
         </ul>
     </aside>
 
@@ -798,15 +806,22 @@
             <!-- TAB 3: MANAGE DOCTORS -->
             <div id="tab-doctors" class="tab-content">
                 <div class="content-card">
-                    <div class="card-header">
-                        <h3><i class='bx bx-health'></i> Doctor List & Management</h3>
-                        <div class="card-header-actions">
+                    <div class="card-header" style="flex-wrap: wrap; gap: 1rem;">
+                        <div>
+                            <h3 style="font-size: 1.125rem;"><i class='bx bx-health'></i> Doctor Account Approval &amp; Management</h3>
+                            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Review new doctor registrations, approve profile documents &amp; manage app publishing</p>
+                        </div>
+                        <div class="card-header-actions" style="flex-wrap: wrap; gap: 0.5rem;">
+                            <button class="btn btn-primary btn-sm" id="btn-doc-filter-all" onclick="window.filterDoctorReviewTab('all', this)">All Doctors</button>
+                            <button class="btn btn-outline btn-sm" id="btn-doc-filter-pending" style="color: var(--warning); border-color: var(--warning);" onclick="window.filterDoctorReviewTab('pending', this)">⏳ Pending Review</button>
+                            <button class="btn btn-outline btn-sm" id="btn-doc-filter-approved" style="color: var(--success); border-color: var(--success);" onclick="window.filterDoctorReviewTab('approved', this)">✅ Approved &amp; Live</button>
+                            <button class="btn btn-outline btn-sm" id="btn-doc-filter-rejected" style="color: var(--danger); border-color: var(--danger);" onclick="window.filterDoctorReviewTab('rejected', this)">❌ Rejected</button>
                             <div class="search-box">
                                 <i class='bx bx-search'></i>
                                 <input type="text" id="search-doc" aria-label="Search doctor by name" placeholder="Search doctor by name..." oninput="renderDoctors()">
                             </div>
                             <button class="btn btn-primary" onclick="openDoctorModal()">
-                                <i class='bx bx-plus'></i> Add New Doctor
+                                <i class='bx bx-plus'></i> Add Doctor
                             </button>
                         </div>
                     </div>
@@ -819,7 +834,9 @@
                                     <th>Qualification</th>
                                     <th>Experience</th>
                                     <th>Consult Fee</th>
-                                    <th>Status</th>
+                                    <th>Bookings</th>
+                                    <th>Earnings</th>
+                                    <th>Verification Status</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -994,6 +1011,70 @@
                 </div>
             </div>
 
+            <!-- TAB 7: DOCTOR WITHDRAWALS & PAYOUTS -->
+            <div id="tab-withdrawals" class="tab-content">
+                <div class="metrics-grid">
+                    <div class="metric-card border-warning">
+                        <div class="metric-info">
+                            <span class="metric-label">Pending Payout Amount</span>
+                            <h3 id="stat-pending-withdraw-amount">₹0</h3>
+                        </div>
+                        <div class="metric-icon warning"><i class='bx bx-time-five'></i></div>
+                    </div>
+                    <div class="metric-card border-success">
+                        <div class="metric-info">
+                            <span class="metric-label">Total Completed Paid Out</span>
+                            <h3 id="stat-completed-withdraw-amount">₹0</h3>
+                        </div>
+                        <div class="metric-icon success"><i class='bx bx-check-double'></i></div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-info">
+                            <span class="metric-label">Total Withdrawal Requests</span>
+                            <h3 id="stat-total-withdraw-count">0</h3>
+                        </div>
+                        <div class="metric-icon primary"><i class='bx bx-wallet'></i></div>
+                    </div>
+                </div>
+
+                <div class="content-card">
+                    <div class="card-header" style="flex-wrap: wrap; gap: 1rem;">
+                        <div>
+                            <h3 style="font-size: 1.125rem;"><i class='bx bx-wallet'></i> Doctor Payouts &amp; Withdrawal Requests</h3>
+                            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Process pending bank/UPI payout requests and approve doctor withdrawals</p>
+                        </div>
+                        <div class="card-header-actions" style="flex-wrap: wrap; gap: 0.5rem;">
+                            <button class="btn btn-primary btn-sm" id="btn-withdraw-filter-all" onclick="window.filterWithdrawalTab('all', this)">All Requests</button>
+                            <button class="btn btn-outline btn-sm" id="btn-withdraw-filter-pending" style="color: var(--warning); border-color: var(--warning);" onclick="window.filterWithdrawalTab('pending', this)">⏳ Pending Payouts</button>
+                            <button class="btn btn-outline btn-sm" id="btn-withdraw-filter-completed" style="color: var(--success); border-color: var(--success);" onclick="window.filterWithdrawalTab('completed', this)">✅ Paid / Completed</button>
+                            <button class="btn btn-outline btn-sm" id="btn-withdraw-filter-rejected" style="color: var(--danger); border-color: var(--danger);" onclick="window.filterWithdrawalTab('rejected', this)">❌ Rejected</button>
+                            <div class="search-box">
+                                <i class='bx bx-search'></i>
+                                <input type="text" id="search-withdraw" aria-label="Search withdrawal requests" placeholder="Search doctor or account..." oninput="window.renderWithdrawals()">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="custom-table">
+                            <thead>
+                                <tr>
+                                    <th>Doctor Name &amp; Contact</th>
+                                    <th>Withdrawal Amount</th>
+                                    <th>Payment Type</th>
+                                    <th>Bank Account / UPI Details</th>
+                                    <th>Request Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="withdrawal-table-body">
+                                <tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;">Loading doctor withdrawal requests...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </main>
 
@@ -1107,6 +1188,55 @@
         </div>
     </div>
 
+    <!-- MODAL: REVIEW & APPROVE DOCTOR -->
+    <div class="modal-backdrop" id="modal-review-doctor">
+        <div class="modal-box" style="max-width: 680px; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h3><i class='bx bx-shield-quarter'></i> Doctor Profile Review &amp; Verification</h3>
+                <button class="modal-close" onclick="closeModal('modal-review-doctor')">&times;</button>
+            </div>
+            <div class="modal-body" style="overflow-y: auto; flex: 1;">
+                <div id="review-doctor-body">
+                    <!-- Dynamic Doctor Details -->
+                </div>
+                <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                    <div class="form-group">
+                        <label class="form-label" style="font-weight: 600;">Admin Approval Decision *</label>
+                        <select id="review-status-select" class="form-control">
+                            <option value="approved">✅ Approve Doctor &amp; Publish on App</option>
+                            <option value="rejected">❌ Reject Doctor Account</option>
+                            <option value="pending">⏳ Keep Under Review (Pending)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" style="font-weight: 600;">Message / Reason to Doctor (Visible on Doctor Panel Dashboard) *</label>
+                        <textarea id="review-message-input" class="form-control" rows="3" placeholder="Enter message for doctor..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--border-color); background: #ffffff; display: flex; justify-content: flex-end; gap: 0.5rem; flex-shrink: 0;">
+                <button class="btn btn-outline" onclick="closeModal('modal-review-doctor')">Cancel</button>
+                <button class="btn btn-primary" id="btn-submit-review" onclick="submitDoctorReview()">Save Decision &amp; Send Message</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: INSPECT WITHDRAWAL & DOCTOR DETAILS -->
+    <div class="modal-backdrop" id="modal-inspect-withdrawal">
+        <div class="modal-box" style="max-width: 720px; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h3><i class='bx bx-wallet'></i> Doctor Payout Request &amp; Full Profile Inspection</h3>
+                <button class="modal-close" onclick="closeModal('modal-inspect-withdrawal')">&times;</button>
+            </div>
+            <div class="modal-body" id="inspect-withdrawal-body" style="overflow-y: auto; flex: 1;">
+                <!-- Dynamic Doctor Details & Financial Overview -->
+            </div>
+            <div class="modal-footer" id="inspect-withdrawal-footer" style="padding: 16px 24px; border-top: 1px solid var(--border-color); background: #ffffff; display: flex; justify-content: flex-end; gap: 0.5rem; flex-shrink: 0;">
+                <button class="btn btn-outline" onclick="closeModal('modal-inspect-withdrawal')">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL: ADD / EDIT USER -->
     <div class="modal-backdrop" id="modal-user">
         <div class="modal-box">
@@ -1215,6 +1345,7 @@
         let doctors = [];
         let users = [];
         let appointments = [];
+        let withdrawals = [];
         let globalCommission = {
             new_patient_commission: 100,
             new_patient_type: 'FLAT',
@@ -1329,7 +1460,18 @@
 
                 if (!apptErr) appointments = apptData || [];
 
-                // 5. Fetch Commission Settings from public.commission_settings
+                // 5. Fetch Doctor Withdrawals from public.withdrawals
+                try {
+                    let { data: wData, error: wErr } = await supabase
+                        .from('withdrawals')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+                    if (!wErr && wData) withdrawals = wData;
+                } catch (wEx) {
+                    console.warn('Withdrawals fetch note:', wEx);
+                }
+
+                // 6. Fetch Commission Settings from public.commission_settings
                 try {
                     let { data: commData, error: commErr } = await supabase
                         .from('commission_settings')
@@ -1380,10 +1522,11 @@
             const titles = {
                 'dashboard': 'Dashboard Overview',
                 'categories': 'App Specializations & Category Images',
-                'doctors': 'Doctor Management',
+                'doctors': 'Doctor Account Review & Verification',
                 'users': 'Patient / User Management',
                 'appointments': 'Appointments & Slots Management',
-                'commissions': 'Commission & Pricing Settings'
+                'commissions': 'Commission & Pricing Settings',
+                'withdrawals': 'Doctor Payouts & Withdrawal Requests'
             };
             document.getElementById('page-heading').innerText = titles[tabName] || 'Super Panel';
         }
@@ -1395,6 +1538,7 @@
             renderUsers();
             renderAppointments();
             renderCommissions();
+            renderWithdrawals();
         }
 
         // HELPER: CALCULATE COMMISSION & EARNINGS FOR A SPECIFIC DOCTOR
@@ -1585,34 +1729,70 @@
         };
 
         // 3. DOCTORS CRUD (SUPABASE `public.doctors` TABLE)
+        let currentDoctorFilterTab = 'all';
+
+        window.filterDoctorReviewTab = function(tab, btn) {
+            currentDoctorFilterTab = tab;
+            const container = btn.parentElement;
+            container.querySelectorAll('button').forEach(b => {
+                b.classList.remove('btn-primary');
+                b.classList.add('btn-outline');
+            });
+            btn.classList.remove('btn-outline');
+            btn.classList.add('btn-primary');
+            renderDoctors();
+        };
+
         function renderDoctors() {
             const searchQuery = (document.getElementById('search-doc')?.value || '').toLowerCase();
             const tbody = document.getElementById('doctor-table-body');
 
-            const filtered = doctors.filter(d =>
+            let filtered = doctors.filter(d =>
                 (d.name || '').toLowerCase().includes(searchQuery) ||
-                (d.specialization || '').toLowerCase().includes(searchQuery)
+                (d.specialization || '').toLowerCase().includes(searchQuery) ||
+                (d.email || '').toLowerCase().includes(searchQuery)
             );
 
+            if (currentDoctorFilterTab === 'pending') {
+                filtered = filtered.filter(d => !d.is_verified && (!d.verification_status || d.verification_status === 'pending'));
+            } else if (currentDoctorFilterTab === 'approved') {
+                filtered = filtered.filter(d => d.is_verified || d.verification_status === 'approved' || d.verification_status === 'verified');
+            } else if (currentDoctorFilterTab === 'rejected') {
+                filtered = filtered.filter(d => d.verification_status === 'rejected');
+            }
+
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No doctors found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--text-muted); padding:2rem;">No doctors found for selected filter.</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = filtered.map(d => {
                 const stats = getDoctorCommissionStats(d);
+                const st = d.verification_status ? d.verification_status.toLowerCase() : (d.is_verified ? 'approved' : 'pending');
+
+                let statusBadge = `<span class="badge badge-pending">⏳ Pending Review</span>`;
+                if (st === 'approved' || st === 'verified' || d.is_verified) {
+                    statusBadge = `<span class="badge badge-verified">✅ Approved & Live</span>`;
+                } else if (st === 'rejected') {
+                    statusBadge = `<span class="badge badge-danger" style="background:#fee2e2; color:#dc2626;">❌ Rejected</span>`;
+                }
+
                 return `
                 <tr>
-                    <td><strong>${d.name || 'Dr. Unknown'}</strong></td>
+                    <td>
+                        <strong>${d.name || 'Dr. Unknown'}</strong><br>
+                        <small style="color:var(--text-muted);">${d.email || d.phone || ''}</small>
+                    </td>
                     <td><span class="badge badge-home">${d.specialization || 'General'}</span></td>
                     <td>${d.qualification || 'MBBS'}</td>
                     <td>${d.experience || '0'} Yrs</td>
                     <td>₹${d.fee || 500}</td>
                     <td><strong>${stats.totalBookings}</strong> Appts</td>
-                    <td><strong style="color:#059669; font-size:14px; background:#ecfdf5; padding:3px 8px; border-radius:6px; border:1px solid #a7f3d0;">₹${stats.platformEarnings.toLocaleString('en-IN')}</strong></td>
-                    <td><span class="badge ${d.is_verified ? 'badge-verified' : 'badge-pending'}">${d.is_verified ? 'Verified' : 'Pending'}</span></td>
+                    <td><strong style="color:#059669; font-size:13px; background:#ecfdf5; padding:3px 8px; border-radius:6px; border:1px solid #a7f3d0;">₹${stats.platformEarnings.toLocaleString('en-IN')}</strong></td>
+                    <td>${statusBadge}</td>
                     <td>
-                        <div class="action-btns">
+                        <div class="action-btns" style="display:flex; gap:4px; align-items:center;">
+                            <button class="btn btn-outline btn-sm" style="color:var(--primary); border-color:var(--primary); padding:3px 8px; font-size:12px;" onclick="window.reviewDoctor('${d.id}')" title="Review Doctor Details & Decision"><i class='bx bx-shield-quarter'></i> Review</button>
                             <button class="btn-icon" onclick="editDoctor('${d.id}')" title="Edit"><i class='bx bx-edit'></i></button>
                             <button class="btn-icon delete" onclick="deleteDoctor('${d.id}')" title="Delete"><i class='bx bx-trash'></i></button>
                         </div>
@@ -1621,6 +1801,121 @@
             `;
             }).join('');
         }
+
+        window.currentReviewDoctorId = null;
+
+        window.reviewDoctor = function(id) {
+            const doc = doctors.find(d => d.id === id);
+            if (!doc) return;
+
+            window.currentReviewDoctorId = id;
+            const container = document.getElementById('review-doctor-body');
+
+            const status = doc.verification_status ? doc.verification_status.toLowerCase() : (doc.is_verified ? 'approved' : 'pending');
+            const adminMsg = doc.admin_message || doc.rejection_reason || '';
+
+            const profilePic = doc.image_url || 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=400';
+            const clinicPhotosHtml = doc.clinic_photos ? doc.clinic_photos.split(',').map(u => `<img src="${u.trim()}" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid var(--border-color);" alt="Clinic photo">`).join('') : '<span style="font-size:12px; color:var(--text-muted);">No clinic photos uploaded</span>';
+
+            container.innerHTML = `
+                <div style="display:flex; gap:1rem; align-items:center; margin-bottom:1rem; padding-bottom:1rem; border-bottom:1px solid var(--border-color);">
+                    <img src="${profilePic}" style="width:72px; height:72px; border-radius:50%; object-fit:cover; border:2px solid var(--primary);" alt="Doctor Avatar">
+                    <div>
+                        <h4 style="font-size:1.1rem; font-weight:700; margin-bottom:2px;">${doc.name || 'Doctor Name'}</h4>
+                        <p style="font-size:0.85rem; color:var(--primary); font-weight:600;">${doc.specialization || 'General Physician'} &bull; ${doc.qualification || 'MBBS'}</p>
+                        <p style="font-size:0.8rem; color:var(--text-muted);">${doc.email || ''} | ${doc.doctor_phone || doc.phone || 'No Phone'}</p>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; font-size:0.85rem; margin-bottom:1rem;">
+                    <div><strong>Doctor Contact:</strong> ${doc.doctor_phone || doc.phone || 'N/A'}</div>
+                    <div><strong>Reception Contact:</strong> ${doc.reception_phone || 'N/A'}</div>
+                    <div><strong>Clinic Name:</strong> ${doc.clinic_name || 'Care Clinic'}</div>
+                    <div><strong>Location:</strong> ${doc.location || 'N/A'}</div>
+                    <div><strong>Experience:</strong> ${doc.experience || '0'} Yrs</div>
+                    <div><strong>Consult Fee:</strong> ₹${doc.fee || 500} (Follow-up: ₹${doc.followup_fee || 300})</div>
+                </div>
+
+                <div style="margin-bottom:1rem;">
+                    <strong style="font-size:0.85rem;">About Doctor:</strong>
+                    <p style="font-size:0.8rem; color:var(--text-muted); margin-top:2px;">${doc.about || 'No detailed bio provided.'}</p>
+                </div>
+
+                <div style="margin-bottom:1rem;">
+                    <strong style="font-size:0.85rem;">Clinic / Hospital Gallery Photos:</strong>
+                    <div style="display:flex; gap:0.5rem; margin-top:0.5rem; flex-wrap:wrap;">
+                        ${clinicPhotosHtml}
+                    </div>
+                </div>
+            `;
+
+            const statusSelect = document.getElementById('review-status-select');
+            if (statusSelect) {
+                if (status === 'approved' || status === 'verified') statusSelect.value = 'approved';
+                else if (status === 'rejected') statusSelect.value = 'rejected';
+                else statusSelect.value = 'pending';
+            }
+
+            const messageInput = document.getElementById('review-message-input');
+            if (messageInput) {
+                messageInput.value = adminMsg;
+            }
+
+            openModal('modal-review-doctor');
+        };
+
+        window.submitDoctorReview = async function() {
+            if (!window.currentReviewDoctorId) return;
+
+            const statusVal = document.getElementById('review-status-select').value;
+            const messageVal = document.getElementById('review-message-input').value.trim();
+
+            const isVerified = statusVal === 'approved';
+
+            showToast('Saving admin review decision...', 'info');
+
+            try {
+                // 1. Update doctors table in Supabase
+                const { error } = await supabase.from('doctors').update({
+                    is_verified: isVerified,
+                    is_approved: isVerified,
+                    verification_status: statusVal,
+                    admin_message: messageVal || null,
+                    rejection_reason: statusVal === 'rejected' ? messageVal : null
+                }).eq('id', window.currentReviewDoctorId);
+
+                if (error) throw error;
+
+                // 2. Insert notification into Supabase notifications table for doctor
+                try {
+                    let titleStr = '🎉 Account Approved!';
+                    if (statusVal === 'rejected') titleStr = '❌ Account Verification Status';
+                    if (statusVal === 'pending') titleStr = '⏳ Account Under Review';
+
+                    let msgStr = messageVal || (statusVal === 'approved' ? 'Your doctor profile has been verified and approved by admin! Your profile is now live on the Patient App.' : 'Your account status has been updated by admin.');
+
+                    await supabase.from('notifications').insert([{
+                        user_id: window.currentReviewDoctorId,
+                        patient_id: window.currentReviewDoctorId,
+                        title: titleStr,
+                        message: msgStr,
+                        type: 'doctor_approval',
+                        is_read: false,
+                        created_at: new Date().toISOString()
+                    }]);
+                } catch (notifErr) {
+                    console.warn("Notification insert note:", notifErr);
+                }
+
+                showToast(`Doctor profile decision updated to "${statusVal.toUpperCase()}"!`, 'success');
+                closeModal('modal-review-doctor');
+                await fetchAllFromSupabase();
+
+            } catch (err) {
+                console.error("Doctor review save error:", err);
+                showToast("Failed to save review: " + err.message, 'danger');
+            }
+        };
 
         function populateDoctorSpecDropdown(selectedSpec = '') {
             const select = document.getElementById('doc-spec-input');
@@ -1985,6 +2280,356 @@
             } catch (err) {
                 console.error(err);
                 showToast('Error saving settings: ' + err.message, 'danger');
+            }
+        };
+
+        // 7. DOCTOR WITHDRAWALS & PAYOUTS
+        let currentWithdrawalFilterTab = 'all';
+
+        window.filterWithdrawalTab = function(tab, btn) {
+            currentWithdrawalFilterTab = tab;
+            const container = btn.parentElement;
+            container.querySelectorAll('button').forEach(b => {
+                b.classList.remove('btn-primary');
+                b.classList.add('btn-outline');
+            });
+            btn.classList.remove('btn-outline');
+            btn.classList.add('btn-primary');
+            renderWithdrawals();
+        };
+
+        function renderWithdrawals() {
+            const searchQuery = (document.getElementById('search-withdraw')?.value || '').toLowerCase();
+            const tbody = document.getElementById('withdrawal-table-body');
+
+            let pendingAmount = 0;
+            let completedAmount = 0;
+
+            (withdrawals || []).forEach(w => {
+                const st = (w.status || 'pending').toLowerCase();
+                const amt = parseFloat(w.amount) || 0;
+                if (st === 'pending') pendingAmount += amt;
+                if (st === 'completed') completedAmount += amt;
+            });
+
+            if (document.getElementById('stat-pending-withdraw-amount')) document.getElementById('stat-pending-withdraw-amount').innerText = `₹${Math.round(pendingAmount).toLocaleString('en-IN')}`;
+            if (document.getElementById('stat-completed-withdraw-amount')) document.getElementById('stat-completed-withdraw-amount').innerText = `₹${Math.round(completedAmount).toLocaleString('en-IN')}`;
+            if (document.getElementById('stat-total-withdraw-count')) document.getElementById('stat-total-withdraw-count').innerText = (withdrawals || []).length;
+
+            let filtered = withdrawals.filter(w =>
+                (w.doctor_name || '').toLowerCase().includes(searchQuery) ||
+                (w.doctor_email || '').toLowerCase().includes(searchQuery) ||
+                (w.upi_id || '').toLowerCase().includes(searchQuery) ||
+                (w.account_number || '').includes(searchQuery) ||
+                (w.bank_name || '').toLowerCase().includes(searchQuery)
+            );
+
+            if (currentWithdrawalFilterTab === 'pending') {
+                filtered = filtered.filter(w => (w.status || 'pending').toLowerCase() === 'pending');
+            } else if (currentWithdrawalFilterTab === 'completed') {
+                filtered = filtered.filter(w => (w.status || '').toLowerCase() === 'completed');
+            } else if (currentWithdrawalFilterTab === 'rejected') {
+                filtered = filtered.filter(w => (w.status || '').toLowerCase() === 'rejected');
+            }
+
+            if (!tbody) return;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;">No withdrawal requests found.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(w => {
+                const st = (w.status || 'pending').toLowerCase();
+                let statusBadge = `<span class="badge badge-pending">⏳ Pending Payout</span>`;
+                if (st === 'completed') statusBadge = `<span class="badge badge-verified">✅ Paid / Completed</span>`;
+                if (st === 'rejected') statusBadge = `<span class="badge badge-danger" style="background:#fee2e2; color:#dc2626;">❌ Rejected &amp; Refunded</span>`;
+
+                let details = '';
+                if (w.payment_method === 'UPI' || (w.upi_id && !w.account_number)) {
+                    details = `<div><strong style="color:var(--primary);">UPI ID:</strong> ${w.upi_id || 'N/A'}</div>`;
+                } else {
+                    details = `<div style="font-size:0.8rem; line-height:1.4;">
+                        <strong>Bank:</strong> ${w.bank_name || 'Bank'} | <strong>Acc:</strong> ${w.account_number || 'N/A'}<br>
+                        <strong>IFSC:</strong> ${w.ifsc_code || 'N/A'} | <strong>Holder:</strong> ${w.account_holder_name || 'N/A'}
+                    </div>`;
+                }
+
+                const reqDate = w.created_at ? new Date(w.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recent';
+
+                let actionBtns = '';
+                if (st === 'pending') {
+                    actionBtns = `
+                        <button class="btn btn-primary btn-sm" style="padding:3px 8px; font-size:12px;" onclick="window.inspectWithdrawalDetails('${w.id}')" title="Inspect Doctor Profile & Financial Summary">🔍 Inspect Doctor</button>
+                        <button class="btn btn-success btn-sm" style="padding:3px 8px; font-size:12px; margin-left:2px;" onclick="window.markWithdrawalPaid('${w.id}')" title="Approve & Mark Paid">✅ Paid</button>
+                        <button class="btn btn-danger btn-sm" style="padding:3px 8px; font-size:12px; margin-left:2px;" onclick="window.rejectWithdrawalAndRefund('${w.id}')" title="Reject & Refund to Wallet">❌ Reject</button>
+                    `;
+                } else {
+                    actionBtns = `
+                        <button class="btn btn-outline btn-sm" style="padding:3px 8px; font-size:12px; margin-right:4px;" onclick="window.inspectWithdrawalDetails('${w.id}')" title="View Doctor Profile & Financials">🔍 View Info</button>
+                        <span style="font-size:0.8rem; color:var(--text-muted);">${w.admin_note || 'Processed'}</span>
+                    `;
+                }
+
+                return `
+                    <tr>
+                        <td style="cursor: pointer;" onclick="window.inspectWithdrawalDetails('${w.id}')" title="Click to inspect doctor details & earnings">
+                            <strong style="color:var(--primary);">${w.doctor_name || 'Doctor'}</strong> <i class='bx bx-search-alt-2' style="font-size:13px; color:var(--primary); vertical-align:middle;"></i><br>
+                            <small style="color:var(--text-muted);">${w.doctor_email || w.doctor_phone || ''}</small>
+                        </td>
+                        <td><strong style="color:var(--primary); font-size:1rem;">₹${parseFloat(w.amount || 0).toLocaleString('en-IN')}</strong></td>
+                        <td><span class="badge badge-home">${w.payment_method || 'UPI'}</span></td>
+                        <td>${details}</td>
+                        <td>${reqDate}</td>
+                        <td>${statusBadge}</td>
+                        <td>${actionBtns}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        window.inspectWithdrawalDetails = async function(id) {
+            const req = withdrawals.find(w => w.id === id);
+            if (!req) return;
+
+            // 1. Find doctor object in loaded doctors array, or fetch from Supabase by doctor_id
+            let doc = doctors.find(d => d.id === req.doctor_id);
+
+            if (!doc && req.doctor_id) {
+                try {
+                    let { data: fetchedDoc } = await supabase.from('doctors').select('*').eq('id', req.doctor_id).maybeSingle();
+                    if (fetchedDoc) doc = fetchedDoc;
+                } catch (e) {}
+            }
+
+            if (!doc) {
+                doc = {
+                    id: req.doctor_id || 'N/A',
+                    name: req.doctor_name || 'Dr. Specialist',
+                    email: req.doctor_email || 'N/A',
+                    phone: req.doctor_phone || 'N/A',
+                    doctor_phone: req.doctor_phone || 'N/A',
+                    reception_phone: 'N/A',
+                    specialization: 'General Physician',
+                    qualification: 'MBBS',
+                    clinic_name: 'Care Clinic',
+                    location: 'Main Branch',
+                    fee: 500
+                };
+            }
+
+            // 2. Calculate Doctor Financial & Appointment Stats
+            const stats = getDoctorCommissionStats(doc);
+
+            // Calculate completed payouts for this doctor
+            let totalPaidOut = 0;
+            (withdrawals || []).forEach(w => {
+                if (w.doctor_id === req.doctor_id && (w.status || '').toLowerCase() === 'completed') {
+                    totalPaidOut += parseFloat(w.amount) || 0;
+                }
+            });
+
+            const walletBal = (doc.wallet_balance !== undefined && doc.wallet_balance !== null)
+                ? parseFloat(doc.wallet_balance)
+                : (doc.total_earning || stats.doctorNet);
+
+            const st = (req.status || 'pending').toLowerCase();
+            let statusBadge = `<span class="badge badge-pending">⏳ Pending Payout</span>`;
+            if (st === 'completed') statusBadge = `<span class="badge badge-verified">✅ Paid / Completed</span>`;
+            if (st === 'rejected') statusBadge = `<span class="badge badge-danger" style="background:#fee2e2; color:#dc2626;">❌ Rejected &amp; Refunded</span>`;
+
+            const profilePic = doc.image_url || 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=400';
+            const reqDate = req.created_at ? new Date(req.created_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recent';
+
+            let paymentDetailsHtml = '';
+            if (req.payment_method === 'UPI' || (req.upi_id && !req.account_number)) {
+                paymentDetailsHtml = `<div style="background:#f8fafc; padding:12px; border-radius:8px; border:1px solid var(--border-color);"><strong style="color:var(--primary); font-size:1rem;">⚡ UPI ID: ${req.upi_id || 'N/A'}</strong></div>`;
+            } else {
+                paymentDetailsHtml = `
+                    <div style="background:#f8fafc; padding:12px; border-radius:8px; border:1px solid var(--border-color); display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.85rem;">
+                        <div><strong>Account Holder:</strong> ${req.account_holder_name || 'N/A'}</div>
+                        <div><strong>Bank Name:</strong> ${req.bank_name || 'N/A'}</div>
+                        <div><strong>Account Number:</strong> ${req.account_number || 'N/A'}</div>
+                        <div><strong>IFSC Code:</strong> ${req.ifsc_code || 'N/A'}</div>
+                    </div>
+                `;
+            }
+
+            const container = document.getElementById('inspect-withdrawal-body');
+            container.innerHTML = `
+                <!-- Doctor Profile Header -->
+                <div style="display:flex; gap:1rem; align-items:center; margin-bottom:1rem; padding-bottom:1rem; border-bottom:1px solid var(--border-color);">
+                    <img src="${profilePic}" style="width:72px; height:72px; border-radius:50%; object-fit:cover; border:2px solid var(--primary);" alt="Doctor Avatar">
+                    <div style="flex:1;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <h4 style="font-size:1.15rem; font-weight:700; margin-bottom:2px;">${doc.name || 'Doctor'}</h4>
+                            ${statusBadge}
+                        </div>
+                        <p style="font-size:0.85rem; color:var(--primary); font-weight:600;">${doc.specialization || 'General Physician'} &bull; ${doc.qualification || 'MBBS'}</p>
+                        <p style="font-size:0.8rem; color:var(--text-muted); margin-top:2px;">
+                            <strong>Doctor ID:</strong> <span style="font-family:monospace; background:#e2e8f0; padding:2px 6px; border-radius:4px; font-weight:600;">${doc.id}</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Doctor Contact & Practice Info -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.65rem; font-size:0.825rem; margin-bottom:1.25rem; background:#f8fafc; padding:12px; border-radius:10px; border:1px solid var(--border-color);">
+                    <div><strong>Email Address:</strong> ${doc.email || req.doctor_email || 'N/A'}</div>
+                    <div><strong>Doctor Contact:</strong> ${doc.doctor_phone || doc.phone || req.doctor_phone || 'N/A'}</div>
+                    <div><strong>Reception Contact:</strong> ${doc.reception_phone || 'N/A'}</div>
+                    <div><strong>Clinic Name:</strong> ${doc.clinic_name || 'Care Clinic'}</div>
+                    <div><strong>Location / City:</strong> ${doc.location || 'N/A'}</div>
+                    <div><strong>Experience:</strong> ${doc.experience || '0'} Yrs</div>
+                </div>
+
+                <!-- Financial & Appointment Overview Grid -->
+                <div style="margin-bottom:1.25rem;">
+                    <h5 style="font-size:0.9rem; font-weight:700; margin-bottom:8px; color:var(--dark);">📊 Doctor Lifetime Financials &amp; Bookings Summary</h5>
+                    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
+                        <div style="background:#e7f1ff; padding:10px 12px; border-radius:8px; border:1px solid #bfdbfe;">
+                            <div style="font-size:0.75rem; color:#1e40af;">Total Bookings</div>
+                            <div style="font-size:1.1rem; font-weight:800; color:#1e3a8a;">${stats.totalBookings} Appts</div>
+                        </div>
+                        <div style="background:#ecfdf5; padding:10px 12px; border-radius:8px; border:1px solid #a7f3d0;">
+                            <div style="font-size:0.75rem; color:#065f46;">Gross Revenue</div>
+                            <div style="font-size:1.1rem; font-weight:800; color:#064e3b;">₹${stats.grossRevenue.toLocaleString('en-IN')}</div>
+                        </div>
+                        <div style="background:#fef3c7; padding:10px 12px; border-radius:8px; border:1px solid #fde68a;">
+                            <div style="font-size:0.75rem; color:#92400e;">Platform Comm.</div>
+                            <div style="font-size:1.1rem; font-weight:800; color:#78350f;">₹${stats.platformEarnings.toLocaleString('en-IN')}</div>
+                        </div>
+                        <div style="background:#f0fdf4; padding:10px 12px; border-radius:8px; border:1px solid #86efac;">
+                            <div style="font-size:0.75rem; color:#166534;">Doctor Net Earned</div>
+                            <div style="font-size:1.1rem; font-weight:800; color:#14532d;">₹${stats.doctorNet.toLocaleString('en-IN')}</div>
+                        </div>
+                        <div style="background:#e0e7ff; padding:10px 12px; border-radius:8px; border:1px solid #c7d2fe;">
+                            <div style="font-size:0.75rem; color:#3730a3;">Current Wallet Bal.</div>
+                            <div style="font-size:1.1rem; font-weight:800; color:#312e81;">₹${Math.round(walletBal).toLocaleString('en-IN')}</div>
+                        </div>
+                        <div style="background:#f1f5f9; padding:10px 12px; border-radius:8px; border:1px solid #cbd5e1;">
+                            <div style="font-size:0.75rem; color:#334155;">Total Paid Out</div>
+                            <div style="font-size:1.1rem; font-weight:800; color:#0f172a;">₹${Math.round(totalPaidOut).toLocaleString('en-IN')}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Withdrawal Request Details -->
+                <div style="border-top:1px solid var(--border-color); padding-top:1rem;">
+                    <h5 style="font-size:0.95rem; font-weight:700; margin-bottom:8px; color:var(--primary);">💳 Current Withdrawal Request Details</h5>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <span style="font-size:0.85rem; color:var(--text-muted);">Request Date: ${reqDate}</span>
+                        <span style="font-size:1.2rem; font-weight:800; color:var(--primary);">Amount: ₹${parseFloat(req.amount || 0).toLocaleString('en-IN')}</span>
+                    </div>
+                    ${paymentDetailsHtml}
+                    ${req.admin_note ? `<div style="margin-top:8px; font-size:0.8rem; background:#fffbe0; padding:8px; border-radius:6px; border:1px solid #fde047;"><strong>Admin Remark:</strong> ${req.admin_note}</div>` : ''}
+                </div>
+            `;
+
+            const footer = document.getElementById('inspect-withdrawal-footer');
+            if (st === 'pending') {
+                footer.innerHTML = `
+                    <button class="btn btn-outline" onclick="closeModal('modal-inspect-withdrawal')">Cancel</button>
+                    <button class="btn btn-danger" onclick="closeModal('modal-inspect-withdrawal'); window.rejectWithdrawalAndRefund('${req.id}');">❌ Reject &amp; Refund</button>
+                    <button class="btn btn-success" onclick="closeModal('modal-inspect-withdrawal'); window.markWithdrawalPaid('${req.id}');">✅ Mark Paid &amp; Complete</button>
+                `;
+            } else {
+                footer.innerHTML = `
+                    <button class="btn btn-outline" onclick="closeModal('modal-inspect-withdrawal')">Close</button>
+                `;
+            }
+
+            openModal('modal-inspect-withdrawal');
+        };
+
+        window.markWithdrawalPaid = async function(id) {
+            const req = withdrawals.find(w => w.id === id);
+            if (!req) return;
+
+            const note = prompt("Enter Payment Reference / UTR Number / Remarks (Optional):", "IMPS/UPI Ref Completed");
+            if (note === null) return;
+
+            showToast("Processing payout completion...", "info");
+
+            try {
+                // Update withdrawal status
+                const { error } = await supabase.from('withdrawals').update({
+                    status: 'Completed',
+                    admin_note: note || 'Paid via Bank/UPI'
+                }).eq('id', id);
+
+                if (error) throw error;
+
+                // Send Notification to doctor
+                try {
+                    await supabase.from('notifications').insert([{
+                        user_id: req.doctor_id,
+                        patient_id: req.doctor_id,
+                        title: '🎉 Payout Processed Successfully!',
+                        message: `Your withdrawal request of ₹${parseFloat(req.amount).toLocaleString('en-IN')} has been approved and paid to your ${req.payment_method || 'UPI/Bank'} account! Remark: ${note || 'Paid'}`,
+                        type: 'payout',
+                        is_read: false,
+                        created_at: new Date().toISOString()
+                    }]);
+                } catch (e) {}
+
+                showToast(`Withdrawal of ₹${req.amount} marked as PAID!`, "success");
+                await fetchAllFromSupabase();
+
+            } catch (err) {
+                console.error("Mark paid error:", err);
+                showToast("Failed to mark paid: " + err.message, "danger");
+            }
+        };
+
+        window.rejectWithdrawalAndRefund = async function(id) {
+            const req = withdrawals.find(w => w.id === id);
+            if (!req) return;
+
+            const reason = prompt("Enter Rejection Reason for Doctor (Amount will be refunded back to Doctor Wallet):", "Incorrect account details / IFSC code error");
+            if (!reason) return;
+
+            showToast("Rejecting request & refunding wallet balance...", "info");
+
+            try {
+                // 1. Update withdrawal status
+                const { error } = await supabase.from('withdrawals').update({
+                    status: 'Rejected',
+                    admin_note: reason
+                }).eq('id', id);
+
+                if (error) throw error;
+
+                // 2. Refund requested amount back to doctor's wallet_balance in doctors table
+                if (req.doctor_id) {
+                    let { data: docData } = await supabase.from('doctors').select('wallet_balance, current_balance').eq('id', req.doctor_id).maybeSingle();
+                    const currentBal = docData ? (parseFloat(docData.wallet_balance) || parseFloat(docData.current_balance) || 0) : 0;
+                    const refundedBal = currentBal + (parseFloat(req.amount) || 0);
+
+                    await supabase.from('doctors').update({
+                        wallet_balance: refundedBal,
+                        current_balance: refundedBal
+                    }).eq('id', req.doctor_id);
+                }
+
+                // 3. Send Notification to doctor
+                try {
+                    await supabase.from('notifications').insert([{
+                        user_id: req.doctor_id,
+                        patient_id: req.doctor_id,
+                        title: '❌ Withdrawal Request Rejected',
+                        message: `Your withdrawal request of ₹${parseFloat(req.amount).toLocaleString('en-IN')} was rejected. Reason: "${reason}". The amount has been refunded back to your Available Wallet Balance.`,
+                        type: 'payout_rejected',
+                        is_read: false,
+                        created_at: new Date().toISOString()
+                    }]);
+                } catch (e) {}
+
+                showToast(`Withdrawal request rejected and ₹${req.amount} refunded to doctor wallet!`, "success");
+                await fetchAllFromSupabase();
+
+            } catch (err) {
+                console.error("Reject withdrawal error:", err);
+                showToast("Failed to reject withdrawal: " + err.message, "danger");
             }
         };
 

@@ -736,6 +736,7 @@
                 <a href="#patients" class="nav-item" data-page="patients"><i class='bx bx-user'></i> Patients</a>
                 <a href="#prescriptions" class="nav-item" data-page="prescriptions"><i class='bx bx-notepad'></i> Prescriptions</a>
                 <a href="#slots" class="nav-item" data-page="slots"><i class='bx bx-time-five'></i> Slots &amp; Availability</a>
+                <a href="#wallet" class="nav-item" data-page="wallet"><i class='bx bx-wallet'></i> Wallet &amp; Withdraw</a>
                 <a href="#profile" class="nav-item" data-page="profile"><i class='bx bx-id-card'></i> Profile &amp; Settings</a>
                 <a href="#" class="nav-item" onclick="window.logout()"><i class='bx bx-log-out'></i> Logout</a>
             </nav>
@@ -754,6 +755,9 @@
                     <div class="avatar" id="header-avatar">DR</div>
                 </div>
             </header>
+
+            <!-- Dynamic Doctor Review Status Alert Banner -->
+            <div id="doctor-status-banner" style="margin: 1.25rem 1.5rem 0 1.5rem; display: none;"></div>
 
             <main class="content-area" id="app-content">
                 <!-- Dynamic HTML Templates Loaded Here -->
@@ -796,6 +800,26 @@
                 <div class="stat-title">Available Wallet Balance</div>
                 <div class="stat-value" id="stat-total-earning" style="color: var(--primary);">₹0</div>
                 <div style="font-size: 0.725rem; color: var(--success); margin-top: 4px; font-weight: 600;">💳 Current Money (Withdrawable)</div>
+            </div>
+        </div>
+
+        <!-- LIVE PATIENT CONSULTATION QUEUE CARD -->
+        <div id="live-consultation-card" class="card" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, #152C69 0%, #1e3a8a 100%); color: #ffffff; display: none; box-shadow: 0 10px 25px -5px rgba(21, 44, 105, 0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 1.75rem;">
+                        🟢
+                    </div>
+                    <div>
+                        <div style="font-size: 0.725rem; text-transform: uppercase; letter-spacing: 1px; color: #60a5fa; font-weight: 700;">🟢 LIVE CONSULTATION IN PROGRESS</div>
+                        <h3 id="live-patient-name" style="font-size: 1.25rem; font-weight: 800; color: #ffffff; margin-top: 2px;">Patient Name</h3>
+                        <p id="live-patient-sub" style="font-size: 0.85rem; color: #dbeafe; margin-top: 2px;">Token #01 &bull; 09:00 AM - 09:15 AM &bull; Clinic Consult</p>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                    <button class="btn btn-success btn-sm" id="btn-complete-live" style="background: #22c55e; border-color: #22c55e; font-size: 0.875rem; padding: 8px 16px; font-weight: 700; color: #ffffff;" onclick="window.completeLiveAndNext()">✅ Complete &amp; Call Next Patient →</button>
+                </div>
             </div>
         </div>
 
@@ -855,28 +879,35 @@
             </div>
         </div>
 
-        <!-- VIEW 2: APPOINTMENTS TABLE FOR SELECTED DATE -->
+        <!-- VIEW 2: SEQUENTIAL PATIENT QUEUE FOR SELECTED DATE -->
         <div id="date-details-view" class="hidden">
             <div class="card" style="margin-bottom: 1.25rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                    <div style="display: flex; align-items: center; gap: 0.75rem;">
-                        <button class="btn btn-outline btn-sm" onclick="window.backToDateFolders()">← Back to Dates List</button>
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
+                    <div style="display: flex; align-items: center; gap: 0.875rem;">
+                        <button class="btn btn-outline btn-sm" onclick="window.backToDateFolders()" style="font-weight: 600;">← Back to Dates</button>
                         <div>
-                            <h3 id="selected-date-heading" style="font-size: 1.125rem; font-weight: 700; color: var(--primary);">📅 Appointments for Date</h3>
-                            <p id="selected-date-sub" style="font-size: 0.85rem; color: var(--text-secondary);">Showing scheduled patients for selected date</p>
+                            <h3 id="selected-date-heading" style="font-size: 1.2rem; font-weight: 800; color: var(--primary); margin: 0;">📅 Patient Queue</h3>
+                            <p id="selected-date-sub" style="font-size: 0.825rem; color: var(--text-secondary); margin-top: 2px;">Sequential time &amp; token queue order</p>
                         </div>
                     </div>
 
                     <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                        <button class="btn btn-success btn-sm" onclick="window.bulkConfirmSelectedDateAppointments()">⚡ Confirm All Patients</button>
-                        <button class="btn btn-outline btn-sm" style="color: var(--error); border-color: var(--error);" onclick="window.bulkCancelSelectedDateAppointments()">🚫 Cancel All Patients</button>
-                        <button class="btn btn-outline btn-sm" id="tab-today" onclick="window.setApptFilter('today', this)">Today</button>
-                        <button class="btn btn-outline btn-sm" id="tab-upcoming" onclick="window.setApptFilter('upcoming', this)">Upcoming</button>
-                        <button class="btn btn-outline btn-sm" id="tab-completed" onclick="window.setApptFilter('completed', this)">Completed</button>
-                        <button class="btn btn-outline btn-sm" id="tab-cancelled" onclick="window.setApptFilter('cancelled', this)">Cancelled</button>
-                        <button class="btn btn-primary btn-sm" id="tab-all" onclick="window.setApptFilter('all', this)">All Statuses</button>
-                        <input type="text" id="appt-search" class="form-control" style="width: 180px;" placeholder="Search patient name..." onkeyup="window.searchAppointments(this.value)">
+                        <div style="position: relative; width: 200px;">
+                            <input type="text" id="appt-search" class="form-control" style="height: 38px; font-size: 0.85rem;" placeholder="🔍 Search patient / token..." onkeyup="window.searchAppointments(this.value)">
+                        </div>
+                        <button class="btn btn-success btn-sm" style="height: 38px; font-weight: 600;" onclick="window.bulkConfirmSelectedDateAppointments()">⚡ Confirm All Queue</button>
+                        <button class="btn btn-outline btn-sm" style="height: 38px; color: var(--error); border-color: var(--error); font-weight: 600;" onclick="window.bulkCancelSelectedDateAppointments()">🚫 Cancel All Queue</button>
                     </div>
+                </div>
+
+                <!-- Clean Queue Status Pills -->
+                <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.875rem; flex-wrap: wrap;">
+                    <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-right: 0.25rem;">Filter Queue:</span>
+                    <button class="btn btn-primary btn-sm" id="tab-all" style="border-radius: 20px; padding: 4px 14px; font-size: 0.8rem;" onclick="window.setApptFilter('all', this)">All Queue</button>
+                    <button class="btn btn-outline btn-sm" id="tab-confirmed" style="border-radius: 20px; padding: 4px 14px; font-size: 0.8rem;" onclick="window.setApptFilter('confirmed', this)">Confirmed</button>
+                    <button class="btn btn-outline btn-sm" id="tab-consultation" style="border-radius: 20px; padding: 4px 14px; font-size: 0.8rem;" onclick="window.setApptFilter('consultation', this)">🟢 In Consultation</button>
+                    <button class="btn btn-outline btn-sm" id="tab-completed" style="border-radius: 20px; padding: 4px 14px; font-size: 0.8rem;" onclick="window.setApptFilter('completed', this)">Completed</button>
+                    <button class="btn btn-outline btn-sm" id="tab-cancelled" style="border-radius: 20px; padding: 4px 14px; font-size: 0.8rem;" onclick="window.setApptFilter('cancelled', this)">Cancelled</button>
                 </div>
             </div>
 
@@ -885,17 +916,17 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>Date &amp; Time</th>
-                                <th>Patient</th>
-                                <th>Clinic / Location</th>
+                                <th>Time &amp; Date</th>
+                                <th>Patient Name</th>
+                                <th>Clinic / Branch</th>
                                 <th>Token #</th>
                                 <th>Earning</th>
                                 <th>Status</th>
-                                <th>Action</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="appointments-body">
-                            <tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading patient appointments...</td></tr>
+                            <tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">Loading patient queue...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -1207,6 +1238,70 @@
         </div>
     </template>
 
+    <!-- Wallet & Withdrawals Template -->
+    <template id="tpl-wallet">
+        <div class="grid-stats" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+            <div class="stat-card" style="border-left: 4px solid var(--primary);">
+                <div class="stat-title">Available Wallet Balance</div>
+                <div class="stat-value" id="wallet-available" style="color: var(--primary);">₹0</div>
+                <div style="font-size: 0.75rem; color: var(--success); margin-top: 4px; font-weight: 600;">💳 Ready for Withdrawal</div>
+            </div>
+            <div class="stat-card" style="border-left: 4px solid var(--warning);">
+                <div class="stat-title">Pending Payout Requests</div>
+                <div class="stat-value" id="wallet-pending" style="color: var(--warning);">₹0</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">⏳ Awaiting Admin Payout</div>
+            </div>
+            <div class="stat-card" style="border-left: 4px solid var(--success);">
+                <div class="stat-title">Total Completed Payouts</div>
+                <div class="stat-value" id="wallet-completed" style="color: var(--success);">₹0</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">✅ Paid to Bank / UPI</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">Today's Net Earnings</div>
+                <div class="stat-value" id="wallet-today" style="color: var(--success);">₹0</div>
+            </div>
+        </div>
+
+        <!-- Withdraw Money Action Card -->
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                    <h3 style="font-size: 1.125rem; font-weight: 700; color: var(--primary);">💳 Request Money Withdrawal</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">Transfer your consultation earnings directly to your Bank Account or UPI ID (Minimum withdrawal amount: <strong>₹1,000</strong>).</p>
+                </div>
+                <button class="btn btn-primary" onclick="window.openWithdrawalModal()">⚡ Request Withdrawal</button>
+            </div>
+        </div>
+
+        <!-- Withdrawal History Table -->
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3 style="font-size: 1.125rem;">📜 Withdrawal &amp; Payout History</h3>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">Track past payout requests and admin approval status</p>
+                </div>
+                <span class="badge badge-info" id="wallet-req-count">0 Requests</span>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Request Date</th>
+                            <th>Amount</th>
+                            <th>Payment Method</th>
+                            <th>Account / UPI Details</th>
+                            <th>Status</th>
+                            <th>Admin Note / Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody id="wallet-history-body">
+                        <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading withdrawal transactions...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </template>
+
 
     <!-- ========================================== -->
     <!-- SUPABASE JS MODULE (EXACT SCHEMA MATCH) -->
@@ -1303,6 +1398,52 @@
         // ----------------------------------------------------
         // AUTHENTICATION & EXACT SCHEMA MATCH
         // ----------------------------------------------------
+        function updateDoctorStatusBanner(doc) {
+            const banner = document.getElementById('doctor-status-banner');
+            if (!banner || !doc) return;
+
+            const st = (doc.verification_status || (doc.is_verified ? 'approved' : 'pending')).toLowerCase();
+            const msg = doc.admin_message || doc.rejection_reason || '';
+
+            if (st === 'approved' || st === 'verified' || doc.is_verified) {
+                banner.style.display = 'block';
+                banner.innerHTML = `
+                    <div style="background: #DCFCE7; border: 1px solid #22C55E; border-radius: 12px; padding: 1rem 1.25rem; color: #166534; display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 0.5rem;">
+                        <div style="font-size: 1.5rem; line-height: 1;">✅</div>
+                        <div style="flex: 1;">
+                            <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 2px;">Account Approved &amp; Live on Patient App</h4>
+                            <p style="font-size: 0.85rem; margin-bottom: 2px;">Your doctor profile has been verified by Doctor Point Admin and is actively published on the Patient App!</p>
+                            ${msg ? `<p style="font-size: 0.825rem; font-weight: 600; background: #F0FDF4; padding: 6px 10px; border-radius: 6px; border: 1px solid #86EFAC; margin-top: 6px;">💬 Admin Note: "${msg}"</p>` : ''}
+                        </div>
+                    </div>
+                `;
+            } else if (st === 'rejected') {
+                banner.style.display = 'block';
+                banner.innerHTML = `
+                    <div style="background: #FEE2E2; border: 1px solid #EF4444; border-radius: 12px; padding: 1rem 1.25rem; color: #991B1B; display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 0.5rem;">
+                        <div style="font-size: 1.5rem; line-height: 1;">❌</div>
+                        <div style="flex: 1;">
+                            <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 2px;">Account Verification Rejected</h4>
+                            <p style="font-size: 0.85rem; margin-bottom: 2px;">Your doctor profile verification has been rejected by Doctor Point Admin.</p>
+                            ${msg ? `<p style="font-size: 0.825rem; font-weight: 600; background: #FEF2F2; padding: 6px 10px; border-radius: 6px; border: 1px solid #FCA5A5; margin-top: 6px;">💬 Rejection Reason from Admin: "${msg}"</p>` : ''}
+                        </div>
+                    </div>
+                `;
+            } else {
+                banner.style.display = 'block';
+                banner.innerHTML = `
+                    <div style="background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 12px; padding: 1rem 1.25rem; color: #92400E; display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 0.5rem;">
+                        <div style="font-size: 1.5rem; line-height: 1;">⏳</div>
+                        <div style="flex: 1;">
+                            <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 2px;">Account Under Admin Review</h4>
+                            <p style="font-size: 0.85rem; margin-bottom: 2px;">Your doctor profile is currently under review by Doctor Point Admin. Once approved, your profile will automatically go live on the patient app.</p>
+                            ${msg ? `<p style="font-size: 0.825rem; font-weight: 600; background: #FFFBEB; padding: 6px 10px; border-radius: 6px; border: 1px solid #FCD34D; margin-top: 6px;">💬 Message from Admin: "${msg}"</p>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
         async function checkSession() {
             try {
                 const { data: { session } } = await supabase.auth.getSession();
@@ -1339,14 +1480,20 @@
                         fee: 500,
                         today_earning: 0,
                         total_earning: 0,
+                        wallet_balance: 0,
+                        current_balance: 0,
+                        is_verified: false,
+                        is_approved: false,
+                        verification_status: 'pending',
+                        admin_message: 'Your profile has been created and is currently under review by Doctor Point Admin.',
                         gender: 'Doctor',
                         is_available_today: true,
                         is_nearby: true,
                         is_popular: true,
-                        morning_start: '09:00:00',
-                        morning_end: '13:00:00',
-                        evening_start: '17:00:00',
-                        evening_end: '20:00:00'
+                        morning_start: '09:00',
+                        morning_end: '13:00',
+                        evening_start: '17:00',
+                        evening_end: '20:00'
                     };
 
                     try {
@@ -1359,6 +1506,8 @@
                 document.getElementById('header-doctor-name').textContent = docName;
                 const initials = (docName.replace(/^Dr\.\s*/i, '').trim() || 'DR').split(/\s+/).map(n => n[0]).filter(Boolean).join('').substring(0, 2).toUpperCase() || 'DR';
                 document.getElementById('header-avatar').textContent = initials;
+
+                updateDoctorStatusBanner(doc);
 
                 showApp();
                 handleRouting();
@@ -1499,37 +1648,44 @@
                 }
 
                 if (userId) {
-                    // 2. Insert Doctor record in doctors table with 0 Initial Earnings
-                    try {
-                        await supabase.from('doctors').upsert([{
-                            id: userId,
-                            name: name,
-                            email: email,
-                            phone: phone,
-                            doctor_phone: phone,
-                            reception_phone: receptionPhone || null,
-                            image_url: profilePic || null,
-                            experience: experience || '5+ Years',
-                            specialization: spec || 'General Physician',
-                            location: location || 'Main City Branch',
-                            clinic_name: clinic || 'Care Clinic',
-                            clinic_photos: clinicPhotos || null,
-                            qualification: qualification || 'MBBS',
-                            fee: fee,
-                            today_earning: 0,
-                            total_earning: 0,
-                            about: about || null,
-                            gender: 'Doctor',
-                            is_available_today: true,
-                            is_nearby: true,
-                            is_popular: true,
-                            morning_start: '09:00:00',
-                            morning_end: '13:00:00',
-                            evening_start: '17:00:00',
-                            evening_end: '20:00:00'
-                        }]);
-                    } catch (upsertErr) {
-                        console.warn("Doctor row upsert note:", upsertErr);
+                    // 2. Insert Doctor record in doctors table with 0 Initial Earnings & Pending Review Status
+                    const { error: docInsertErr } = await supabase.from('doctors').upsert([{
+                        id: userId,
+                        name: name,
+                        email: email,
+                        phone: phone,
+                        doctor_phone: phone,
+                        reception_phone: receptionPhone || null,
+                        image_url: profilePic || null,
+                        experience: experience || '5+ Years',
+                        specialization: spec || 'General Physician',
+                        location: location || 'Main City Branch',
+                        clinic_name: clinic || 'Care Clinic',
+                        clinic_photos: clinicPhotos || null,
+                        qualification: qualification || 'MBBS',
+                        fee: fee,
+                        today_earning: 0,
+                        total_earning: 0,
+                        wallet_balance: 0,
+                        current_balance: 0,
+                        is_verified: false,
+                        is_approved: false,
+                        verification_status: 'pending',
+                        admin_message: 'Your profile has been created and is currently under review by Doctor Point Admin.',
+                        about: about || null,
+                        gender: 'Doctor',
+                        is_available_today: true,
+                        is_nearby: true,
+                        is_popular: true,
+                        morning_start: '09:00',
+                        morning_end: '13:00',
+                        evening_start: '17:00',
+                        evening_end: '20:00'
+                    }]);
+
+                    if (docInsertErr) {
+                        console.error("Supabase Doctors Table Insert Error:", docInsertErr);
+                        throw new Error("Failed to save doctor profile to database: " + docInsertErr.message);
                     }
                 }
 
@@ -1611,6 +1767,7 @@
                 if (hash === 'prescriptions') initPrescriptions();
                 if (hash === 'slots') initSlots();
                 if (hash === 'profile') initProfile();
+                if (hash === 'wallet') initWallet();
             } else {
                 appContent.innerHTML = `<div style="padding: 3rem; text-align: center;"><h3>Page Not Found</h3></div>`;
             }
@@ -1773,7 +1930,38 @@
                     console.warn("Earnings sync note:", syncErr);
                 }
 
-                // Today Schedule Table
+                // Today Schedule Table - Sort sequentially by start_time and token_number
+                todayAppts.sort((a, b) => {
+                    const t1 = a.start_time || '00:00:00';
+                    const t2 = b.start_time || '00:00:00';
+                    if (t1 !== t2) return t1.localeCompare(t2);
+                    return (a.token_number || 1) - (b.token_number || 1);
+                });
+
+                // Detect Active Live Consultation Patient
+                window.activeLiveAppt = todayAppts.find(a => {
+                    const st = (a.status || '').toLowerCase().trim();
+                    return st.includes('consultation') || st.includes('in_consultation');
+                });
+
+                window.todayApptsList = todayAppts;
+
+                const liveCard = document.getElementById('live-consultation-card');
+                if (liveCard) {
+                    if (window.activeLiveAppt) {
+                        liveCard.style.display = 'block';
+                        const livePName = (window.activeLiveAppt.patient && window.activeLiveAppt.patient.full_name) ? window.activeLiveAppt.patient.full_name : ('Patient #' + (window.activeLiveAppt.id ? window.activeLiveAppt.id.substring(0, 5) : '01'));
+                        const tokenStr = `#${String(window.activeLiveAppt.token_number || 1).padStart(2, '0')}`;
+                        const timeStr = formatTime(window.activeLiveAppt.start_time);
+                        const typeStr = window.activeLiveAppt.appointment_type || 'Clinic Consult';
+
+                        document.getElementById('live-patient-name').textContent = livePName;
+                        document.getElementById('live-patient-sub').textContent = `Token ${tokenStr} • Slot ${timeStr} • ${typeStr}`;
+                    } else {
+                        liveCard.style.display = 'none';
+                    }
+                }
+
                 const tbody = document.getElementById('today-schedule-body');
                 if (!todayAppts || todayAppts.length === 0) {
                     tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No patient appointments scheduled for today.</td></tr>`;
@@ -1790,9 +1978,9 @@
                     if (st.includes('pending')) {
                         actions += `<button class="btn btn-primary btn-sm" onclick="window.updateApptStatus('${appt.id}', 'Confirmed')">Confirm</button>`;
                     } else if (st.includes('confirm')) {
-                        actions += `<button class="btn btn-outline btn-sm" onclick="window.updateApptStatus('${appt.id}', 'In Consultation')">Start Consult</button>`;
+                        actions += `<button class="btn btn-outline btn-sm" onclick="window.updateApptStatus('${appt.id}', 'In Consultation')">▶️ Start Consult</button>`;
                     } else if (st.includes('consultation')) {
-                        actions += `<button class="btn btn-success btn-sm" onclick="window.updateApptStatus('${appt.id}', 'Completed')">Complete</button>`;
+                        actions += `<button class="btn btn-success btn-sm" onclick="window.updateApptStatus('${appt.id}', 'Completed')">✅ Complete</button>`;
                     }
                     if (!st.includes('cancel')) {
                         actions += `<button class="btn btn-outline btn-sm" style="color: var(--warning); border-color: var(--warning);" title="Cancel Appointment" onclick="window.updateApptStatus('${appt.id}', 'Cancelled')">🚫 Cancel</button>`;
@@ -1800,14 +1988,15 @@
                     actions += `<button class="btn btn-outline btn-sm" style="color: var(--error); border-color: var(--error);" title="Delete Appointment" onclick="window.deleteAppointment('${appt.id}')">🗑️ Delete</button></div>`;
 
                     let badgeClass = 'badge-info';
-                    if (appt.status === 'Confirmed' || appt.status === 'confirmed') badgeClass = 'badge-success';
-                    if (appt.status === 'Pending' || appt.status === 'pending') badgeClass = 'badge-warning';
-                    if (appt.status === 'Cancelled' || appt.status === 'cancelled') badgeClass = 'badge-error';
+                    if (st.includes('consultation')) badgeClass = 'badge-verified';
+                    else if (st.includes('confirm')) badgeClass = 'badge-success';
+                    else if (st.includes('pending')) badgeClass = 'badge-warning';
+                    else if (st.includes('cancel')) badgeClass = 'badge-error';
 
                     html += `
-                        <tr>
+                        <tr style="${st.includes('consultation') ? 'background: #f0fdf4; border-left: 4px solid #22c55e;' : ''}">
                             <td style="font-weight: 600;">${formatTime(appt.start_time)}</td>
-                            <td style="font-weight: 500;">${pName}</td>
+                            <td style="font-weight: 500;">${pName} ${st.includes('consultation') ? '🟢 <small style="color:#166534; font-weight:700;">(Live)</small>' : ''}</td>
                             <td style="text-transform: capitalize;">${appt.appointment_type || 'Clinic'}</td>
                             <td style="font-weight: 700; color: var(--primary);">#${String(appt.token_number || 1).padStart(2, '0')}</td>
                             <td style="font-weight: 700; color: var(--success);">₹${apptFee}</td>
@@ -1977,47 +2166,55 @@
             const tbody = document.getElementById('appointments-body');
             if (!tbody) return;
 
-            const today = new Date().toISOString().split('T')[0];
-
+            // 1. Filter appointments for selected date and status pill
             let filtered = cachedAppointments.filter(appt => {
                 if (selectedApptDate && appt.appointment_date !== selectedApptDate) {
                     return false;
                 }
 
-                const st = (appt.status || 'confirmed').toLowerCase();
-                if (currentApptFilter === 'today') return appt.appointment_date === today && !st.includes('completed') && !st.includes('cancel');
-                if (currentApptFilter === 'upcoming') return appt.appointment_date > today && !st.includes('cancel');
-                if (currentApptFilter === 'completed') return st.includes('completed');
+                const st = (appt.status || 'confirmed').toLowerCase().trim();
+                if (currentApptFilter === 'confirmed') return st.includes('confirm') && !st.includes('consultation');
+                if (currentApptFilter === 'consultation') return st.includes('consultation');
+                if (currentApptFilter === 'completed') return st.includes('completed') || st.includes('complete');
                 if (currentApptFilter === 'cancelled') return st.includes('cancel') || st.includes('reject');
                 return true;
             });
 
+            // 2. Search filter
             if (searchQuery.trim() !== '') {
-                const q = searchQuery.toLowerCase();
+                const q = searchQuery.toLowerCase().trim();
                 filtered = filtered.filter(a => {
                     const pName = (a.patient && a.patient.full_name) ? a.patient.full_name.toLowerCase() : '';
-                    return pName.includes(q) || String(a.token_number).includes(q);
+                    return pName.includes(q) || String(a.token_number).includes(q) || (a.start_time || '').includes(q);
                 });
             }
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No appointments found for selected date/filter.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">No patient appointments found for selected queue filter.</td></tr>`;
                 return;
             }
+
+            // 3. Sort STRICTLY sequentially by start_time asc and token_number asc
+            filtered.sort((a, b) => {
+                const t1 = a.start_time || '00:00:00';
+                const t2 = b.start_time || '00:00:00';
+                if (t1 !== t2) return t1.localeCompare(t2);
+                return (a.token_number || 1) - (b.token_number || 1);
+            });
 
             let html = '';
             filtered.forEach(appt => {
                 const pName = (appt.patient && appt.patient.full_name) ? appt.patient.full_name : ('Patient #' + (appt.id ? appt.id.substring(0, 5) : '01'));
-                const st = (appt.status || 'Confirmed').toLowerCase();
+                const st = (appt.status || 'Confirmed').toLowerCase().trim();
                 const apptFee = appt.fee || window.doctorContext.fee || 500;
 
                 let actions = `<div style="display: flex; gap: 0.25rem; align-items: center; flex-wrap: wrap;">`;
                 if (st.includes('pending')) {
                     actions += `<button class="btn btn-primary btn-sm" onclick="window.updateApptStatus('${appt.id}', 'Confirmed')">Confirm</button>`;
                 } else if (st.includes('confirm')) {
-                    actions += `<button class="btn btn-outline btn-sm" onclick="window.updateApptStatus('${appt.id}', 'In Consultation')">Start Consult</button>`;
+                    actions += `<button class="btn btn-outline btn-sm" onclick="window.updateApptStatus('${appt.id}', 'In Consultation')">▶️ Start Consult</button>`;
                 } else if (st.includes('consultation')) {
-                    actions += `<button class="btn btn-success btn-sm" onclick="window.updateApptStatus('${appt.id}', 'Completed')">Complete</button>`;
+                    actions += `<button class="btn btn-success btn-sm" onclick="window.updateApptStatus('${appt.id}', 'Completed')">✅ Complete</button>`;
                 }
                 if (!st.includes('cancel')) {
                     actions += `<button class="btn btn-outline btn-sm" style="color: var(--warning); border-color: var(--warning);" title="Cancel Appointment" onclick="window.updateApptStatus('${appt.id}', 'Cancelled')">🚫 Cancel</button>`;
@@ -2025,19 +2222,20 @@
                 actions += `<button class="btn btn-outline btn-sm" style="color: var(--error); border-color: var(--error);" title="Delete Appointment" onclick="window.deleteAppointment('${appt.id}')">🗑️ Delete</button></div>`;
 
                 let badgeClass = 'badge-info';
-                if (st.includes('confirm')) badgeClass = 'badge-success';
-                if (st.includes('cancel')) badgeClass = 'badge-error';
-                if (st.includes('completed')) badgeClass = 'badge-secondary';
+                if (st.includes('consultation')) badgeClass = 'badge-verified';
+                else if (st.includes('confirm')) badgeClass = 'badge-success';
+                else if (st.includes('pending')) badgeClass = 'badge-warning';
+                else if (st.includes('cancel')) badgeClass = 'badge-error';
 
                 html += `
-                    <tr>
+                    <tr style="${st.includes('consultation') ? 'background: #f0fdf4; border-left: 4px solid #22c55e;' : ''}">
                         <td>
-                            <div style="font-weight: 600;">${appt.appointment_date}</div>
-                            <div style="font-size: 0.75rem; color: var(--text-secondary);">${formatTime(appt.start_time)}</div>
+                            <div style="font-weight: 700; color: var(--primary);">${formatTime(appt.start_time)}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">${appt.appointment_date}</div>
                         </td>
-                        <td style="font-weight: 500;">${pName}</td>
+                        <td style="font-weight: 600;">${pName} ${st.includes('consultation') ? '🟢 <small style="color:#166534; font-weight:700;">(Live)</small>' : ''}</td>
                         <td>${appt.clinic_name || window.doctorContext.clinic_name || 'Main Clinic'}</td>
-                        <td style="font-weight: 700; color: var(--primary);">#${String(appt.token_number || 1).padStart(2, '0')}</td>
+                        <td style="font-weight: 800; color: var(--primary); font-size: 1rem;">#${String(appt.token_number || 1).padStart(2, '0')}</td>
                         <td style="font-weight: 700; color: var(--success);">₹${apptFee}</td>
                         <td><span class="badge ${badgeClass}">${appt.status || 'Confirmed'}</span></td>
                         <td>${actions}</td>
@@ -2064,6 +2262,37 @@
                 }
             } catch (err) {
                 alert("Failed to update status: " + err.message);
+            }
+        };
+
+        window.completeLiveAndNext = async () => {
+            if (!window.activeLiveAppt) return;
+
+            const liveId = window.activeLiveAppt.id;
+            try {
+                // 1. Mark current live patient as Completed
+                const { error: compErr } = await supabase.from('appointments').update({ status: 'Completed' }).eq('id', liveId);
+                if (compErr) throw compErr;
+
+                // 2. Find next patient in queue (status is Confirmed or Pending)
+                const nextAppt = (window.todayApptsList || []).find(a => {
+                    if (a.id === liveId) return false;
+                    const st = (a.status || '').toLowerCase().trim();
+                    return st.includes('confirm') || st.includes('pending');
+                });
+
+                if (nextAppt) {
+                    // Update next patient status to 'In Consultation'
+                    await supabase.from('appointments').update({ status: 'In Consultation' }).eq('id', nextAppt.id);
+                    const nextPName = (nextAppt.patient && nextAppt.patient.full_name) ? nextAppt.patient.full_name : ('Patient #' + (nextAppt.id ? nextAppt.id.substring(0, 5) : '01'));
+                    if (window.showToast) window.showToast(`✅ Consultation Completed! Calling Next Patient: ${nextPName} (Token #${nextAppt.token_number || 1})`, "success", 4000);
+                } else {
+                    if (window.showToast) window.showToast("✅ Consultation Completed! All queued patients done for today.", "success", 3000);
+                }
+
+                initDashboard();
+            } catch (err) {
+                alert("Failed to advance queue: " + err.message);
             }
         };
 
@@ -2724,6 +2953,262 @@
             } catch (err) {
                 alert("Failed to delete slot: " + err.message);
             }
+        };
+
+        // ----------------------------------------------------
+        // WALLET & WITHDRAWAL MODULE
+        // ----------------------------------------------------
+        async function initWallet() {
+            if (!window.doctorContext) return;
+            const doctorId = window.doctorContext.id;
+
+            try {
+                // Fetch doctor's withdrawal history from Supabase
+                let { data: reqs, error } = await supabase
+                    .from('withdrawals')
+                    .select('*')
+                    .eq('doctor_id', doctorId)
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    console.warn("withdrawals fetch note:", error);
+                    reqs = [];
+                }
+
+                let pendingSum = 0;
+                let completedSum = 0;
+
+                (reqs || []).forEach(r => {
+                    const st = (r.status || 'Pending').toLowerCase();
+                    const amt = parseFloat(r.amount) || 0;
+                    if (st === 'pending') pendingSum += amt;
+                    if (st === 'completed') completedSum += amt;
+                });
+
+                const currentBal = (window.doctorContext.wallet_balance !== undefined && window.doctorContext.wallet_balance !== null)
+                    ? window.doctorContext.wallet_balance
+                    : (window.doctorContext.total_earning || 0);
+
+                if (document.getElementById('wallet-available')) document.getElementById('wallet-available').textContent = `₹${Math.round(currentBal).toLocaleString('en-IN')}`;
+                if (document.getElementById('wallet-pending')) document.getElementById('wallet-pending').textContent = `₹${Math.round(pendingSum).toLocaleString('en-IN')}`;
+                if (document.getElementById('wallet-completed')) document.getElementById('wallet-completed').textContent = `₹${Math.round(completedSum).toLocaleString('en-IN')}`;
+                if (document.getElementById('wallet-req-count')) document.getElementById('wallet-req-count').textContent = `${(reqs || []).length} Requests`;
+
+                // Render history table
+                const tbody = document.getElementById('wallet-history-body');
+                if (!tbody) return;
+
+                if (!reqs || reqs.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No withdrawal requests submitted yet. Minimum withdrawal limit is ₹1,000.</td></tr>`;
+                    return;
+                }
+
+                let html = '';
+                reqs.forEach(r => {
+                    const st = (r.status || 'Pending').toLowerCase();
+                    let badgeClass = 'badge-warning';
+                    if (st === 'completed') badgeClass = 'badge-success';
+                    if (st === 'rejected') badgeClass = 'badge-error';
+
+                    let details = '';
+                    if (r.payment_method === 'UPI' || (r.upi_id && !r.account_number)) {
+                        details = `<span style="font-weight:600; color:var(--primary);">UPI: ${r.upi_id || 'N/A'}</span>`;
+                    } else {
+                        details = `<div style="font-size:0.8rem;">
+                            <strong>Bank:</strong> ${r.bank_name || 'Bank'} | <strong>Acc:</strong> ${r.account_number || ''}<br>
+                            <strong>IFSC:</strong> ${r.ifsc_code || ''} | <strong>Holder:</strong> ${r.account_holder_name || ''}
+                        </div>`;
+                    }
+
+                    const reqDate = r.created_at ? new Date(r.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recent';
+
+                    html += `
+                        <tr>
+                            <td style="font-weight: 600;">${reqDate}</td>
+                            <td style="font-weight: 700; color: var(--primary); font-size: 1rem;">₹${parseFloat(r.amount || 0).toLocaleString('en-IN')}</td>
+                            <td><span class="badge badge-info">${r.payment_method || 'UPI'}</span></td>
+                            <td>${details}</td>
+                            <td><span class="badge ${badgeClass}">${r.status || 'Pending'}</span></td>
+                            <td style="font-size: 0.85rem; color: var(--text-secondary);">${r.admin_note || 'Awaiting Payout Processing'}</td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
+
+            } catch (err) {
+                console.error("Wallet load error:", err);
+            }
+        }
+
+        window.openWithdrawalModal = () => {
+            if (!window.doctorContext) return;
+            const currentBal = (window.doctorContext.wallet_balance !== undefined && window.doctorContext.wallet_balance !== null)
+                ? window.doctorContext.wallet_balance
+                : (window.doctorContext.total_earning || 0);
+
+            const modalContainer = document.getElementById('modal-container');
+            modalContainer.innerHTML = `
+                <div class="modal-overlay">
+                    <div class="modal-content" style="max-width: 520px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                            <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--primary);">💳 Request Money Withdrawal</h3>
+                            <button class="btn btn-outline btn-sm" onclick="document.getElementById('modal-container').innerHTML=''">✕</button>
+                        </div>
+                        <form id="withdrawal-request-form">
+                            <div style="background: var(--primary-light); padding: 1rem; border-radius: 10px; margin-bottom: 1rem; border: 1px solid #BFDBFE;">
+                                <div style="font-size: 0.85rem; color: var(--primary-dark); font-weight: 600;">Available Wallet Balance: <span style="font-size: 1.15rem; font-weight: 800; color: var(--primary);" id="modal-available-bal">₹${Math.round(currentBal).toLocaleString('en-IN')}</span></div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">* Minimum withdrawal limit: <strong>₹1,000</strong></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" style="font-weight: 600;">Withdrawal Amount (₹) *</label>
+                                <input type="number" id="withdraw-amount" class="form-control" placeholder="Enter amount (min 1000)" min="1000" max="${Math.max(1000, Math.round(currentBal))}" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" style="font-weight: 600;">Select Payment Type *</label>
+                                <select id="withdraw-method" class="form-control" onchange="window.onWithdrawMethodChange(this.value)">
+                                    <option value="UPI">⚡ UPI Transfer (GPay / PhonePe / Paytm)</option>
+                                    <option value="Bank Transfer">🏦 Direct Bank Account Transfer (IMPS / NEFT)</option>
+                                </select>
+                            </div>
+
+                            <!-- UPI Inputs -->
+                            <div id="group-upi" class="form-group">
+                                <label class="form-label" style="font-weight: 600;">UPI ID *</label>
+                                <input type="text" id="withdraw-upi-id" class="form-control" placeholder="e.g. 9876543210@paytm or doctor@okaxis">
+                            </div>
+
+                            <!-- Bank Transfer Inputs -->
+                            <div id="group-bank" class="hidden">
+                                <div class="form-group">
+                                    <label class="form-label" style="font-weight: 600;">Account Holder Name *</label>
+                                    <input type="text" id="withdraw-bank-holder" class="form-control" placeholder="e.g. Dr. Priya Sharma">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" style="font-weight: 600;">Bank Name *</label>
+                                    <input type="text" id="withdraw-bank-name" class="form-control" placeholder="e.g. State Bank of India / HDFC Bank">
+                                </div>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label" style="font-weight: 600;">Account Number *</label>
+                                        <input type="text" id="withdraw-account-no" class="form-control" placeholder="e.g. 38291048123">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" style="font-weight: 600;">IFSC Code *</label>
+                                        <input type="text" id="withdraw-ifsc" class="form-control" placeholder="e.g. SBIN0001234">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="withdraw-error-msg" style="color: var(--error); font-size: 0.85rem; margin-bottom: 0.75rem; display: none;"></div>
+
+                            <button type="submit" class="btn btn-primary" id="btn-submit-withdraw" style="width: 100%; margin-top: 0.5rem;">Submit Withdrawal Request →</button>
+                        </form>
+                    </div>
+                </div>
+            `;
+
+            window.onWithdrawMethodChange = (method) => {
+                const groupUpi = document.getElementById('group-upi');
+                const groupBank = document.getElementById('group-bank');
+                if (method === 'Bank Transfer') {
+                    groupUpi.classList.add('hidden');
+                    groupBank.classList.remove('hidden');
+                } else {
+                    groupBank.classList.add('hidden');
+                    groupUpi.classList.remove('hidden');
+                }
+            };
+
+            document.getElementById('withdrawal-request-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const amt = parseInt(document.getElementById('withdraw-amount').value) || 0;
+                const method = document.getElementById('withdraw-method').value;
+                const upiId = document.getElementById('withdraw-upi-id')?.value.trim();
+                const bankHolder = document.getElementById('withdraw-bank-holder')?.value.trim();
+                const bankName = document.getElementById('withdraw-bank-name')?.value.trim();
+                const accountNo = document.getElementById('withdraw-account-no')?.value.trim();
+                const ifsc = document.getElementById('withdraw-ifsc')?.value.trim();
+
+                const errEl = document.getElementById('withdraw-error-msg');
+                const submitBtn = document.getElementById('btn-submit-withdraw');
+
+                errEl.style.display = 'none';
+
+                if (amt < 1000) {
+                    errEl.textContent = "⚠️ Minimum withdrawal amount is ₹1,000.";
+                    errEl.style.display = 'block';
+                    return;
+                }
+
+                if (amt > currentBal) {
+                    errEl.textContent = `⚠️ Insufficient Wallet Balance! Your available balance is ₹${currentBal}.`;
+                    errEl.style.display = 'block';
+                    return;
+                }
+
+                if (method === 'UPI' && !upiId) {
+                    errEl.textContent = "⚠️ Please enter a valid UPI ID (e.g. 9876543210@paytm).";
+                    errEl.style.display = 'block';
+                    return;
+                }
+
+                if (method === 'Bank Transfer' && (!accountNo || !ifsc || !bankName || !bankHolder)) {
+                    errEl.textContent = "⚠️ Please fill in all bank transfer details (Account Number, IFSC, Bank Name, Holder Name).";
+                    errEl.style.display = 'block';
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Submitting Request...';
+
+                try {
+                    // Insert into withdrawals table
+                    const { error } = await supabase.from('withdrawals').insert([{
+                        doctor_id: window.doctorContext.id,
+                        doctor_name: window.doctorContext.name,
+                        doctor_email: window.doctorContext.email,
+                        doctor_phone: window.doctorContext.doctor_phone || window.doctorContext.phone,
+                        amount: amt,
+                        payment_method: method,
+                        upi_id: method === 'UPI' ? upiId : null,
+                        account_number: method === 'Bank Transfer' ? accountNo : null,
+                        ifsc_code: method === 'Bank Transfer' ? ifsc : null,
+                        bank_name: method === 'Bank Transfer' ? bankName : null,
+                        account_holder_name: method === 'Bank Transfer' ? bankHolder : null,
+                        status: 'Pending'
+                    }]);
+
+                    if (error) throw error;
+
+                    // Deduct from doctor's wallet_balance
+                    const newBal = Math.max(0, currentBal - amt);
+                    await supabase.from('doctors').update({
+                        wallet_balance: newBal,
+                        current_balance: newBal
+                    }).eq('id', window.doctorContext.id);
+
+                    window.doctorContext.wallet_balance = newBal;
+                    window.doctorContext.current_balance = newBal;
+
+                    if (window.showToast) window.showToast(`✅ Withdrawal request of ₹${amt.toLocaleString('en-IN')} submitted successfully!`, "success", 4000);
+                    modalContainer.innerHTML = '';
+
+                    if (window.location.hash.includes('wallet')) {
+                        initWallet();
+                    } else if (window.location.hash.includes('dashboard')) {
+                        initDashboard();
+                    }
+
+                } catch (err) {
+                    errEl.textContent = "Failed to submit withdrawal: " + err.message;
+                    errEl.style.display = 'block';
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit Withdrawal Request →';
+                }
+            });
         };
 
         // ----------------------------------------------------
