@@ -20,6 +20,7 @@ public class PreferenceManager {
     private static final String KEY_REMINDERS_ENABLED = "reminders_enabled";
     private static final String KEY_USER_ROLE = "user_role";
     private static final String KEY_SELECTED_DOCTOR_ID = "selected_doctor_id";
+    private static final String KEY_USER_AVATAR = "user_avatar";
 
     private static PreferenceManager instance;
     private final SharedPreferences prefs;
@@ -65,6 +66,14 @@ public class PreferenceManager {
 
     public void setUserPhone(String phone) {
         prefs.edit().putString(KEY_USER_PHONE, phone).apply();
+    }
+
+    public String getUserAvatar() {
+        return prefs.getString(KEY_USER_AVATAR, "");
+    }
+
+    public void setUserAvatar(String avatarUrl) {
+        prefs.edit().putString(KEY_USER_AVATAR, avatarUrl).apply();
     }
 
     public String getUserId() {

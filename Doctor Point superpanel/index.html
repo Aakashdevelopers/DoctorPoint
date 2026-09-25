@@ -2135,7 +2135,7 @@
                     <td><strong>${a.appointment_date || 'Today'}</strong></td>
                     <td>${a.start_time || '09:00'} - ${a.end_time || '09:15'}</td>
                     <td>${a.clinic_name || a.doctor_id || 'Main Clinic'}</td>
-                    <td><small>${a.patient_id || 'Patient'}</small></td>
+                    <td><strong>${a.patient_name || (a.patient && a.patient.full_name) || a.patient_id || 'Patient'}</strong></td>
                     <td><span class="badge badge-home">${a.appointment_type || 'In-Clinic'}</span></td>
                     <td><span class="badge ${a.status === 'Confirmed' ? 'badge-active' : 'badge-blocked'}">${a.status || 'Confirmed'}</span></td>
                     <td>

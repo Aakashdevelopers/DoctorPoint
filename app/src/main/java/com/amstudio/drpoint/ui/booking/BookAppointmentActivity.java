@@ -2,6 +2,7 @@ package com.amstudio.drpoint.ui.booking;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
@@ -21,11 +22,13 @@ import com.amstudio.drpoint.model.DoctorSlot;
 import com.amstudio.drpoint.network.SupabaseClient;
 import com.amstudio.drpoint.network.model.BookAppointmentRpcRequest;
 import com.amstudio.drpoint.network.model.BookAppointmentRpcResponse;
+import com.amstudio.drpoint.ui.auth.SignupActivity;
 import com.amstudio.drpoint.util.AvailabilityHelper;
 import com.amstudio.drpoint.util.CommissionHelper;
 import com.amstudio.drpoint.util.DummyDataProvider;
 import com.amstudio.drpoint.util.PreferenceManager;
 import com.bumptech.glide.Glide;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
@@ -535,11 +538,32 @@ public class BookAppointmentActivity extends AppCompatActivity {
             return;
         }
 
+        String userAvatar = PreferenceManager.getInstance(this).getUserAvatar();
+        if (userAvatar == null || userAvatar.trim().isEmpty()) {
+            promptProfilePhotoUpload(userId, selectedSlotId);
+            return;
+        }
+
         binding.btnConfirmBooking.setEnabled(false);
         binding.btnConfirmBooking.setText("Booking Appointment...");
 
         // Directly execute client-side appointment insertion into Supabase REST endpoint
         executeClientSideBookingFallback(userId, selectedSlotId);
+    }
+
+    private void promptProfilePhotoUpload(String userId, String slotId) {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("📷 Profile Photo Required")
+                .setMessage("Doctor & reception desk require a clear patient profile photo for appointment check-in. Please upload your photo to proceed.")
+                .setPositiveButton("📷 Upload Photo", (dialog, which) -> {
+                    Toast.makeText(this, "Please update your profile photo in Profile Settings", Toast.LENGTH_LONG).show();
+                })
+                .setNegativeButton("Proceed Without Photo", (dialog, which) -> {
+                    binding.btnConfirmBooking.setEnabled(false);
+                    binding.btnConfirmBooking.setText("Booking Appointment...");
+                    executeClientSideBookingFallback(userId, slotId);
+                })
+                .show();
     }
 
     private void sendBookingRpcRequest(String userId, String slotId) {
@@ -600,6 +624,14 @@ public class BookAppointmentActivity extends AppCompatActivity {
             clinicNameVal = doctor.getClinicName();
         }
 
+        String patientReasonInput = (binding.etPatientReason.getText() != null)
+                ? binding.etPatientReason.getText().toString().trim() : "";
+
+        String patientNameVal = PreferenceManager.getInstance(this).getUserName();
+        if (patientNameVal == null || patientNameVal.trim().isEmpty()) {
+            patientNameVal = "Patient User";
+        }
+
         Map<String, Object> payload = new HashMap<>();
         payload.put("id", apptId);
         if (validDoctorId != null) payload.put("doctor_id", validDoctorId);
@@ -612,6 +644,13 @@ public class BookAppointmentActivity extends AppCompatActivity {
         payload.put("token_number", 1);
         payload.put("status", "Confirmed");
         payload.put("clinic_name", clinicNameVal);
+        payload.put("patient_name", patientNameVal);
+        payload.put("notes", patientReasonInput);
+        payload.put("patient_reason", patientReasonInput);
+        String userAvatarUrl = PreferenceManager.getInstance(this).getUserAvatar();
+        if (userAvatarUrl != null && !userAvatarUrl.isEmpty()) {
+            payload.put("patient_image", userAvatarUrl);
+        }
 
         final String finalApptId = apptId;
         SupabaseClient.getAppointmentService().createAppointmentPayload("return=representation", payload)

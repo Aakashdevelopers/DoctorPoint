@@ -253,7 +253,7 @@
         .btn-primary {
             background-color: var(--primary);
             color: white;
-            width: 100%;
+            width: auto;
         }
 
         .btn-primary:hover {
@@ -552,6 +552,45 @@
             border-radius: 8px;
             display: inline-block;
             letter-spacing: -0.5px;
+        }
+
+        /* Bottom Sheet Queue Navigation Dialog */
+        .bottom-sheet-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .bottom-sheet-dialog {
+            background: #ffffff;
+            border-radius: 24px 24px 0 0;
+            width: 100%;
+            max-width: 640px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
+            animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .bottom-sheet-drag-handle {
+            width: 48px;
+            height: 5px;
+            background: var(--border);
+            border-radius: 10px;
+            margin: 12px auto 4px auto;
         }
 
         /* Responsive Mobile Queue View */
@@ -920,6 +959,7 @@
                     <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">Sequential time &amp; token queue order for today</p>
                 </div>
                 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                    <button class="btn btn-outline btn-sm" style="font-weight: 600;" onclick="window.openQueueBottomSheet(0)">📱 Patient Profile Sheet</button>
                     <button class="btn btn-outline btn-sm" onclick="window.openAddAppointmentModal()">+ Add Appointment</button>
                     <a href="#appointments" class="btn btn-primary btn-sm">View All Dates Queue →</a>
                 </div>
@@ -989,9 +1029,10 @@
                     </div>
 
                     <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                        <div style="position: relative; width: 220px;">
+                        <div style="position: relative; width: 200px;">
                             <input type="text" id="appt-search" class="form-control" style="height: 38px; font-size: 0.85rem;" placeholder="🔍 Search patient, token or phone..." onkeyup="window.searchAppointments(this.value)">
                         </div>
+                        <button class="btn btn-success btn-sm" style="height: 38px; font-weight: 700; background: #22c55e; border-color: #22c55e; color: #ffffff;" onclick="window.startConsultationModeForQueue()">▶️ Start Consultation Mode</button>
                         <button class="btn btn-outline btn-sm" style="height: 38px; font-weight: 600;" onclick="window.openAddAppointmentModal()">+ Add Appointment</button>
                         <button class="btn btn-outline btn-sm" style="height: 38px; font-weight: 600;" onclick="window.toggleBulkMenu(event)">⋮ Bulk Actions</button>
                     </div>
@@ -1035,7 +1076,6 @@
                 <!-- Dynamic cards for mobile -->
             </div>
         </div>
-    </template>
     </template>
 
     <!-- Patients Template -->
@@ -1938,91 +1978,188 @@
             }
         };
 
+        function getSortedQueueForCurrentView() {
+            let queue = cachedAppointments || [];
+            if (window.location.hash.includes('dashboard') || !selectedApptDate) {
+                const today = new Date().toISOString().split('T')[0];
+                queue = queue.filter(a => a.appointment_date === today);
+            } else if (selectedApptDate) {
+                queue = queue.filter(a => a.appointment_date === selectedApptDate);
+            }
+
+            queue.sort((a, b) => {
+                const t1 = a.start_time || '00:00:00';
+                const t2 = b.start_time || '00:00:00';
+                if (t1 !== t2) return t1.localeCompare(t2);
+                return (a.token_number || 1) - (b.token_number || 1);
+            });
+
+            return queue;
+        }
+
+        window.currentConsultationIndex = 0;
+
         window.openConsultationMode = (apptId) => {
-            const appt = (window.todayApptsList || []).find(a => a.id === apptId) || (cachedAppointments || []).find(a => a.id === apptId);
+            const queue = getSortedQueueForCurrentView();
+            let idx = queue.findIndex(a => a.id === apptId);
+            if (idx === -1) idx = 0;
+
+            const appt = queue[idx];
             if (!appt) return;
 
-            const pName = (appt.patient && appt.patient.full_name) ? appt.patient.full_name : 'Patient Name';
+            window.currentConsultationIndex = idx;
+            window.currentConsultationApptId = appt.id;
+
+            const prevAppt = idx > 0 ? queue[idx - 1] : null;
+            const nextAppt = idx < queue.length - 1 ? queue[idx + 1] : null;
+
+            const pName = appt.patient_name || (appt.patient && appt.patient.full_name) || appt.patient_full_name || appt.user_name || 'Patient Name';
+            const patientPic = appt.patient_image || appt.patient?.avatar_url || appt.patient?.image_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150';
             const tokenStr = `#${String(appt.token_number || 1).padStart(2, '0')}`;
             const timeStr = formatTime(appt.start_time);
-            const feeVal = appt.fee || window.doctorContext.fee || 500;
-            const apptType = (appt.appointment_type === 'followup' || appt.is_followup) ? 'Follow-up Patient' : 'New Patient';
+            const feeVal = appt.fee || window.doctorContext?.fee || 500;
+            const isFollowUp = appt.appointment_type === 'followup' || appt.is_followup === true;
+            const visitBadge = isFollowUp
+                ? `<span style="background:#e0e7ff; color:#3730a3; font-weight:700; padding:3px 10px; border-radius:12px; font-size:0.75rem;">🔄 Follow-up</span>`
+                : `<span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 10px; border-radius:12px; font-size:0.75rem;">✨ New Patient</span>`;
 
             const modalContainer = document.getElementById('modal-container');
             modalContainer.innerHTML = `
-                <div class="modal-overlay">
-                    <div class="modal-content" style="max-width: 680px; padding: 0; overflow: hidden; border-radius: 16px;">
-                        <div style="background: linear-gradient(135deg, #152C69 0%, #1e3a8a 100%); color: #fff; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-                            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <button class="btn btn-outline btn-sm" style="color: #fff; border-color: rgba(255,255,255,0.4);" onclick="document.getElementById('modal-container').innerHTML=''">← Queue</button>
+                <div class="modal-overlay" style="align-items:center; padding: 1rem;">
+                    <div class="modal-content" style="max-width: 650px; width: 100%; max-height: 90vh; padding: 0; display: flex; flex-direction: column; border-radius: 20px; box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25); border: 1px solid var(--border); overflow: hidden;">
+
+                        <!-- Clean Header Bar -->
+                        <div style="background: #ffffff; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10;">
+                            <div style="display: flex; align-items: center; gap: 0.875rem;">
+                                <div style="background: #152C69; color: #ffffff; width: 52px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 900;">
+                                    ${tokenStr}
+                                </div>
+                                <img src="${patientPic}" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary);" alt="Patient Photo">
                                 <div>
-                                    <h3 style="font-size: 1.2rem; font-weight: 800; color: #fff; margin: 0;">📋 Consultation Mode</h3>
-                                    <span style="font-size: 0.775rem; color: #86efac; font-weight: 700;">LIVE CONSULTATION SESSION</span>
-                                </div>
-                            </div>
-                            <span class="token-badge-lg" style="background: rgba(255,255,255,0.2); color: #fff; font-size: 1.25rem;">Token ${tokenStr}</span>
-                        </div>
-
-                        <div style="padding: 1.5rem; max-height: 75vh; overflow-y: auto;">
-                            <!-- Patient Info Card -->
-                            <div style="background: #f8fafc; padding: 1rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 1.25rem;">
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                    <div>
-                                        <h4 style="font-size: 1.15rem; font-weight: 800; color: var(--primary);">${pName}</h4>
-                                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">${apptType} &bull; Scheduled Time: <strong>${timeStr}</strong></p>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin: 0;">${pName}</h3>
+                                        ${visitBadge}
                                     </div>
-                                    <span class="badge badge-success" style="font-size: 0.85rem; padding: 6px 12px;">Fee: ₹${feeVal}</span>
-                                </div>
-                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 0.75rem; font-size: 0.8rem; border-top: 1px solid var(--border); padding-top: 0.5rem;">
-                                    <div><strong>Phone:</strong> ${appt.patient?.phone || 'N/A'}</div>
-                                    <div><strong>Gender:</strong> ${appt.patient?.gender || 'Patient'}</div>
-                                    <div><strong>Age:</strong> ${appt.patient?.age || '25'} Yrs</div>
+                                    <p style="font-size: 0.825rem; color: var(--text-secondary); margin-top: 2px;">
+                                        🕒 Slot: <strong>${timeStr}</strong> &bull; Fee: <strong style="color:var(--success);">₹${feeVal}</strong>
+                                    </p>
                                 </div>
                             </div>
+                            <button class="btn btn-outline btn-sm" style="border-radius: 50%; width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;" onclick="document.getElementById('modal-container').innerHTML=''">✕</button>
+                        </div>
 
-                            <!-- Clinical Symptoms & Notes -->
+                        <!-- Scrollable Body Content -->
+                        <div style="padding: 1.25rem 1.5rem; overflow-y: auto; flex: 1; background: #ffffff;">
+
+                            <!-- Compact Patient Demographics Pill Strip -->
+                            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.25rem; background: #f8fafc; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--border); font-size: 0.825rem; color: var(--text-primary);">
+                                <div>📞 <strong>Phone:</strong> ${appt.patient?.phone || 'N/A'}</div>
+                                <div style="color: var(--border);">|</div>
+                                <div>👤 <strong>Gender:</strong> ${appt.patient?.gender || 'Patient'}</div>
+                                <div style="color: var(--border);">|</div>
+                                <div>🎂 <strong>Age:</strong> ${appt.patient?.age || '25'} Yrs</div>
+                            </div>
+
+                            <!-- Symptoms / Diagnosis Field -->
                             <div class="form-group" style="margin-bottom: 1.25rem;">
-                                <label class="form-label" style="font-weight: 700; color: var(--text-primary);">Symptoms / Clinical Notes</label>
-                                <textarea id="consult-symptoms-input" class="form-control" rows="3" placeholder="Enter patient symptoms, diagnosis or clinical findings...">${appt.notes || appt.patient_reason || ''}</textarea>
+                                <label class="form-label" style="font-size: 0.9rem; font-weight: 700; color: var(--primary); display: flex; justify-content: space-between; align-items: center;">
+                                    <span>🩺 Symptoms / Illness Notes</span>
+                                    <span style="font-size: 0.75rem; font-weight: 500; color: var(--text-muted);">Patient's complaints &amp; diagnosis</span>
+                                </label>
+                                <textarea id="consult-symptoms-input" class="form-control" rows="3" style="border-radius: 12px; font-size: 0.875rem; line-height: 1.5; padding: 10px 14px;" placeholder="e.g. High fever for 2 days, dry cough, weakness...">${appt.notes || appt.patient_reason || ''}</textarea>
                             </div>
 
-                            <!-- Prescription Input -->
-                            <div class="form-group">
-                                <label class="form-label" style="font-weight: 700; color: var(--text-primary);">Prescription &amp; Medicines</label>
-                                <textarea id="consult-prescription-input" class="form-control" rows="3" placeholder="e.g. Paracetamol 500mg (1-0-1, 3 days), Rest and drink water">${appt.prescription || ''}</textarea>
+                            <!-- Prescription & Advice Field -->
+                            <div class="form-group" style="margin-bottom: 0.5rem;">
+                                <label class="form-label" style="font-size: 0.9rem; font-weight: 700; color: var(--primary); display: flex; justify-content: space-between; align-items: center;">
+                                    <span>💊 Prescription &amp; Medicines</span>
+                                    <span style="font-size: 0.75rem; font-weight: 500; color: var(--text-muted);">Medicines &amp; instructions for patient</span>
+                                </label>
+                                <textarea id="consult-prescription-input" class="form-control" rows="3" style="border-radius: 12px; font-size: 0.875rem; line-height: 1.5; padding: 10px 14px;" placeholder="e.g. Tab Paracetamol 650mg (1-0-1 after food x 3 days)&#10;Tab Cetirizine 10mg (0-0-1 at night)&#10;Drink warm water &amp; take rest.">${appt.prescription || ''}</textarea>
                             </div>
                         </div>
 
-                        <div style="padding: 1rem 1.5rem; background: #f8fafc; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
-                            <button class="btn btn-outline" onclick="window.saveConsultationNotesOnly('${appt.id}')">💾 Save Notes</button>
-                            <button class="btn btn-success" style="padding: 10px 20px; font-weight: 800; font-size: 0.95rem;" onclick="window.completeConsultationFromModal('${appt.id}')">Complete Consultation ✓</button>
+                        <!-- Sticky Footer Actions Bar -->
+                        <div style="padding: 1rem 1.5rem; background: #f8fafc; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; position: sticky; bottom: 0; z-index: 10;">
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <button class="btn btn-outline btn-sm" style="font-weight: 700; padding: 8px 14px;" ${!prevAppt ? 'disabled style="opacity:0.4;"' : ''} onclick="window.navigateConsultationMode(-1)">← Prev Patient</button>
+                                <button class="btn btn-outline btn-sm" style="font-weight: 700; padding: 8px 14px;" ${!nextAppt ? 'disabled style="opacity:0.4;"' : ''} onclick="window.navigateConsultationMode(1)">Next Patient →</button>
+                            </div>
+
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <button class="btn btn-outline" style="font-weight: 600; font-size: 0.85rem;" onclick="document.getElementById('modal-container').innerHTML=''">← Close</button>
+                                <button class="btn btn-success" style="padding: 10px 22px; font-weight: 800; font-size: 0.925rem; background: #22c55e; border-color: #22c55e; color: #ffffff;" onclick="window.completeConsultationFromModal('${appt.id}')">Complete &amp; Next Patient →</button>
+                            </div>
                         </div>
+
                     </div>
                 </div>
             `;
         };
 
-        window.saveConsultationNotesOnly = async (apptId) => {
+        window.navigateConsultationMode = (direction) => {
+            const queue = getSortedQueueForCurrentView();
+            if (!queue || queue.length === 0) return;
+
+            let newIdx = (window.currentConsultationIndex || 0) + direction;
+            if (newIdx < 0) newIdx = 0;
+            if (newIdx >= queue.length) newIdx = queue.length - 1;
+
+            const target = queue[newIdx];
+            if (target) {
+                window.openConsultationMode(target.id);
+            }
+        };
+
+        window.completeConsultationFromModal = async (apptId) => {
+            // Auto save symptoms & prescription silently
             const symptoms = document.getElementById('consult-symptoms-input')?.value.trim();
             const prescription = document.getElementById('consult-prescription-input')?.value.trim();
 
             try {
                 await supabase.from('appointments').update({
                     notes: symptoms,
-                    prescription: prescription
+                    prescription: prescription,
+                    status: 'Completed'
                 }).eq('id', apptId);
-
-                if (window.showToast) window.showToast("💾 Clinical notes & prescription saved!", "success", 2500);
             } catch (err) {
-                alert("Failed to save notes: " + err.message);
+                console.warn("Silent save notes warning:", err);
             }
-        };
 
-        window.completeConsultationFromModal = async (apptId) => {
-            await window.saveConsultationNotesOnly(apptId);
-            await window.updateApptStatus(apptId, 'Completed');
-            document.getElementById('modal-container').innerHTML = '';
-            if (window.showToast) window.showToast("✅ Consultation Completed!", "success", 3000);
+            const queue = getSortedQueueForCurrentView();
+
+            // Update status in cached queue item
+            const finishedItem = queue.find(a => a.id === apptId);
+            if (finishedItem) finishedItem.status = 'Completed';
+
+            // Find next waiting or confirmed patient in queue
+            const nextPatient = queue.find(a => {
+                if (a.id === apptId) return false;
+                const st = (a.status || '').toLowerCase().trim();
+                return st.includes('confirm') || st.includes('pending') || st.includes('waiting') || st.includes('consultation');
+            });
+
+            if (nextPatient) {
+                const st = (nextPatient.status || '').toLowerCase();
+                if (!st.includes('consultation')) {
+                    nextPatient.status = 'In Consultation';
+                    await supabase.from('appointments').update({ status: 'In Consultation' }).eq('id', nextPatient.id);
+                }
+                const nextPName = nextPatient.patient_name || (nextPatient.patient && nextPatient.patient.full_name) || 'Next Patient';
+                if (window.showToast) window.showToast(`✅ Consultation Completed! Loaded Next Patient: ${nextPName} (Token #${nextPatient.token_number || 1})`, "success", 3000);
+
+                // Instantly load next patient in consultation mode!
+                window.openConsultationMode(nextPatient.id);
+
+                if (window.location.hash.includes('dashboard')) initDashboard();
+                else renderAppointmentsTable();
+            } else {
+                document.getElementById('modal-container').innerHTML = '';
+                if (window.showToast) window.showToast("✅ Consultation Completed! All queued patients completed for today.", "success", 3000);
+
+                if (window.location.hash.includes('dashboard')) initDashboard();
+                else renderAppointmentsTable();
+            }
         };
 
         window.openAddAppointmentModal = () => {
@@ -2285,7 +2422,7 @@
                 if (liveCard) {
                     if (window.activeLiveAppt) {
                         liveCard.style.display = 'block';
-                        const livePName = (window.activeLiveAppt.patient && window.activeLiveAppt.patient.full_name) ? window.activeLiveAppt.patient.full_name : ('Patient #' + (window.activeLiveAppt.id ? window.activeLiveAppt.id.substring(0, 5) : '01'));
+                        const livePName = window.activeLiveAppt.patient_name || (window.activeLiveAppt.patient && window.activeLiveAppt.patient.full_name) || window.activeLiveAppt.patient_full_name || ('Patient #' + (window.activeLiveAppt.id ? window.activeLiveAppt.id.substring(0, 5) : '01'));
                         const tokenStr = `#${String(window.activeLiveAppt.token_number || 1).padStart(2, '0')}`;
                         const timeStr = formatTime(window.activeLiveAppt.start_time);
                         const apptType = (window.activeLiveAppt.appointment_type === 'followup' || window.activeLiveAppt.is_followup) ? 'Follow-up Patient' : 'New Patient';
@@ -2311,7 +2448,7 @@
                 if (nextBar && nextInfo) {
                     if (nextPatient) {
                         nextBar.style.display = 'flex';
-                        const nextPName = (nextPatient.patient && nextPatient.patient.full_name) ? nextPatient.patient.full_name : ('Patient #' + (nextPatient.id ? nextPatient.id.substring(0, 5) : '01'));
+                        const nextPName = nextPatient.patient_name || (nextPatient.patient && nextPatient.patient.full_name) || nextPatient.patient_full_name || ('Patient #' + (nextPatient.id ? nextPatient.id.substring(0, 5) : '01'));
                         const waitTimeStr = calcWaitingTime(nextPatient.start_time, today);
                         nextInfo.textContent = `Token #${String(nextPatient.token_number || 1).padStart(2, '0')} • ${nextPName} • ${formatTime(nextPatient.start_time)} • Waiting ${waitTimeStr}`;
                         window.nextQueueApptId = nextPatient.id;
@@ -2332,8 +2469,8 @@
                 let html = '';
                 let mobileHtml = '';
 
-                todayAppts.forEach(appt => {
-                    const pName = (appt.patient && appt.patient.full_name) ? appt.patient.full_name : ('Patient #' + (appt.id ? appt.id.substring(0, 5) : '01'));
+                todayAppts.forEach((appt, idx) => {
+                    const pName = appt.patient_name || (appt.patient && appt.patient.full_name) || appt.patient_full_name || appt.user_name || ('Patient #' + (appt.id ? appt.id.substring(0, 5) : '01'));
                     const apptFee = appt.fee || window.doctorContext.fee || 500;
                     const tokenStr = `#${String(appt.token_number || 1).padStart(2, '0')}`;
                     const waitTime = calcWaitingTime(appt.start_time, today);
@@ -2354,6 +2491,7 @@
                         <div class="dropdown-wrapper" id="drop-${appt.id}">
                             <button class="btn btn-outline btn-sm" onclick="window.toggleRowDropdown(event, '${appt.id}')">⋮ More</button>
                             <div class="dropdown-menu">
+                                <button class="dropdown-item" onclick="window.openQueueBottomSheet(${idx})">📱 Quick Patient Profile Sheet</button>
                                 <button class="dropdown-item" onclick="window.openConsultationMode('${appt.id}')">📋 Open Consultation Mode</button>
                                 ${!st.includes('consultation') ? `<button class="dropdown-item" onclick="window.updateApptStatus('${appt.id}', 'In Consultation')">▶️ Start Consultation</button>` : ''}
                                 ${!st.includes('completed') ? `<button class="dropdown-item" onclick="window.updateApptStatus('${appt.id}', 'Completed')">✅ Complete</button>` : ''}
@@ -2630,8 +2768,8 @@
             let html = '';
             let mobileHtml = '';
 
-            filtered.forEach(appt => {
-                const pName = (appt.patient && appt.patient.full_name) ? appt.patient.full_name : ('Patient #' + (appt.id ? appt.id.substring(0, 5) : '01'));
+            filtered.forEach((appt, idx) => {
+                const pName = appt.patient_name || (appt.patient && appt.patient.full_name) || appt.patient_full_name || appt.user_name || ('Patient #' + (appt.id ? appt.id.substring(0, 5) : '01'));
                 const st = (appt.status || 'Confirmed').toLowerCase().trim();
                 const apptFee = appt.fee || window.doctorContext.fee || 500;
                 const tokenStr = `#${String(appt.token_number || 1).padStart(2, '0')}`;
@@ -2650,6 +2788,7 @@
                     <div class="dropdown-wrapper" id="drop-${appt.id}">
                         <button class="btn btn-outline btn-sm" onclick="window.toggleRowDropdown(event, '${appt.id}')">⋮ More</button>
                         <div class="dropdown-menu">
+                            <button class="dropdown-item" onclick="window.openQueueBottomSheet(${idx})">📱 Quick Patient Profile Sheet</button>
                             <button class="dropdown-item" onclick="window.openConsultationMode('${appt.id}')">📋 Open Consultation Mode</button>
                             ${!st.includes('consultation') ? `<button class="dropdown-item" onclick="window.updateApptStatus('${appt.id}', 'In Consultation')">▶️ Start Consultation</button>` : ''}
                             ${!st.includes('completed') ? `<button class="dropdown-item" onclick="window.updateApptStatus('${appt.id}', 'Completed')">✅ Complete</button>` : ''}
@@ -2762,23 +2901,167 @@
             }
         };
 
-        window.bulkConfirmTodayAppointments = async () => {
-            if (!window.doctorContext) return;
-            const doctorId = window.doctorContext.id;
-            const today = new Date().toISOString().split('T')[0];
+        window.startConsultationModeForQueue = async () => {
+            const dateAppts = cachedAppointments.filter(a => !selectedApptDate || a.appointment_date === selectedApptDate);
 
-            try {
-                const { error } = await supabase
-                    .from('appointments')
-                    .update({ status: 'Confirmed' })
-                    .eq('appointment_date', today);
+            dateAppts.sort((a, b) => {
+                const t1 = a.start_time || '00:00:00';
+                const t2 = b.start_time || '00:00:00';
+                if (t1 !== t2) return t1.localeCompare(t2);
+                return (a.token_number || 1) - (b.token_number || 1);
+            });
 
-                if (error) throw error;
-                if (window.showToast) window.showToast("✅ All today's appointments confirmed together!", "success", 3000);
-                initDashboard();
-            } catch (err) {
-                alert("Failed to confirm appointments: " + err.message);
+            if (!dateAppts || dateAppts.length === 0) {
+                if (window.showToast) window.showToast("⚠️ No appointments in queue for selected date.", "warning", 2500);
+                return;
             }
+
+            let target = dateAppts.find(a => (a.status || '').toLowerCase().includes('consultation'));
+            if (!target) {
+                target = dateAppts.find(a => {
+                    const st = (a.status || '').toLowerCase();
+                    return st.includes('confirm') || st.includes('pending') || st.includes('waiting');
+                });
+            }
+
+            if (!target) {
+                target = dateAppts[0];
+            }
+
+            const st = (target.status || '').toLowerCase();
+            if (!st.includes('consultation') && !st.includes('completed')) {
+                await window.updateApptStatus(target.id, 'In Consultation');
+            }
+
+            window.openConsultationMode(target.id);
+        };
+
+        window.currentQueueSheetIndex = 0;
+
+        window.openQueueBottomSheet = (startIndex = 0) => {
+            const queue = (window.todayApptsList && window.todayApptsList.length > 0)
+                ? window.todayApptsList
+                : (cachedAppointments || []);
+
+            if (!queue || queue.length === 0) {
+                if (window.showToast) window.showToast("⚠️ No patient appointments in queue.", "warning", 2500);
+                return;
+            }
+
+            window.currentQueueSheetIndex = Math.max(0, Math.min(startIndex, queue.length - 1));
+            renderQueueBottomSheetItem();
+        };
+
+        window.renderQueueBottomSheetItem = () => {
+            const queue = (window.todayApptsList && window.todayApptsList.length > 0)
+                ? window.todayApptsList
+                : (cachedAppointments || []);
+
+            if (!queue || queue.length === 0) return;
+
+            const idx = window.currentQueueSheetIndex;
+            const appt = queue[idx];
+            if (!appt) return;
+
+            const pName = appt.patient_name || (appt.patient && appt.patient.full_name) || appt.patient_full_name || appt.user_name || ('Patient #' + (appt.id ? appt.id.substring(0, 5) : '01'));
+            const patientPic = appt.patient_image || appt.patient?.avatar_url || appt.patient?.image_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150';
+            const tokenStr = `#${String(appt.token_number || 1).padStart(2, '0')}`;
+            const timeStr = formatTime(appt.start_time);
+            const feeVal = appt.fee || window.doctorContext?.fee || 500;
+            const isFollowUp = appt.appointment_type === 'followup' || appt.is_followup === true;
+            const patientTypeBadge = isFollowUp
+                ? `<span class="badge badge-info" style="font-size:0.825rem; padding: 6px 12px; background: #DBEAFE; color: #1E40AF;">🔄 Follow-up Patient (Repeat Visit)</span>`
+                : `<span class="badge badge-success" style="font-size:0.825rem; padding: 6px 12px; background: #DCFCE7; color: #15803D;">✨ New Patient (First Visit)</span>`;
+
+            const st = (appt.status || 'Confirmed').toLowerCase().trim();
+            const waitTime = calcWaitingTime(appt.start_time, appt.appointment_date);
+
+            let statusBadge = `<span class="badge badge-info">Waiting</span>`;
+            if (st.includes('consultation')) statusBadge = `<span class="badge badge-verified">🟢 In Consultation (Live)</span>`;
+            else if (st.includes('completed')) statusBadge = `<span class="badge badge-secondary">Completed ✓</span>`;
+            else if (st.includes('cancel')) statusBadge = `<span class="badge badge-error">Cancelled</span>`;
+
+            let startActionBtn = '';
+            if (st.includes('consultation')) {
+                startActionBtn = `<button class="btn btn-success" style="font-weight: 800; padding: 10px 18px;" onclick="window.completeLiveAndNext(); window.closeQueueBottomSheet();">Complete Consultation ✓</button>`;
+            } else if (st.includes('confirm') || st.includes('pending')) {
+                startActionBtn = `<button class="btn btn-primary" style="font-weight: 800; padding: 10px 18px;" onclick="window.updateApptStatus('${appt.id}', 'In Consultation'); window.closeQueueBottomSheet();">▶️ Start Consultation</button>`;
+            } else {
+                startActionBtn = `<button class="btn btn-outline" style="font-weight: 700;" onclick="window.openConsultationMode('${appt.id}'); window.closeQueueBottomSheet();">📋 Open Consultation</button>`;
+            }
+
+            const modalContainer = document.getElementById('modal-container');
+            modalContainer.innerHTML = `
+                <div class="bottom-sheet-overlay" onclick="window.closeQueueBottomSheet()">
+                    <div class="bottom-sheet-dialog" onclick="event.stopPropagation()">
+                        <div class="bottom-sheet-drag-handle"></div>
+
+                        <!-- Header -->
+                        <div style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <span class="token-badge-lg" style="font-size: 1.35rem;">Token ${tokenStr}</span>
+                                <img src="${patientPic}" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary);" alt="Patient Photo">
+                                <div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700;">PATIENT ${idx + 1} OF ${queue.length} IN QUEUE</div>
+                                    <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin: 0;">${pName}</h3>
+                                </div>
+                            </div>
+                            <button class="btn btn-outline btn-sm" onclick="window.closeQueueBottomSheet()">✕</button>
+                        </div>
+
+                        <!-- Content Body -->
+                        <div style="padding: 1.25rem 1.5rem; overflow-y: auto; flex: 1;">
+                            <!-- Patient Visit Type & Status -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
+                                ${patientTypeBadge}
+                                ${statusBadge}
+                            </div>
+
+                            <!-- Timing & Fee Grid -->
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; background: #f8fafc; padding: 1rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 1rem; font-size: 0.85rem;">
+                                <div>🕒 <strong>Scheduled Slot:</strong> ${timeStr}</div>
+                                <div>⏱ <strong>Waiting Duration:</strong> ${waitTime}</div>
+                                <div>💰 <strong>Consultation Fee:</strong> ₹${feeVal}</div>
+                                <div>📞 <strong>Phone:</strong> ${appt.patient?.phone || 'N/A'}</div>
+                                <div>👤 <strong>Gender &amp; Age:</strong> ${appt.patient?.gender || 'Patient'}, ${appt.patient?.age || '25'} Yrs</div>
+                                <div>🏥 <strong>Clinic Branch:</strong> ${appt.clinic_name || window.doctorContext?.clinic_name || 'Main Clinic'}</div>
+                            </div>
+
+                            <!-- Patient Reason / Symptoms -->
+                            <div style="margin-bottom: 0.5rem;">
+                                <strong style="font-size: 0.85rem; color: var(--text-primary);">Patient Symptoms / Notes:</strong>
+                                <div style="background: #f1f5f9; padding: 0.75rem; border-radius: 8px; font-size: 0.825rem; color: var(--text-secondary); margin-top: 4px; border: 1px solid var(--border);">
+                                    ${appt.notes || appt.patient_reason || 'No specific symptoms noted.'}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Footer Queue Navigation Bar -->
+                        <div style="padding: 1rem 1.5rem; background: #f8fafc; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                            <button class="btn btn-outline btn-sm" ${idx === 0 ? 'disabled style="opacity:0.5;"' : ''} onclick="window.navigateQueueSheet(-1)">← Prev Patient</button>
+
+                            ${startActionBtn}
+
+                            <button class="btn btn-outline btn-sm" ${idx === queue.length - 1 ? 'disabled style="opacity:0.5;"' : ''} onclick="window.navigateQueueSheet(1)">Next Patient →</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        window.navigateQueueSheet = (direction) => {
+            const queue = (window.todayApptsList && window.todayApptsList.length > 0)
+                ? window.todayApptsList
+                : (cachedAppointments || []);
+
+            if (!queue || queue.length === 0) return;
+
+            window.currentQueueSheetIndex = Math.max(0, Math.min(window.currentQueueSheetIndex + direction, queue.length - 1));
+            renderQueueBottomSheetItem();
+        };
+
+        window.closeQueueBottomSheet = () => {
+            document.getElementById('modal-container').innerHTML = '';
         };
 
         window.bulkCancelTodayAppointments = async () => {
