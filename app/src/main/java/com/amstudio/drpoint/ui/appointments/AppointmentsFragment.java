@@ -13,6 +13,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.amstudio.drpoint.R;
 import com.amstudio.drpoint.adapter.AppointmentListAdapter;
 import com.amstudio.drpoint.databinding.BottomSheetAppointmentDetailsBinding;
 import com.amstudio.drpoint.databinding.FragmentAppointmentsBinding;
@@ -24,6 +25,7 @@ import com.amstudio.drpoint.ui.booking.BookAppointmentActivity;
 import com.amstudio.drpoint.ui.main.MainActivity;
 import com.amstudio.drpoint.util.DummyDataProvider;
 import com.amstudio.drpoint.util.PreferenceManager;
+import com.bumptech.glide.Glide;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.tabs.TabLayout;
 
@@ -284,34 +286,68 @@ public class AppointmentsFragment extends Fragment {
         BottomSheetAppointmentDetailsBinding sheetBinding = BottomSheetAppointmentDetailsBinding.inflate(getLayoutInflater());
         dialog.setContentView(sheetBinding.getRoot());
 
-        // Header info
+        // Header info & Doctor Avatar
         sheetBinding.tvDetailStatus.setText(appointment.getUserFriendlyStatus());
         sheetBinding.tvDetailDoctorName.setText(appointment.getDoctorName());
         sheetBinding.tvDetailSpecialization.setText(appointment.getSpecialization());
         sheetBinding.tvDetailClinicName.setText(appointment.getClinicName());
         sheetBinding.tvDetailClinicAddress.setText(appointment.getLocation());
 
-        String dateVal = (appointment.getDate() != null ? appointment.getDate() : "") + " • " + (appointment.getTime() != null ? appointment.getTime() : "");
-        sheetBinding.tvDetailDatetime.setText(dateVal);
+        if (appointment.getDoctor() != null && appointment.getDoctor().getImageUrl() != null && !appointment.getDoctor().getImageUrl().isEmpty()) {
+            Glide.with(this)
+                    .load(appointment.getDoctor().getImageUrl())
+                    .placeholder(R.drawable.ic_user)
+                    .into(sheetBinding.ivDetailDoctorImage);
+        }
 
+        if (appointment.getDoctor() != null && appointment.getDoctor().getReceptionPhone() != null && !appointment.getDoctor().getReceptionPhone().isEmpty()) {
+            sheetBinding.tvDetailReceptionPhone.setText("📞 Reception: " + appointment.getDoctor().getReceptionPhone());
+            sheetBinding.tvDetailReceptionPhone.setVisibility(View.VISIBLE);
+        } else {
+            sheetBinding.tvDetailReceptionPhone.setText("📞 Clinic Branch: " + appointment.getClinicName());
+            sheetBinding.tvDetailReceptionPhone.setVisibility(View.VISIBLE);
+        }
+
+        // Clean Date & Time Formatting
+        String formattedDate = appointment.getDate() != null ? appointment.getDate() : "Scheduled";
+        String formattedTime = appointment.getFormattedTime();
+        sheetBinding.tvDetailDatetime.setText(formattedDate + " • " + formattedTime);
+
+        // Clean Type & Fee
+        String apptTypeStr = "In-Clinic";
+        if (appointment.getAppointmentType() != null && !appointment.getAppointmentType().isEmpty()) {
+            String typeLower = appointment.getAppointmentType().toLowerCase();
+            if (typeLower.contains("video")) apptTypeStr = "Video Consult";
+            else if (typeLower.contains("follow")) apptTypeStr = "Follow-up";
+            else apptTypeStr = "In-Clinic";
+        }
         int feeVal = appointment.getAmount() > 0 ? appointment.getAmount() : (appointment.getFee() > 0 ? appointment.getFee() : 900);
-        sheetBinding.tvDetailTypeFee.setText((appointment.getAppointmentType() != null ? appointment.getAppointmentType() : "Clinic") + " • ₹" + feeVal);
+        sheetBinding.tvDetailTypeFee.setText(apptTypeStr + " • ₹" + feeVal);
 
         // Queue Metrics Calculation
-        int yourToken = appointment.getTokenNumber() > 0 ? appointment.getTokenNumber() : 12;
+        int yourToken = appointment.getTokenNumber() > 0 ? appointment.getTokenNumber() : 1;
         sheetBinding.tvQueueTokenNum.setText("Token #" + String.format(Locale.getDefault(), "%02d", yourToken));
 
-        int currentToken = Math.max(1, yourToken - 3);
+        int currentToken = Math.max(1, yourToken - 2);
         int patientsAhead = Math.max(0, yourToken - currentToken);
 
         sheetBinding.tvQueueCurrentToken.setText("#" + String.format(Locale.getDefault(), "%02d", currentToken));
         sheetBinding.tvQueuePatientsAhead.setText(String.valueOf(patientsAhead));
 
+        // Symptoms / Illness Notes
         if (appointment.getPatientReason() != null && !appointment.getPatientReason().trim().isEmpty()) {
             sheetBinding.cardPatientReason.setVisibility(View.VISIBLE);
             sheetBinding.tvDetailReason.setText(appointment.getPatientReason());
         } else {
             sheetBinding.cardPatientReason.setVisibility(View.GONE);
+        }
+
+        // Prescription & Medicines (If Completed & Prescription Available)
+        if (appointment.getPrescription() != null && !appointment.getPrescription().trim().isEmpty()) {
+            sheetBinding.cardPrescriptionDetail.setVisibility(View.VISIBLE);
+            sheetBinding.tvDetailPrescriptionText.setText(appointment.getPrescription());
+        } else {
+            sheetBinding.cardPrescriptionDetail.setVisibility(View.GONE);
         }
 
         // Action Buttons

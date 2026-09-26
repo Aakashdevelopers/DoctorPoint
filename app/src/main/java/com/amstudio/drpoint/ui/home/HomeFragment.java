@@ -20,12 +20,14 @@ import com.amstudio.drpoint.adapter.SpecialitiesAdapter;
 import com.amstudio.drpoint.databinding.FragmentHomeBinding;
 import com.amstudio.drpoint.model.Doctor;
 import com.amstudio.drpoint.model.NotificationItem;
+import com.amstudio.drpoint.model.PatientProfile;
 import com.amstudio.drpoint.network.SupabaseClient;
 import com.amstudio.drpoint.ui.doctor.DoctorDetailActivity;
 import com.amstudio.drpoint.ui.doctor.DoctorListActivity;
 import com.amstudio.drpoint.ui.explore.FindDoctorsActivity;
 import com.amstudio.drpoint.util.DummyDataProvider;
 import com.amstudio.drpoint.util.PreferenceManager;
+import com.bumptech.glide.Glide;
 import com.denzcoskun.imageslider.constants.ScaleTypes;
 import com.denzcoskun.imageslider.interfaces.ItemClickListener;
 import com.denzcoskun.imageslider.models.SlideModel;
@@ -249,9 +251,44 @@ public class HomeFragment extends Fragment {
 
     private void updateGreeting() {
         if (binding == null) return;
-        String userName = PreferenceManager.getInstance(requireContext()).getUserName();
+        PreferenceManager prefManager = PreferenceManager.getInstance(requireContext());
+        String userName = prefManager.getUserName();
         if (userName != null && !userName.isEmpty()) {
             binding.tvUsername.setText(userName + " 👋");
+        }
+
+        String userAvatar = prefManager.getUserAvatar();
+        if (userAvatar != null && !userAvatar.trim().isEmpty()) {
+            Glide.with(this)
+                    .load(userAvatar)
+                    .placeholder(R.drawable.ic_user)
+                    .error(R.drawable.ic_user)
+                    .into(binding.ivAvatar);
+        }
+
+        String userId = prefManager.getUserId();
+        if (userId != null && !userId.trim().isEmpty()) {
+            SupabaseClient.getPatientService().getProfile("eq." + userId)
+                    .enqueue(new Callback<List<PatientProfile>>() {
+                        @Override
+                        public void onResponse(Call<List<PatientProfile>> call, Response<List<PatientProfile>> response) {
+                            if (binding == null || !isAdded()) return;
+                            if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                                PatientProfile p = response.body().get(0);
+                                if (p.getAvatarUrl() != null && !p.getAvatarUrl().trim().isEmpty()) {
+                                    prefManager.setUserAvatar(p.getAvatarUrl());
+                                    Glide.with(HomeFragment.this)
+                                            .load(p.getAvatarUrl())
+                                            .placeholder(R.drawable.ic_user)
+                                            .error(R.drawable.ic_user)
+                                            .into(binding.ivAvatar);
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<List<PatientProfile>> call, Throwable t) {}
+                    });
         }
     }
 

@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingBottom="32dp">
+        android:paddingBottom="36dp">
 
         <!-- Top App Bar Card -->
         <com.google.android.material.card.MaterialCardView
@@ -52,7 +52,7 @@
                     android:layout_centerVertical="true"
                     android:layout_marginStart="12dp"
                     android:layout_toEndOf="@id/fl_back_bg"
-                    android:text="Find Doctors"
+                    android:text="Find Doctors &amp; Specialists"
                     android:textColor="@color/text_primary"
                     android:textSize="20sp"
                     android:textStyle="bold" />
@@ -68,7 +68,7 @@
                     android:focusable="true"
                     android:paddingHorizontal="12dp"
                     android:paddingVertical="8dp"
-                    android:text="📍 Bangalore ▾"
+                    android:text="📍 All Cities ▾"
                     android:textColor="@color/primary"
                     android:textSize="12sp"
                     android:textStyle="bold" />
@@ -95,29 +95,109 @@
 
             <EditText
                 android:id="@+id/et_search"
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="10dp"
+                android:layout_weight="1"
                 android:background="@null"
-                android:hint="Search symptoms, doctors, specialities..."
+                android:hint="Search doctor, speciality or clinic..."
                 android:inputType="text"
                 android:textColor="@color/text_primary"
                 android:textColorHint="@color/text_muted"
                 android:textSize="14sp" />
+
+            <ImageView
+                android:id="@+id/iv_clear_search"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:contentDescription="Clear"
+                android:src="@drawable/ic_settings"
+                android:visibility="gone"
+                app:tint="@color/text_muted" />
         </LinearLayout>
 
-        <!-- Specialities Section Header -->
+        <!-- Search Mode Filter Chips Bar -->
+        <LinearLayout
+            android:id="@+id/ll_search_mode_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp">
+
+            <TextView
+                android:id="@+id/chip_search_all"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_chip_selected"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="7dp"
+                android:text="All Results"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/chip_search_doctors"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_chip_unselected"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="7dp"
+                android:text="Doctors"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/chip_search_specs"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_chip_unselected"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="7dp"
+                android:text="Specialisations"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- Speciality Filter Chips Horizontal Carousel -->
+        <HorizontalScrollView
+            android:id="@+id/hs_chips"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:paddingHorizontal="16dp"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/ll_chip_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+
+        <!-- Specialities Grid Section -->
         <TextView
+            android:id="@+id/tv_speciality_header"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="20dp"
-            android:layout_marginTop="22dp"
-            android:text="Popular Specialities"
+            android:layout_marginTop="20dp"
+            android:text="Popular Medical Categories"
             android:textColor="@color/text_primary"
-            android:textSize="17sp"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
-        <!-- Grid RecyclerView for Specialities -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rv_specialities"
             android:layout_width="match_parent"
@@ -126,20 +206,7 @@
             android:layout_marginTop="10dp"
             android:nestedScrollingEnabled="false" />
 
-        <!-- AI Symptom Checker Banner Card -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/card_ai_symptom"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="20dp"
-            app:cardBackgroundColor="@color/bg_blue_light"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="0dp"
-            app:strokeColor="@color/secondary"
-            app:strokeWidth="1dp"/>
-
-        <!-- Top Doctors Section Header -->
+        <!-- Doctors Result Count Header -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -147,11 +214,12 @@
             android:layout_marginTop="24dp">
 
             <TextView
+                android:id="@+id/tv_result_count"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
                 android:layout_centerVertical="true"
-                android:text="Top Doctors Near You"
+                android:text="Available Doctors"
                 android:textColor="@color/text_primary"
                 android:textSize="17sp"
                 android:textStyle="bold" />
@@ -172,13 +240,48 @@
                 android:textStyle="bold" />
         </RelativeLayout>
 
-        <!-- Horizontal RecyclerView for Doctor Previews -->
+        <!-- Empty State View -->
+        <LinearLayout
+            android:id="@+id/ll_empty_state"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="32dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:contentDescription="No doctors found"
+                android:src="@drawable/ic_search"
+                app:tint="@color/text_muted" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="No Doctors Found"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Try searching with a different doctor name or speciality."
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <!-- Doctors Grid / List -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rv_top_doctors"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:clipToPadding="false"
+            android:nestedScrollingEnabled="false"
             android:paddingHorizontal="10dp" />
 
     </LinearLayout>

@@ -87,7 +87,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="6dp"
-            android:text="📷 Tap to Upload Profile Photo (Required)"
+            android:text="Tap to Upload Profile Photo (Required)"
             android:textColor="@color/primary"
             android:textSize="12sp"
             android:textStyle="bold" />

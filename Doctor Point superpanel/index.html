@@ -1086,7 +1086,7 @@
                 <button class="modal-close" onclick="closeModal('modal-category')">&times;</button>
             </div>
             <div class="modal-body">
-                <form id="form-category">
+                <form id="form-category" onsubmit="saveCategory(event); return false;">
                     <input type="hidden" id="cat-id">
                     <div class="form-group">
                         <label class="form-label" for="cat-title-input">Specialization Name *</label>
@@ -1110,8 +1110,8 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-outline" onclick="closeModal('modal-category')">Cancel</button>
-                <button class="btn btn-primary" onclick="saveCategory()">Save Specialization</button>
+                <button class="btn btn-outline" type="button" onclick="closeModal('modal-category')">Cancel</button>
+                <button class="btn btn-primary" type="button" onclick="saveCategory(event)">Save Specialization</button>
             </div>
         </div>
     </div>
@@ -1331,13 +1331,13 @@
         ];
 
         function getFallbackImg(title = '') {
-            const name = title.toLowerCase();
-            if (name.contains('general') || name.contains('physician')) return 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=400';
-            if (name.contains('women') || name.contains('gynaec')) return 'https://images.unsplash.com/photo-1594824813566-78a931a2935e?auto=format&fit=crop&q=80&w=400';
-            if (name.contains('skin') || name.contains('derma')) return 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=400';
-            if (name.contains('dent') || name.contains('teeth')) return 'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&q=80&w=400';
-            if (name.contains('eye') || name.contains('vision')) return 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=400';
-            if (name.contains('heart') || name.contains('cardio')) return 'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&q=80&w=400';
+            const name = (title || '').toLowerCase();
+            if (name.includes('general') || name.includes('physician')) return 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=400';
+            if (name.includes('women') || name.includes('gynaec')) return 'https://images.unsplash.com/photo-1594824813566-78a931a2935e?auto=format&fit=crop&q=80&w=400';
+            if (name.includes('skin') || name.includes('derma')) return 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=400';
+            if (name.includes('dent') || name.includes('teeth')) return 'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&q=80&w=400';
+            if (name.includes('eye') || name.includes('vision')) return 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=400';
+            if (name.includes('heart') || name.includes('cardio')) return 'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&q=80&w=400';
             return 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=400';
         }
 
@@ -1658,12 +1658,14 @@
 
         window.openCategoryModal = function(cat = null) {
             const id = cat ? cat.id : '';
-            const title = cat ? cat.title : '';
-            const icon_url = cat ? (cat.icon_url || getFallbackImg(title)) : '';
+            const title = cat ? (cat.title || cat.name || '') : '';
+            const icon_url = cat ? (cat.icon_url || cat.image_url || '') : '';
+            const fallback = getFallbackImg(title);
+            const displayUrl = icon_url || fallback;
 
             document.getElementById('cat-id').value = id;
             document.getElementById('cat-title-input').value = title;
-            document.getElementById('cat-img-input').value = icon_url;
+            document.getElementById('cat-img-input').value = displayUrl;
 
             const fileInput = document.getElementById('cat-file-input');
             if (fileInput) fileInput.value = '';
@@ -1671,13 +1673,15 @@
             const statusText = document.getElementById('upload-status-text');
             if (statusText) statusText.innerText = '';
 
-            previewCatImage(icon_url || getFallbackImg(title));
+            previewCatImage(displayUrl);
 
             document.getElementById('modal-cat-title').innerText = cat ? 'Edit Specialization' : 'Add Specialization';
             openModal('modal-category');
         };
 
-        window.saveCategory = async function() {
+        window.saveCategory = async function(e) {
+            if (e && e.preventDefault) e.preventDefault();
+
             const id = document.getElementById('cat-id').value;
             const title = document.getElementById('cat-title-input').value.trim();
             const icon_url = document.getElementById('cat-img-input').value.trim() || getFallbackImg(title);
@@ -1687,28 +1691,71 @@
                 return;
             }
 
-            const payload = { title, icon_url };
-            showToast('Saving to Supabase specialities table...', 'info');
+            const isNew = !id || id.startsWith('cat_');
+            const catId = (!isNew) ? id : crypto.randomUUID();
 
+            showToast('Saving specialization to Supabase...', 'info');
+
+            let saveSuccess = false;
             try {
-                if (id && !id.startsWith('cat_')) {
-                    let { error } = await supabase.from('specialities').update(payload).eq('id', id);
-                    if (error) throw error;
+                const payload = {
+                    id: catId,
+                    name: title,
+                    title: title,
+                    icon_url: icon_url,
+                    image_url: icon_url
+                };
+
+                let { error } = await supabase.from('specialities').upsert([payload]);
+                if (!error) {
+                    saveSuccess = true;
                 } else {
-                    let { error } = await supabase.from('specialities').insert([payload]);
-                    if (error) throw error;
+                    console.warn('First upsert attempt failed, retrying simplified payload:', error);
+                    let { error: err2 } = await supabase.from('specialities').upsert([{ id: catId, name: title, icon_url }]);
+                    if (!err2) {
+                        saveSuccess = true;
+                    } else if (isNew) {
+                        console.warn('Second upsert attempt failed, trying insert without id:', err2);
+                        let { error: err3 } = await supabase.from('specialities').insert([{ name: title, icon_url, title: title, image_url: icon_url }]);
+                        if (!err3) {
+                            saveSuccess = true;
+                        } else {
+                            let { error: err4 } = await supabase.from('specialities').insert([{ name: title, icon_url }]);
+                            if (!err4) {
+                                saveSuccess = true;
+                            } else {
+                                console.error('All Supabase Speciality save attempts failed:', err4);
+                                showToast('Database Error: ' + (err4.message || err3.message || err2.message || error.message), 'danger', 5000);
+                            }
+                        }
+                    } else {
+                        console.error('Supabase Speciality Upsert Error:', err2);
+                        showToast('Database Error: ' + err2.message, 'danger', 5000);
+                    }
                 }
-                showToast('Category saved to Supabase DB!', 'success');
             } catch (err) {
-                console.warn('Supabase speciality insert/update fallback:', err);
-                const idx = categories.findIndex(c => c.id === id);
-                if (idx !== -1) categories[idx] = { id, title, icon_url };
-                else categories.unshift({ id: 'cat_' + Date.now(), title, icon_url });
-                showToast('Category saved!', 'success');
+                console.error('Supabase speciality insert/update exception:', err);
+                showToast('Save Error: ' + err.message, 'danger', 5000);
+            }
+
+            // Always update local memory array
+            const newCatObj = { id: catId, title: title, name: title, icon_url: icon_url };
+            const idx = categories.findIndex(c => c.id === id || c.id === catId);
+            if (idx !== -1) categories[idx] = newCatObj;
+            else categories.unshift(newCatObj);
+
+            if (saveSuccess) {
+                showToast('✅ Specialization saved to Supabase DB!', 'success');
+            } else {
+                showToast('⚠️ Specialization saved locally.', 'warning', 5000);
             }
 
             closeModal('modal-category');
-            await fetchAllFromSupabase();
+            renderAll();
+
+            if (saveSuccess) {
+                await fetchAllFromSupabase();
+            }
         };
 
         window.editCategory = function(id) {
@@ -1847,7 +1894,31 @@
                         ${clinicPhotosHtml}
                     </div>
                 </div>
+
+                <div style="margin-bottom:1rem; background:#f8fafc; padding:12px; border-radius:8px; border:1px solid var(--border-color);">
+                    <label class="form-label" style="font-weight:700; color:var(--primary);">🩺 Specialisation / Category Override (Admin Select):</label>
+                    <select id="review-doctor-spec" class="form-control" style="margin-top:4px;">
+                        <option value="General Physician">General Physician / Internal Medicine</option>
+                        <option value="Dermatologist">Dermatologist / Skin &amp; Hair</option>
+                        <option value="Cardiologist">Cardiologist / Heart Care</option>
+                        <option value="Pediatrician">Pediatrician / Child Care</option>
+                        <option value="Orthopedic">Orthopedic / Bone &amp; Joint</option>
+                        <option value="Neurologist">Neurologist / Brain &amp; Nerves</option>
+                        <option value="Gynecologist">Gynecologist / Women Health</option>
+                        <option value="Dentist">Dentist / Dental Care</option>
+                        <option value="ENT Specialist">ENT Specialist / Ear, Nose, Throat</option>
+                        <option value="Psychiatrist">Psychiatrist / Mental Health</option>
+                        <option value="Ophthalmologist">Ophthalmologist / Eye Care</option>
+                        <option value="Urologist">Urologist</option>
+                        <option value="Gastroenterologist">Gastroenterologist</option>
+                    </select>
+                </div>
             `;
+
+            const specSelect = document.getElementById('review-doctor-spec');
+            if (specSelect && doc.specialization) {
+                specSelect.value = doc.specialization;
+            }
 
             const statusSelect = document.getElementById('review-status-select');
             if (statusSelect) {
@@ -1869,6 +1940,7 @@
 
             const statusVal = document.getElementById('review-status-select').value;
             const messageVal = document.getElementById('review-message-input').value.trim();
+            const specVal = document.getElementById('review-doctor-spec')?.value || 'General Physician';
 
             const isVerified = statusVal === 'approved';
 
@@ -1877,6 +1949,7 @@
             try {
                 // 1. Update doctors table in Supabase
                 const { error } = await supabase.from('doctors').update({
+                    specialization: specVal,
                     is_verified: isVerified,
                     is_approved: isVerified,
                     verification_status: statusVal,

@@ -51,8 +51,7 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:maxHeight="460dp">
+        android:layout_marginTop="16dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -75,24 +74,50 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <TextView
-                        android:id="@+id/tv_detail_doctor_name"
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Dr. Priya Sharma"
-                        android:textColor="@color/text_primary"
-                        android:textSize="17sp"
-                        android:textStyle="bold" />
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
 
-                    <TextView
-                        android:id="@+id/tv_detail_specialization"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="Dermatologist &amp; Cosmetologist"
-                        android:textColor="@color/secondary"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
+                        <com.google.android.material.imageview.ShapeableImageView
+                            android:id="@+id/iv_detail_doctor_image"
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            android:contentDescription="Doctor Photo"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/ic_user"
+                            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.Circle"
+                            app:strokeColor="@color/primary"
+                            app:strokeWidth="2dp" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/tv_detail_doctor_name"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Dr. Akash Mishra"
+                                android:textColor="@color/text_primary"
+                                android:textSize="17sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tv_detail_specialization"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="Dermatology Specialist"
+                                android:textColor="@color/secondary"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </LinearLayout>
 
                     <View
                         android:layout_width="match_parent"
@@ -104,7 +129,7 @@
                         android:id="@+id/tv_detail_clinic_name"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Skin Care Clinic"
+                        android:text="Care Clinic - Main Branch"
                         android:textColor="@color/text_primary"
                         android:textSize="14sp"
                         android:textStyle="bold" />
@@ -114,9 +139,19 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="#42, Indiranagar, Bangalore"
+                        android:text="Lucknow, Uttar Pradesh"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tv_detail_reception_phone"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="📞 Reception: +91 9876543210"
+                        android:textColor="@color/primary"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -151,7 +186,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Date &amp; Time"
+                                android:text="Scheduled Date &amp; Slot"
                                 android:textColor="@color/text_secondary"
                                 android:textSize="11sp" />
 
@@ -160,7 +195,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:text="18 Sep • 10:30 AM"
+                                android:text="2026-09-26 • 09:40 AM"
                                 android:textColor="@color/text_primary"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
@@ -175,7 +210,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Type &amp; Fee"
+                                android:text="Consultation Type &amp; Fee"
                                 android:textColor="@color/text_secondary"
                                 android:textSize="11sp" />
 
@@ -184,7 +219,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:text="Clinic • ₹900"
+                                android:text="In-Clinic • ₹900"
                                 android:textColor="@color/primary"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
@@ -329,7 +364,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Reason / Notes"
+                        android:text="Symptoms / Illness Notes"
                         android:textColor="@color/text_primary"
                         android:textSize="13sp"
                         android:textStyle="bold" />
@@ -342,6 +377,44 @@
                         android:text="General consultation &amp; skin checkup."
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Prescription & Medicines Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_prescription_detail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:visibility="gone"
+                app:cardBackgroundColor="#F0FDF4"
+                app:cardCornerRadius="14dp"
+                app:cardElevation="1dp"
+                app:strokeColor="#86EFAC"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="💊 Doctor Prescription &amp; Medicines"
+                        android:textColor="#166534"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_detail_prescription_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Tab Paracetamol 650mg (1-0-1 after food x 3 days)"
+                        android:textColor="#14532D"
+                        android:textSize="13sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

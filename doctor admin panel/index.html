@@ -798,7 +798,21 @@
 
                     <div class="form-group">
                         <label class="form-label" for="signup-spec">Category / Specialization *</label>
-                        <input type="text" id="signup-spec" class="form-control" required placeholder="e.g. Dermatologist / Cardiologist">
+                        <select id="signup-spec" class="form-control" required>
+                            <option value="General Physician" selected>General Physician / Internal Medicine</option>
+                            <option value="Dermatologist">Dermatologist / Skin &amp; Hair</option>
+                            <option value="Cardiologist">Cardiologist / Heart Care</option>
+                            <option value="Pediatrician">Pediatrician / Child Care</option>
+                            <option value="Orthopedic">Orthopedic / Bone &amp; Joint</option>
+                            <option value="Neurologist">Neurologist / Brain &amp; Nerves</option>
+                            <option value="Gynecologist">Gynecologist / Women Health</option>
+                            <option value="Dentist">Dentist / Dental Care</option>
+                            <option value="ENT Specialist">ENT Specialist / Ear, Nose, Throat</option>
+                            <option value="Psychiatrist">Psychiatrist / Mental Health</option>
+                            <option value="Ophthalmologist">Ophthalmologist / Eye Care</option>
+                            <option value="Urologist">Urologist</option>
+                            <option value="Gastroenterologist">Gastroenterologist</option>
+                        </select>
                     </div>
 
                     <div class="form-group">
@@ -1081,10 +1095,13 @@
     <!-- Patients Template -->
     <template id="tpl-patients">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header" style="flex-wrap: wrap; gap: 0.75rem;">
                 <div>
-                    <h3>My Patients Directory</h3>
-                    <p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 2px;">Patients who have booked consultations with your clinic.</p>
+                    <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--primary);">👥 My Patients Directory (<span id="stat-patients-count">0</span>)</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">Real-time patient demographic profiles &amp; consultation records</p>
+                </div>
+                <div style="position: relative; width: 240px;">
+                    <input type="text" id="patient-search-input" class="form-control" style="height: 38px; font-size: 0.85rem;" placeholder="🔍 Search patient name or phone..." onkeyup="window.filterPatientsDirectory(this.value)">
                 </div>
             </div>
 
@@ -1092,14 +1109,16 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Patient ID</th>
-                            <th>Patient Name</th>
-                            <th>Total Consultations</th>
-                            <th>Status</th>
+                            <th>Patient Profile</th>
+                            <th>Contact Info</th>
+                            <th>Demographics</th>
+                            <th>Address / Location</th>
+                            <th>Visits &amp; History</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="patients-body">
-                        <tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading patients list...</td></tr>
+                        <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">Loading real-time patient directory...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -1293,8 +1312,22 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label" for="prof-spec">Category / Specialization</label>
-                        <input type="text" id="prof-spec" class="form-control" required>
+                        <label class="form-label" for="prof-spec">Category / Specialization *</label>
+                        <select id="prof-spec" class="form-control" required>
+                            <option value="General Physician">General Physician / Internal Medicine</option>
+                            <option value="Dermatologist">Dermatologist / Skin &amp; Hair</option>
+                            <option value="Cardiologist">Cardiologist / Heart Care</option>
+                            <option value="Pediatrician">Pediatrician / Child Care</option>
+                            <option value="Orthopedic">Orthopedic / Bone &amp; Joint</option>
+                            <option value="Neurologist">Neurologist / Brain &amp; Nerves</option>
+                            <option value="Gynecologist">Gynecologist / Women Health</option>
+                            <option value="Dentist">Dentist / Dental Care</option>
+                            <option value="ENT Specialist">ENT Specialist / Ear, Nose, Throat</option>
+                            <option value="Psychiatrist">Psychiatrist / Mental Health</option>
+                            <option value="Ophthalmologist">Ophthalmologist / Eye Care</option>
+                            <option value="Urologist">Urologist</option>
+                            <option value="Gastroenterologist">Gastroenterologist</option>
+                        </select>
                     </div>
 
                     <div class="form-group">
@@ -1446,6 +1479,29 @@
         </div>
     </template>
 
+    <!-- Dedicated Unverified / Pending / Rejected Doctor Account View -->
+    <template id="tpl-unverified-view">
+        <div style="max-width: 800px; margin: 0 auto; padding-top: 1rem;">
+
+            <!-- Dynamic Status Banner & Action Card -->
+            <div id="unverified-status-card" class="card" style="padding: 2rem; margin-bottom: 1.5rem; border-radius: 20px;">
+                <!-- Rendered dynamically by initUnverifiedView() -->
+            </div>
+
+            <!-- Admin Notifications & Communication Log Card -->
+            <div class="card" style="padding: 1.5rem; border-radius: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.875rem; margin-bottom: 1rem;">
+                    <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--primary);">🔔 Admin Communication &amp; Verification Notifications</h3>
+                    <button class="btn btn-outline btn-sm" onclick="window.recheckDoctorStatus()">🔄 Refresh Status</button>
+                </div>
+                <div id="admin-notifications-log">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+        </div>
+    </template>
+
 
     <!-- ========================================== -->
     <!-- SUPABASE JS MODULE (EXACT SCHEMA MATCH) -->
@@ -1542,9 +1598,20 @@
         // ----------------------------------------------------
         // AUTHENTICATION & EXACT SCHEMA MATCH
         // ----------------------------------------------------
+        window.dismissDoctorStatusBanner = (docId) => {
+            const banner = document.getElementById('doctor-status-banner');
+            if (banner) banner.style.display = 'none';
+            if (docId) sessionStorage.setItem('hide_status_banner_' + docId, 'true');
+        };
+
         function updateDoctorStatusBanner(doc) {
             const banner = document.getElementById('doctor-status-banner');
             if (!banner || !doc) return;
+
+            if (sessionStorage.getItem('hide_status_banner_' + doc.id) === 'true') {
+                banner.style.display = 'none';
+                return;
+            }
 
             const st = (doc.verification_status || (doc.is_verified ? 'approved' : 'pending')).toLowerCase();
             const msg = doc.admin_message || doc.rejection_reason || '';
@@ -1552,37 +1619,40 @@
             if (st === 'approved' || st === 'verified' || doc.is_verified) {
                 banner.style.display = 'block';
                 banner.innerHTML = `
-                    <div style="background: #DCFCE7; border: 1px solid #22C55E; border-radius: 12px; padding: 1rem 1.25rem; color: #166534; display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 0.5rem;">
+                    <div style="background: #DCFCE7; border: 1px solid #22C55E; border-radius: 12px; padding: 1rem 1.25rem; color: #166534; display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 0.5rem; position: relative;">
                         <div style="font-size: 1.5rem; line-height: 1;">✅</div>
                         <div style="flex: 1;">
                             <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 2px;">Account Approved &amp; Live on Patient App</h4>
                             <p style="font-size: 0.85rem; margin-bottom: 2px;">Your doctor profile has been verified by Doctor Point Admin and is actively published on the Patient App!</p>
                             ${msg ? `<p style="font-size: 0.825rem; font-weight: 600; background: #F0FDF4; padding: 6px 10px; border-radius: 6px; border: 1px solid #86EFAC; margin-top: 6px;">💬 Admin Note: "${msg}"</p>` : ''}
                         </div>
+                        <button type="button" onclick="window.dismissDoctorStatusBanner('${doc.id}')" style="background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #166534; opacity: 0.7; padding: 0 4px; font-weight: bold;" title="Dismiss Banner">✕</button>
                     </div>
                 `;
             } else if (st === 'rejected') {
                 banner.style.display = 'block';
                 banner.innerHTML = `
-                    <div style="background: #FEE2E2; border: 1px solid #EF4444; border-radius: 12px; padding: 1rem 1.25rem; color: #991B1B; display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 0.5rem;">
+                    <div style="background: #FEE2E2; border: 1px solid #EF4444; border-radius: 12px; padding: 1rem 1.25rem; color: #991B1B; display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 0.5rem; position: relative;">
                         <div style="font-size: 1.5rem; line-height: 1;">❌</div>
                         <div style="flex: 1;">
                             <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 2px;">Account Verification Rejected</h4>
                             <p style="font-size: 0.85rem; margin-bottom: 2px;">Your doctor profile verification has been rejected by Doctor Point Admin.</p>
                             ${msg ? `<p style="font-size: 0.825rem; font-weight: 600; background: #FEF2F2; padding: 6px 10px; border-radius: 6px; border: 1px solid #FCA5A5; margin-top: 6px;">💬 Rejection Reason from Admin: "${msg}"</p>` : ''}
                         </div>
+                        <button type="button" onclick="window.dismissDoctorStatusBanner('${doc.id}')" style="background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #991B1B; opacity: 0.7; padding: 0 4px; font-weight: bold;" title="Dismiss Banner">✕</button>
                     </div>
                 `;
             } else {
                 banner.style.display = 'block';
                 banner.innerHTML = `
-                    <div style="background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 12px; padding: 1rem 1.25rem; color: #92400E; display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 0.5rem;">
+                    <div style="background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 12px; padding: 1rem 1.25rem; color: #92400E; display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 0.5rem; position: relative;">
                         <div style="font-size: 1.5rem; line-height: 1;">⏳</div>
                         <div style="flex: 1;">
                             <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 2px;">Account Under Admin Review</h4>
                             <p style="font-size: 0.85rem; margin-bottom: 2px;">Your doctor profile is currently under review by Doctor Point Admin. Once approved, your profile will automatically go live on the patient app.</p>
                             ${msg ? `<p style="font-size: 0.825rem; font-weight: 600; background: #FFFBEB; padding: 6px 10px; border-radius: 6px; border: 1px solid #FCD34D; margin-top: 6px;">💬 Message from Admin: "${msg}"</p>` : ''}
                         </div>
+                        <button type="button" onclick="window.dismissDoctorStatusBanner('${doc.id}')" style="background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #92400E; opacity: 0.7; padding: 0 4px; font-weight: bold;" title="Dismiss Banner">✕</button>
                     </div>
                 `;
             }
@@ -1879,11 +1949,49 @@
             appView.classList.remove('hidden');
         }
 
+        function updateSidebarLockState(isApproved) {
+            const navItems = document.querySelectorAll('.sidebar-nav .nav-item');
+            navItems.forEach(item => {
+                const isLogout = item.getAttribute('onclick')?.includes('logout');
+
+                if (!isApproved && !isLogout) {
+                    item.classList.add('locked-item');
+                    item.title = "🔒 Account pending admin review/approval";
+                    item.style.opacity = "0.35";
+                    item.style.pointerEvents = "none";
+                    item.style.filter = "grayscale(1)";
+                } else {
+                    item.classList.remove('locked-item');
+                    item.title = "";
+                    item.style.opacity = "1";
+                    item.style.pointerEvents = "auto";
+                    item.style.filter = "none";
+                }
+            });
+        }
+
         // ----------------------------------------------------
         // SPA ROUTER
         // ----------------------------------------------------
         function handleRouting() {
             if (appView.classList.contains('hidden')) return;
+
+            const doc = window.doctorContext;
+            const isApproved = doc && ((doc.verification_status || '').toLowerCase().trim() === 'approved' || doc.is_verified || doc.is_approved);
+
+            updateSidebarLockState(isApproved);
+
+            if (!isApproved) {
+                // Doctor account is NOT approved yet (Pending or Rejected)
+                pageTitle.textContent = 'Account Verification Status';
+                const template = document.getElementById('tpl-unverified-view');
+                if (template) {
+                    appContent.innerHTML = '';
+                    appContent.appendChild(template.content.cloneNode(true));
+                    window.initUnverifiedView();
+                }
+                return;
+            }
 
             const hash = window.location.hash.replace('#', '') || 'dashboard';
 
@@ -1916,6 +2024,207 @@
                 appContent.innerHTML = `<div style="padding: 3rem; text-align: center;"><h3>Page Not Found</h3></div>`;
             }
         }
+
+        window.recheckDoctorStatus = async () => {
+            if (window.showToast) window.showToast("⌛ Checking verification status in Supabase DB...", "info", 2000);
+            await checkSession();
+        };
+
+        window.initUnverifiedView = () => {
+            const doc = window.doctorContext;
+            if (!doc) return;
+
+            const st = (doc.verification_status || (doc.is_verified ? 'approved' : 'pending')).toLowerCase().trim();
+            const msg = doc.admin_message || doc.rejection_reason || '';
+            const container = document.getElementById('unverified-status-card');
+            const notifLog = document.getElementById('admin-notifications-log');
+
+            if (!container) return;
+
+            if (st === 'rejected') {
+                container.style.borderLeft = '6px solid #ef4444';
+                container.style.background = '#fef2f2';
+                container.innerHTML = `
+                    <div style="display: flex; align-items: flex-start; gap: 1.25rem; margin-bottom: 1.5rem;">
+                        <div style="font-size: 2.75rem; line-height: 1;">❌</div>
+                        <div style="flex: 1;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                                <h3 style="font-size: 1.35rem; font-weight: 800; color: #991b1b; margin: 0;">Account Verification Rejected</h3>
+                                <span class="badge badge-error" style="font-size:0.85rem; padding:6px 12px;">REJECTED</span>
+                            </div>
+                            <p style="font-size: 0.925rem; color: #7f1d1d; margin-top: 6px; line-height: 1.5;">
+                                Your doctor account verification was rejected by Doctor Point Admin. Please review the rejection reason below, update your profile details or clinic documents, and resubmit for review.
+                            </p>
+                            ${msg ? `
+                                <div style="margin-top: 1rem; background: #ffffff; padding: 12px 16px; border-radius: 10px; border: 1px solid #fca5a5; color: #991b1b; font-weight: 600; font-size: 0.9rem;">
+                                    💬 <strong>Admin Rejection Reason:</strong> "${msg}"
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <!-- Resubmit Profile Form -->
+                    <div style="background: #ffffff; padding: 1.5rem; border-radius: 14px; border: 1px solid #fca5a5;">
+                        <h4 style="font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 1rem;">🔄 Update Details &amp; Resubmit Profile for Review</h4>
+                        <form id="resubmit-profile-form">
+                            <div class="form-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                                <div class="form-group">
+                                    <label class="form-label">Full Doctor Name *</label>
+                                    <input type="text" id="resubmit-name" class="form-control" value="${doc.name || ''}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Specialization *</label>
+                                    <input type="text" id="resubmit-spec" class="form-control" value="${doc.specialization || 'General Physician'}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Qualification *</label>
+                                    <input type="text" id="resubmit-qual" class="form-control" value="${doc.qualification || 'MBBS'}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Doctor Phone *</label>
+                                    <input type="text" id="resubmit-phone" class="form-control" value="${doc.doctor_phone || doc.phone || ''}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Reception Phone *</label>
+                                    <input type="text" id="resubmit-reception" class="form-control" value="${doc.reception_phone || ''}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Clinic Name *</label>
+                                    <input type="text" id="resubmit-clinic" class="form-control" value="${doc.clinic_name || ''}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Location / City *</label>
+                                    <input type="text" id="resubmit-location" class="form-control" value="${doc.location || ''}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Consultation Fee (₹) *</label>
+                                    <input type="number" id="resubmit-fee" class="form-control" value="${doc.fee || 500}" required>
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 1rem;">
+                                <label class="form-label">Profile Photo URL (or paste image link)</label>
+                                <input type="url" id="resubmit-avatar" class="form-control" value="${doc.image_url || ''}" placeholder="https://...">
+                            </div>
+                            <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                                <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-weight: 800; background: #dc2626; border-color: #dc2626; color: #fff;">🔄 Resubmit Profile for Admin Review →</button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+
+                setTimeout(() => {
+                    document.getElementById('resubmit-profile-form')?.addEventListener('submit', window.handleResubmitProfile);
+                }, 100);
+
+            } else {
+                // Pending Review Status
+                container.style.borderLeft = '6px solid #f59e0b';
+                container.style.background = '#fffbe2';
+                container.innerHTML = `
+                    <div style="display: flex; align-items: flex-start; gap: 1.25rem;">
+                        <div style="font-size: 2.75rem; line-height: 1;">⏳</div>
+                        <div style="flex: 1;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                                <h3 style="font-size: 1.35rem; font-weight: 800; color: #92400e; margin: 0;">Account Under Admin Review</h3>
+                                <span class="badge badge-warning" style="font-size:0.85rem; padding:6px 12px;">⏳ PENDING REVIEW</span>
+                            </div>
+                            <p style="font-size: 0.925rem; color: #78350f; margin-top: 6px; line-height: 1.5;">
+                                Your doctor account profile has been submitted and is currently being verified by <strong>Doctor Point Admin</strong>. Once verified, your profile will automatically go live on the patient app.
+                            </p>
+                            ${msg ? `
+                                <div style="margin-top: 1rem; background: #ffffff; padding: 12px 16px; border-radius: 10px; border: 1px solid #fcd34d; color: #78350f; font-weight: 600; font-size: 0.9rem;">
+                                    💬 <strong>Message from Admin:</strong> "${msg}"
+                                </div>
+                            ` : ''}
+
+                            <!-- Doctor Submitted Profile Summary -->
+                            <div style="margin-top: 1.25rem; background: #ffffff; padding: 1rem 1.25rem; border-radius: 12px; border: 1px solid #fcd34d; font-size: 0.85rem; color: var(--text-primary);">
+                                <strong style="font-weight: 800; color: var(--primary); font-size: 0.95rem;">👤 Submitted Profile Summary:</strong>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.5rem; margin-top: 0.5rem;">
+                                    <div><strong>Doctor:</strong> ${doc.name} (${doc.qualification})</div>
+                                    <div><strong>Specialization:</strong> ${doc.specialization}</div>
+                                    <div><strong>Doctor Contact:</strong> ${doc.doctor_phone || doc.phone}</div>
+                                    <div><strong>Reception Contact:</strong> ${doc.reception_phone || 'N/A'}</div>
+                                    <div><strong>Clinic:</strong> ${doc.clinic_name} - ${doc.location}</div>
+                                    <div><strong>Consultation Fee:</strong> ₹${doc.fee}</div>
+                                </div>
+                            </div>
+
+                            <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                                <button class="btn btn-primary" style="padding: 10px 20px; font-weight: 700; background: #d97706; border-color: #d97706; color: #fff;" onclick="window.recheckDoctorStatus()"><i class='bx bx-refresh'></i> Re-check Verification Status Now</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Notification Log HTML
+            if (notifLog) {
+                notifLog.innerHTML = `
+                    <div style="background:#f8fafc; padding:12px; border-radius:10px; border:1px solid var(--border); font-size:0.85rem; margin-bottom:8px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                            <strong style="color:var(--primary);">📌 Registration Submitted</strong>
+                            <small style="color:var(--text-muted);">${doc.created_at ? new Date(doc.created_at).toLocaleDateString() : 'Recent'}</small>
+                        </div>
+                        <p style="color:var(--text-secondary);">Doctor account created with email: <strong>${doc.email}</strong>. Verification status set to <strong>${doc.verification_status || 'pending'}</strong>.</p>
+                    </div>
+                    ${msg ? `
+                        <div style="background:${st === 'rejected' ? '#fef2f2' : '#fffbe2'}; padding:12px; border-radius:10px; border:1px solid ${st === 'rejected' ? '#fca5a5' : '#fcd34d'}; font-size:0.85rem;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                                <strong style="color:${st === 'rejected' ? '#991b1b' : '#78350f'};">${st === 'rejected' ? '❌ Admin Rejection Feedback' : '💬 Admin Review Remark'}</strong>
+                                <small style="color:var(--text-muted);">Admin Update</small>
+                            </div>
+                            <p style="color:${st === 'rejected' ? '#7f1d1d' : '#78350f'};">"${msg}"</p>
+                        </div>
+                    ` : ''}
+                `;
+            }
+        };
+
+        window.handleResubmitProfile = async (e) => {
+            if (e && e.preventDefault) e.preventDefault();
+
+            if (!window.doctorContext) return;
+            const docId = window.doctorContext.id;
+
+            const name = document.getElementById('resubmit-name').value.trim();
+            const spec = document.getElementById('resubmit-spec').value.trim();
+            const qual = document.getElementById('resubmit-qual').value.trim();
+            const phone = document.getElementById('resubmit-phone').value.trim();
+            const reception = document.getElementById('resubmit-reception').value.trim();
+            const clinic = document.getElementById('resubmit-clinic').value.trim();
+            const location = document.getElementById('resubmit-location').value.trim();
+            const fee = parseInt(document.getElementById('resubmit-fee').value) || 500;
+            const avatar = document.getElementById('resubmit-avatar').value.trim();
+
+            if (window.showToast) window.showToast("⌛ Resubmitting profile to Admin for review...", "info", 2000);
+
+            try {
+                const { error } = await supabase.from('doctors').update({
+                    name: name,
+                    specialization: spec,
+                    qualification: qual,
+                    phone: phone,
+                    doctor_phone: phone,
+                    reception_phone: reception,
+                    clinic_name: clinic,
+                    location: location,
+                    fee: fee,
+                    image_url: avatar || window.doctorContext.image_url,
+                    is_verified: false,
+                    is_approved: false,
+                    verification_status: 'pending',
+                    admin_message: 'Resubmitted by doctor. Awaiting admin review.'
+                }).eq('id', docId);
+
+                if (error) throw error;
+
+                if (window.showToast) window.showToast("✅ Profile resubmitted successfully! Status updated to Pending Review.", "success", 4000);
+                await checkSession();
+            } catch (err) {
+                alert("Failed to resubmit profile: " + err.message);
+            }
+        };
 
         // ----------------------------------------------------
         // UTILS & QUEUE HELPERS
@@ -2023,6 +2332,10 @@
                 ? `<span style="background:#e0e7ff; color:#3730a3; font-weight:700; padding:3px 10px; border-radius:12px; font-size:0.75rem;">🔄 Follow-up</span>`
                 : `<span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 10px; border-radius:12px; font-size:0.75rem;">✨ New Patient</span>`;
 
+            const pPhone = appt.patient?.phone || appt.phone || appt.patient_phone || 'N/A';
+            const pGender = appt.patient?.gender || appt.gender || appt.patient_gender || 'Male';
+            const pAge = appt.patient?.age ? `${appt.patient.age} Yrs` : (appt.age ? `${appt.age} Yrs` : '25 Yrs');
+
             const modalContainer = document.getElementById('modal-container');
             modalContainer.innerHTML = `
                 <div class="modal-overlay" style="align-items:center; padding: 1rem;">
@@ -2053,11 +2366,11 @@
 
                             <!-- Compact Patient Demographics Pill Strip -->
                             <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.25rem; background: #f8fafc; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--border); font-size: 0.825rem; color: var(--text-primary);">
-                                <div>📞 <strong>Phone:</strong> ${appt.patient?.phone || 'N/A'}</div>
+                                <div>📞 <strong>Phone:</strong> ${pPhone}</div>
                                 <div style="color: var(--border);">|</div>
-                                <div>👤 <strong>Gender:</strong> ${appt.patient?.gender || 'Patient'}</div>
+                                <div>👤 <strong>Gender:</strong> ${pGender}</div>
                                 <div style="color: var(--border);">|</div>
-                                <div>🎂 <strong>Age:</strong> ${appt.patient?.age || '25'} Yrs</div>
+                                <div>🎂 <strong>Age:</strong> ${pAge}</div>
                             </div>
 
                             <!-- Symptoms / Diagnosis Field -->
@@ -2165,11 +2478,13 @@
         window.openAddAppointmentModal = () => {
             const today = new Date().toISOString().split('T')[0];
             const modalContainer = document.getElementById('modal-container');
+            const defaultFee = window.doctorContext?.fee || 500;
+
             modalContainer.innerHTML = `
                 <div class="modal-overlay">
                     <div class="modal-content" style="max-width: 520px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-                            <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--primary);">+ Add Direct Appointment</h3>
+                            <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--primary);">+ Add Patient & Direct Appointment</h3>
                             <button class="btn btn-outline btn-sm" onclick="document.getElementById('modal-container').innerHTML=''">✕</button>
                         </div>
                         <form id="add-direct-appt-form">
@@ -2193,9 +2508,10 @@
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Consultation Fee (₹)</label>
-                                <input type="number" id="add-appt-fee" class="form-control" value="${window.doctorContext?.fee || 500}">
+                                <input type="number" id="add-appt-fee" class="form-control" value="${defaultFee}">
                             </div>
-                            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">Save &amp; Add to Queue →</button>
+                            <div id="add-appt-error" style="color: var(--error); font-size: 0.85rem; margin-bottom: 0.5rem; display: none;"></div>
+                            <button type="submit" id="btn-save-direct-appt" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">Save &amp; Add to Queue →</button>
                         </form>
                     </div>
                 </div>
@@ -2203,37 +2519,136 @@
 
             document.getElementById('add-direct-appt-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
+                const errDiv = document.getElementById('add-appt-error');
+                const btnSave = document.getElementById('btn-save-direct-appt');
+                if (errDiv) errDiv.style.display = 'none';
+
                 const pName = document.getElementById('add-patient-name').value.trim();
                 const pPhone = document.getElementById('add-patient-phone').value.trim();
                 const apptDate = document.getElementById('add-appt-date').value;
                 const apptTime = document.getElementById('add-appt-time').value;
                 const feeVal = parseInt(document.getElementById('add-appt-fee').value) || 500;
 
+                // Obtain Doctor Context or fallback
+                let docId = window.doctorContext?.id;
+                let docName = window.doctorContext?.name || 'Doctor';
+                let docSpec = window.doctorContext?.specialization || 'General Physician';
+
+                if (!docId && typeof doctors !== 'undefined' && doctors.length > 0) {
+                    docId = doctors[0].id;
+                    docName = doctors[0].name || docName;
+                    docSpec = doctors[0].specialization || docSpec;
+                }
+
+                if (!docId) {
+                    if (errDiv) {
+                        errDiv.textContent = '❌ Doctor session not found. Please reload or log in.';
+                        errDiv.style.display = 'block';
+                    }
+                    return;
+                }
+
+                if (btnSave) {
+                    btnSave.disabled = true;
+                    btnSave.textContent = 'Saving Patient & Appointment...';
+                }
+
                 try {
                     let patientId = crypto.randomUUID();
-                    await supabase.from('profiles').insert([{
+
+                    // Check if profile exists with phone
+                    if (pPhone) {
+                        try {
+                            const { data: existingProf } = await supabase
+                                .from('profiles')
+                                .select('id')
+                                .eq('phone', pPhone)
+                                .maybeSingle();
+                            if (existingProf && existingProf.id) {
+                                patientId = existingProf.id;
+                            }
+                        } catch (ex) {
+                            console.warn("Phone check note:", ex);
+                        }
+                    }
+
+                    // Insert or update patient profile
+                    let { error: pErr } = await supabase.from('profiles').upsert([{
                         id: patientId,
                         full_name: pName,
                         phone: pPhone,
                         role: 'patient'
                     }]);
 
-                    let nextToken = 1;
-                    const existingAppts = (cachedAppointments || []).filter(a => a.appointment_date === apptDate);
-                    if (existingAppts.length > 0) {
-                        nextToken = Math.max(...existingAppts.map(a => a.token_number || 1)) + 1;
+                    if (pErr) {
+                        console.warn('Profile upsert note:', pErr);
                     }
 
-                    await supabase.from('appointments').insert([{
-                        doctor_id: window.doctorContext.id,
+                    // Calculate next token number for date
+                    let nextToken = 1;
+                    const dateAppts = (cachedAppointments || []).filter(a => a.appointment_date === apptDate);
+                    if (dateAppts.length > 0) {
+                        const maxToken = Math.max(...dateAppts.map(a => parseInt(a.token_number) || 0));
+                        nextToken = (maxToken > 0 ? maxToken : dateAppts.length) + 1;
+                    }
+
+                    const timeFormatted = apptTime + (apptTime.length === 5 ? ":00" : "");
+
+                    function calculateEndTime(startTimeStr, durationMins = 20) {
+                        if (!startTimeStr) return "09:20:00";
+                        const parts = startTimeStr.split(':');
+                        let hrs = parseInt(parts[0]) || 9;
+                        let mins = parseInt(parts[1]) || 0;
+                        mins += durationMins;
+                        while (mins >= 60) {
+                            mins -= 60;
+                            hrs = (hrs + 1) % 24;
+                        }
+                        const hh = String(hrs).padStart(2, '0');
+                        const mm = String(mins).padStart(2, '0');
+                        return `${hh}:${mm}:00`;
+                    }
+
+                    const endTimeFormatted = calculateEndTime(apptTime, 20);
+
+                    // Primary Appointment Insert Payload
+                    const apptPayload = {
+                        id: crypto.randomUUID(),
+                        doctor_id: docId,
                         patient_id: patientId,
-                        doctor_name: window.doctorContext.name,
+                        doctor_name: docName,
+                        patient_name: pName,
+                        patient_phone: pPhone,
+                        specialization: docSpec,
                         appointment_date: apptDate,
-                        start_time: apptTime + ":00",
+                        start_time: timeFormatted,
+                        end_time: endTimeFormatted,
+                        time_slot: apptTime,
                         token_number: nextToken,
                         fee: feeVal,
                         status: 'Confirmed'
-                    }]);
+                    };
+
+                    let { error: aErr } = await supabase.from('appointments').insert([apptPayload]);
+
+                    if (aErr) {
+                        console.warn('Primary appointment insert error, retrying without optional columns:', aErr);
+                        // Retry with core schema fields
+                        const corePayload = {
+                            doctor_id: docId,
+                            patient_id: patientId,
+                            appointment_date: apptDate,
+                            start_time: timeFormatted,
+                            end_time: endTimeFormatted,
+                            token_number: nextToken,
+                            fee: feeVal,
+                            status: 'Confirmed'
+                        };
+                        let { error: aErr2 } = await supabase.from('appointments').insert([corePayload]);
+                        if (aErr2) {
+                            throw new Error(aErr2.message || aErr.message);
+                        }
+                    }
 
                     if (window.showToast) window.showToast(`✅ Added ${pName} to Queue (Token #${nextToken})!`, "success", 3000);
                     modalContainer.innerHTML = '';
@@ -2241,7 +2656,17 @@
                     if (window.location.hash.includes('dashboard')) initDashboard();
 
                 } catch (err) {
-                    alert("Failed to add appointment: " + err.message);
+                    console.error("Add appointment error:", err);
+                    if (errDiv) {
+                        errDiv.textContent = '❌ Failed to add appointment: ' + err.message;
+                        errDiv.style.display = 'block';
+                    } else {
+                        alert("Failed to add appointment: " + err.message);
+                    }
+                    if (btnSave) {
+                        btnSave.disabled = false;
+                        btnSave.textContent = 'Save & Add to Queue →';
+                    }
                 }
             });
         };
@@ -2257,25 +2682,16 @@
             document.getElementById('stat-fee').textContent = `₹${window.doctorContext.fee || 500}`;
 
             try {
-                // Today's appointments query
+                // Today's appointments query strictly for logged-in doctor
                 let { data: todayAppts } = await supabase
                     .from('appointments')
-                    .select('*, patient:profiles(full_name)')
+                    .select('*, patient:profiles(*)')
                     .eq('doctor_id', doctorId)
                     .eq('appointment_date', today)
                     .order('start_time', { ascending: true });
 
-                // Fallback query if no appointments matched doctor_id strictly
-                if (!todayAppts || todayAppts.length === 0) {
-                    const { data: fallbackAppts } = await supabase
-                        .from('appointments')
-                        .select('*, patient:profiles(full_name)')
-                        .eq('appointment_date', today)
-                        .order('start_time', { ascending: true });
-                    todayAppts = fallbackAppts || [];
-                }
-
-                document.getElementById('stat-today').textContent = todayAppts ? todayAppts.length : 0;
+                todayAppts = todayAppts || [];
+                document.getElementById('stat-today').textContent = todayAppts.length;
 
                 // Fetch Global Commission Settings from public.commission_settings
                 let commSetting = null;
@@ -2687,19 +3103,10 @@
             try {
                 let { data, error } = await supabase
                     .from('appointments')
-                    .select('*, patient:profiles(full_name)')
+                    .select('*, patient:profiles(*)')
                     .eq('doctor_id', doctorId)
                     .order('appointment_date', { ascending: true })
                     .order('start_time', { ascending: true });
-
-                if (error || !data || data.length === 0) {
-                    const { data: fallbackData } = await supabase
-                        .from('appointments')
-                        .select('*, patient:profiles(full_name)')
-                        .order('appointment_date', { ascending: true })
-                        .order('start_time', { ascending: true });
-                    data = fallbackData || [];
-                }
 
                 cachedAppointments = data || [];
                 renderDateFolders();
@@ -3147,51 +3554,221 @@
         };
 
         // ----------------------------------------------------
-        // PATIENTS MODULE
+        // PATIENTS MODULE (REAL-TIME DIRECTORY)
         // ----------------------------------------------------
+        let cachedPatientsDirectory = [];
+
         async function initPatients() {
             if (!window.doctorContext) return;
             const doctorId = window.doctorContext.id;
 
             try {
-                const { data: appts } = await supabase
+                // 1. Fetch appointments for doctor strictly to get unique patients
+                let { data: appts } = await supabase
                     .from('appointments')
-                    .select('patient_id')
-                    .eq('doctor_id', doctorId);
+                    .select('id, patient_id, patient_name, appointment_date, notes, prescription')
+                    .eq('doctor_id', doctorId)
+                    .order('appointment_date', { ascending: false });
 
-                const patientMap = new Map();
+                appts = appts || [];
+
+                // Map patient IDs to appointment stats
+                const patientStatsMap = new Map();
                 (appts || []).forEach(a => {
-                    if (a.patient_id) {
-                        patientMap.set(a.patient_id, (patientMap.get(a.patient_id) || 0) + 1);
+                    const pid = a.patient_id || a.id;
+                    if (!patientStatsMap.has(pid)) {
+                        patientStatsMap.set(pid, {
+                            patientId: pid,
+                            patientName: a.patient_name || 'Patient',
+                            count: 1,
+                            lastVisit: a.appointment_date,
+                            lastNotes: a.notes || 'Routine Checkup'
+                        });
+                    } else {
+                        const existing = patientStatsMap.get(pid);
+                        existing.count += 1;
+                        if (!existing.patientName || existing.patientName === 'Patient') {
+                            existing.patientName = a.patient_name || 'Patient';
+                        }
                     }
                 });
 
-                const tbody = document.getElementById('patients-body');
-                if (patientMap.size === 0) {
-                    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 2rem;">No patients registered yet.</td></tr>`;
-                    return;
+                // 2. Fetch profiles for all patient IDs
+                const patientIds = Array.from(patientStatsMap.keys()).filter(id => id.length === 36);
+                let profiles = [];
+                if (patientIds.length > 0) {
+                    let { data: profData } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .in('id', patientIds);
+                    profiles = profData || [];
                 }
 
-                let html = '';
-                for (const [pid, count] of patientMap.entries()) {
-                    const { data: profile } = await supabase.from('profiles').select('full_name, email, phone').eq('id', pid).single();
-                    const pName = profile ? profile.full_name : 'Patient';
+                const profileMap = new Map(profiles.map(p => [p.id, p]));
 
-                    html += `
-                        <tr>
-                            <td style="font-family: monospace; color: var(--text-muted);">${pid.substring(0, 8)}...</td>
-                            <td style="font-weight: 600;">${pName}</td>
-                            <td><span class="badge badge-info">${count} Consultations</span></td>
-                            <td><span class="badge badge-success">ACTIVE</span></td>
-                        </tr>
-                    `;
+                // Build enriched patient directory items
+                cachedPatientsDirectory = [];
+                for (const [pid, stats] of patientStatsMap.entries()) {
+                    const prof = profileMap.get(pid) || {};
+                    cachedPatientsDirectory.push({
+                        id: pid,
+                        fullName: prof.full_name || stats.patientName || 'Patient User',
+                        email: prof.email || 'N/A',
+                        phone: prof.phone || 'N/A',
+                        gender: prof.gender || 'Patient',
+                        age: prof.age ? `${prof.age} Yrs` : '25 Yrs',
+                        bloodGroup: prof.blood_group || 'O+',
+                        address: prof.address || 'Main Branch',
+                        avatarUrl: prof.avatar_url || prof.image_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
+                        totalVisits: stats.count,
+                        lastVisitDate: stats.lastVisit || 'Recent',
+                        lastNotes: stats.lastNotes
+                    });
                 }
-                tbody.innerHTML = html;
+
+                renderPatientsTable(cachedPatientsDirectory);
 
             } catch (err) {
                 console.error("Patients load error:", err);
             }
         }
+
+        function renderPatientsTable(list) {
+            const tbody = document.getElementById('patients-body');
+            const totalCountEl = document.getElementById('stat-patients-count');
+
+            if (totalCountEl) totalCountEl.textContent = list.length;
+
+            if (!list || list.length === 0) {
+                if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">No patients found in directory.</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            list.forEach(item => {
+                html += `
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.875rem;">
+                                <img src="${item.avatarUrl}" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary);" alt="Patient Photo">
+                                <div>
+                                    <div style="font-weight: 800; color: var(--primary); font-size: 0.95rem;">${item.fullName}</div>
+                                    <small style="color: var(--text-muted); font-family: monospace;">ID: ${item.id.substring(0, 8)}...</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div>📞 <strong>${item.phone}</strong></div>
+                            <div style="font-size: 0.775rem; color: var(--text-secondary);">${item.email}</div>
+                        </td>
+                        <td>
+                            <div>👤 ${item.gender}, <strong>${item.age}</strong></div>
+                            <span class="badge badge-info" style="font-size: 0.7rem; margin-top: 2px;">🩸 Blood: ${item.bloodGroup}</span>
+                        </td>
+                        <td style="font-size: 0.85rem; color: var(--text-secondary);">${item.address}</td>
+                        <td>
+                            <div style="font-weight: 700; color: var(--success);">${item.totalVisits} Consultations</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Last: ${item.lastVisitDate}</div>
+                        </td>
+                        <td>
+                            <button class="btn btn-outline btn-sm" style="font-weight: 600;" onclick="window.inspectPatientFullProfile('${item.id}')">📋 Full Profile</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            if (tbody) tbody.innerHTML = html;
+        }
+
+        window.filterPatientsDirectory = (query) => {
+            if (!query || query.trim() === '') {
+                renderPatientsTable(cachedPatientsDirectory);
+                return;
+            }
+            const q = query.toLowerCase().trim();
+            const filtered = cachedPatientsDirectory.filter(p =>
+                p.fullName.toLowerCase().includes(q) ||
+                p.phone.toLowerCase().includes(q) ||
+                p.email.toLowerCase().includes(q)
+            );
+            renderPatientsTable(filtered);
+        };
+
+        window.inspectPatientFullProfile = async (pid) => {
+            const item = cachedPatientsDirectory.find(p => p.id === pid) || {
+                fullName: 'Patient User',
+                email: 'N/A',
+                phone: 'N/A',
+                gender: 'Patient',
+                age: '25 Yrs',
+                bloodGroup: 'O+',
+                address: 'Main Branch',
+                avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
+                totalVisits: 1,
+                lastVisitDate: 'Recent'
+            };
+
+            // Fetch patient's full medical history
+            let medicalRecords = [];
+            try {
+                let { data: records } = await supabase
+                    .from('appointments')
+                    .select('*')
+                    .eq('patient_id', pid)
+                    .order('appointment_date', { ascending: false });
+                medicalRecords = records || [];
+            } catch (e) {}
+
+            let recordsHtml = '';
+            if (medicalRecords.length > 0) {
+                recordsHtml = medicalRecords.map(r => `
+                    <div style="background:#f8fafc; padding:12px; border-radius:10px; border:1px solid var(--border); margin-bottom:8px; font-size:0.85rem;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                            <strong>📅 Date: ${r.appointment_date} (${formatTime(r.start_time)})</strong>
+                            <span class="badge badge-success">${r.status || 'Completed'}</span>
+                        </div>
+                        <div><strong>🩺 Symptoms / Diagnosis:</strong> ${r.notes || r.patient_reason || 'Routine Checkup'}</div>
+                        ${r.prescription ? `<div style="margin-top:4px; color:var(--primary);"><strong>💊 Prescription:</strong> ${r.prescription}</div>` : ''}
+                    </div>
+                `).join('');
+            } else {
+                recordsHtml = `<div style="color:var(--text-muted); padding:1rem; text-align:center;">No past consultation records found.</div>`;
+            }
+
+            const modalContainer = document.getElementById('modal-container');
+            modalContainer.innerHTML = `
+                <div class="modal-overlay">
+                    <div class="modal-content" style="max-width: 620px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1rem;">
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <img src="${item.avatarUrl}" style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary);" alt="Patient Photo">
+                                <div>
+                                    <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--primary); margin: 0;">${item.fullName}</h3>
+                                    <span style="font-size: 0.8rem; color: var(--text-secondary);">${item.gender} &bull; ${item.age} &bull; Blood: ${item.bloodGroup}</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-outline btn-sm" onclick="document.getElementById('modal-container').innerHTML=''">✕</button>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.65rem; background: #f8fafc; padding: 12px; border-radius: 10px; border: 1px solid var(--border); font-size: 0.825rem; margin-bottom: 1rem;">
+                            <div>📞 <strong>Phone:</strong> ${item.phone}</div>
+                            <div>✉️ <strong>Email:</strong> ${item.email}</div>
+                            <div>🏥 <strong>Address:</strong> ${item.address}</div>
+                            <div>📊 <strong>Total Consultations:</strong> ${item.totalVisits} Visits</div>
+                        </div>
+
+                        <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--primary); margin-bottom: 8px;">📜 Consultation &amp; Prescription History</h4>
+                        <div style="max-height: 250px; overflow-y: auto;">
+                            ${recordsHtml}
+                        </div>
+
+                        <div style="margin-top: 1.25rem; text-align: right;">
+                            <button class="btn btn-outline" onclick="document.getElementById('modal-container').innerHTML=''">Close</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
 
         // ----------------------------------------------------
         // PRESCRIPTIONS MODULE
@@ -3379,7 +3956,7 @@
             try {
                 let schedules = [];
 
-                // 1. Primary Query: Read slots from doctor_slots
+                // 1. Primary Query: Read slots strictly for logged-in doctor
                 let { data: slotsData } = await supabase
                     .from('doctor_slots')
                     .select('*')
@@ -3387,14 +3964,7 @@
                     .order('slot_date', { ascending: true })
                     .order('start_time', { ascending: true });
 
-                if (!slotsData || slotsData.length === 0) {
-                    const { data: fallbackSlots } = await supabase
-                        .from('doctor_slots')
-                        .select('*')
-                        .order('slot_date', { ascending: true })
-                        .order('start_time', { ascending: true });
-                    slotsData = fallbackSlots || [];
-                }
+                slotsData = slotsData || [];
 
                 if (currentSlotDateFilter && slotsData) {
                     slotsData = slotsData.filter(s => s.slot_date === currentSlotDateFilter);
@@ -3961,9 +4531,35 @@
         };
 
         // ----------------------------------------------------
-        // IMGBB IMAGE UPLOAD HELPER & EVENT LISTENERS
+        // SUPABASE STORAGE ('profiile' BUCKET) IMAGE UPLOAD HELPER
         // ----------------------------------------------------
-        window.IMGBB_API_KEY = '98b5b00cee79645e2ea44a187446c2e3'; // Your ImgBB API Key
+        async function uploadToSupabaseStorageBucket(file) {
+            try {
+                const fileName = 'profile_' + Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+                const uploadUrl = 'https://kewuxbvilvqxphmvyhkz.supabase.co/storage/v1/object/profiile/' + fileName;
+                const publicUrl = 'https://kewuxbvilvqxphmvyhkz.supabase.co/storage/v1/object/public/profiile/' + fileName;
+
+                const response = await fetch(uploadUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer sb_publishable_2vrXZkEw8rHLVwK6fCMjgw_uqQ-D5BA',
+                        'apikey': 'sb_publishable_2vrXZkEw8rHLVwK6fCMjgw_uqQ-D5BA',
+                        'x-upsert': 'true',
+                        'Content-Type': file.type || 'image/jpeg'
+                    },
+                    body: file
+                });
+
+                if (response.ok || response.status === 200 || response.status === 201) {
+                    return publicUrl;
+                }
+            } catch (err) {
+                console.warn("Supabase Storage bucket upload attempt:", err);
+            }
+
+            // Fallback to ImgBB
+            return await uploadToImgBB(file);
+        }
 
         async function uploadToImgBB(file) {
             const formData = new FormData();
@@ -3979,7 +4575,7 @@
             if (result.success && result.data && result.data.url) {
                 return result.data.url;
             } else {
-                throw new Error(result.error?.message || 'ImgBB upload failed');
+                throw new Error(result.error?.message || 'Image upload failed');
             }
         }
 
@@ -3997,11 +4593,11 @@
                 if (previewContainer) previewContainer.style.display = 'flex';
                 if (statusEl) {
                     statusEl.style.color = 'var(--text-secondary)';
-                    statusEl.textContent = 'Uploading to ImgBB...';
+                    statusEl.textContent = 'Uploading to Supabase Storage...';
                 }
 
                 try {
-                    const uploadedUrl = await uploadToImgBB(file);
+                    const uploadedUrl = await uploadToSupabaseStorageBucket(file);
                     urlInput.value = uploadedUrl;
                     if (previewImg) previewImg.src = uploadedUrl;
                     if (statusEl) {

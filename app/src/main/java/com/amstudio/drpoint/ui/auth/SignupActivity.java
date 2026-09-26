@@ -18,6 +18,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.amstudio.drpoint.BuildConfig;
 import com.amstudio.drpoint.databinding.ActivitySignupBinding;
 import com.amstudio.drpoint.network.SupabaseClient;
 import com.amstudio.drpoint.network.model.AuthResponse;
@@ -37,6 +38,7 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 
 import okhttp3.FormBody;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -97,7 +99,7 @@ public class SignupActivity extends AppCompatActivity {
                     if (result.getResultCode() == RESULT_OK && result.getData() != null && result.getData().getData() != null) {
                         Uri imageUri = result.getData().getData();
                         binding.ivProfilePic.setImageURI(imageUri);
-                        uploadImageToImgBB(imageUri);
+                        uploadImageToSupabaseStorage(imageUri);
                     }
                 }
         );
@@ -112,40 +114,43 @@ public class SignupActivity extends AppCompatActivity {
         imagePickerLauncher.launch(intent);
     }
 
-    private void uploadImageToImgBB(Uri imageUri) {
-        binding.tvUploadLabel.setText("⌛ Uploading photo...");
+    private void uploadImageToSupabaseStorage(Uri imageUri) {
+        binding.tvUploadLabel.setText("⌛ Uploading photo to Supabase...");
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
                 InputStream inputStream = getContentResolver().openInputStream(imageUri);
                 byte[] imageBytes = getBytes(inputStream);
-                String base64Image = Base64.encodeToString(imageBytes, Base64.DEFAULT);
+
+                String fileName = "profile_" + System.currentTimeMillis() + ".jpg";
+                String uploadUrl = BuildConfig.SUPABASE_URL + "storage/v1/object/profiile/" + fileName;
+                String publicUrl = BuildConfig.SUPABASE_URL + "storage/v1/object/public/profiile/" + fileName;
 
                 OkHttpClient client = new OkHttpClient();
-                RequestBody formBody = new FormBody.Builder()
-                        .add("key", "98b5b00cee79645e2ea44a187446c2e3")
-                        .add("image", base64Image)
-                        .build();
+                RequestBody requestBody = RequestBody.create(imageBytes, MediaType.parse("image/jpeg"));
 
                 Request request = new Request.Builder()
-                        .url("https://api.imgbb.com/1/upload")
-                        .post(formBody)
+                        .url(uploadUrl)
+                        .post(requestBody)
+                        .addHeader("Authorization", "Bearer " + BuildConfig.SUPABASE_KEY)
+                        .addHeader("apikey", BuildConfig.SUPABASE_KEY)
+                        .addHeader("x-upsert", "true")
+                        .addHeader("Content-Type", "image/jpeg")
                         .build();
 
                 okhttp3.Response response = client.newCall(request).execute();
-                if (response.isSuccessful() && response.body() != null) {
-                    String respStr = response.body().string();
-                    JsonObject json = new Gson().fromJson(respStr, JsonObject.class);
-                    if (json.has("data") && json.getAsJsonObject("data").has("url")) {
-                        uploadedAvatarUrl = json.getAsJsonObject("data").get("url").getAsString();
-                        runOnUiThread(() -> {
-                            binding.tvUploadLabel.setText("✅ Photo Uploaded!");
-                            Toast.makeText(SignupActivity.this, "Profile Photo Uploaded!", Toast.LENGTH_SHORT).show();
-                        });
-                        return;
-                    }
+                if (response.isSuccessful() || response.code() == 200 || response.code() == 201) {
+                    uploadedAvatarUrl = publicUrl;
+                    Log.d("SignUpActivity", "Supabase Storage Upload Success: " + publicUrl);
+                    runOnUiThread(() -> {
+                        binding.tvUploadLabel.setText("✅ Photo Uploaded!");
+                        Toast.makeText(SignupActivity.this, "Profile Photo Uploaded to Supabase!", Toast.LENGTH_SHORT).show();
+                    });
+                    return;
+                } else {
+                    Log.e("SignUpActivity", "Supabase Storage Upload Error Code: " + response.code() + " msg: " + (response.body() != null ? response.body().string() : response.message()));
                 }
             } catch (Exception e) {
-                Log.e("SignUpActivity", "Image upload failed: " + e.getMessage());
+                Log.e("SignUpActivity", "Supabase Storage Upload Failed: " + e.getMessage());
             }
             runOnUiThread(() -> binding.tvUploadLabel.setText("📷 Tap to Upload Profile Photo"));
         });

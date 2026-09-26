@@ -42,13 +42,56 @@ public class AvailabilityHelper {
     }
 
     /**
-     * Reusable check to ensure slot is in 'available' status and is not in the past.
+     * Reusable check to ensure slot is not in the past (both Date and Time).
+     * If slot date is Today, checks if slot end_time (e.g. 17:00:00 / 5:00 PM) has passed.
      */
     public static boolean isSlotInPast(DoctorSlot slot) {
         if (slot == null || slot.getSlotDate() == null || slot.getSlotDate().trim().isEmpty()) {
             return true;
         }
-        return isDateInPast(slot.getSlotDate());
+
+        String slotDateStr = slot.getSlotDate().trim();
+        if (slotDateStr.contains("T")) slotDateStr = slotDateStr.substring(0, slotDateStr.indexOf("T"));
+        if (slotDateStr.contains(" ")) slotDateStr = slotDateStr.substring(0, slotDateStr.indexOf(" "));
+
+        if (isDateInPast(slotDateStr)) {
+            return true;
+        }
+
+        // If slot date is TODAY, compare current system time against slot end_time / start_time
+        try {
+            SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            String todayStr = sdfDate.format(new Date());
+
+            if (todayStr.equals(slotDateStr)) {
+                String timeCheck = slot.getEndTime();
+                if (timeCheck == null || timeCheck.trim().isEmpty()) {
+                    timeCheck = slot.getStartTime();
+                }
+
+                if (timeCheck != null && !timeCheck.trim().isEmpty()) {
+                    String cleanTime = timeCheck.trim();
+                    if (cleanTime.contains(" ")) cleanTime = cleanTime.substring(0, cleanTime.indexOf(" "));
+                    String[] timeParts = cleanTime.split(":");
+
+                    if (timeParts.length >= 2) {
+                        int hour = Integer.parseInt(timeParts[0]);
+                        int min = Integer.parseInt(timeParts[1]);
+
+                        Calendar now = Calendar.getInstance();
+                        int nowHour = now.get(Calendar.HOUR_OF_DAY);
+                        int nowMin = now.get(Calendar.MINUTE);
+
+                        // If current system hour:min is past slot's end hour:min, mark as past
+                        if (nowHour > hour || (nowHour == hour && nowMin >= min)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+
+        return false;
     }
 
     public static boolean isSlotValidAndBookable(DoctorSlot slot) {
@@ -135,6 +178,11 @@ public class AvailabilityHelper {
             if (slot == null || slot.getSlotDate() == null) continue;
             if (isDateInPast(slot.getSlotDate())) continue;
 
+            // Only include available (unbooked) slots
+            if (slot.getStatus() != null && !"available".equalsIgnoreCase(slot.getStatus().trim())) {
+                continue;
+            }
+
             if (!rawDates.contains(slot.getSlotDate())) {
                 rawDates.add(slot.getSlotDate());
             }
@@ -167,6 +215,7 @@ public class AvailabilityHelper {
 
     /**
      * Filter available slots by date, sorted by start_time ascending.
+     * Only returns unbooked ("available") slots.
      */
     public static List<DoctorSlot> filterAndSortSlots(List<DoctorSlot> slots, String selectedClinicId, String selectedDateRaw) {
         if (slots == null || slots.isEmpty()) return new ArrayList<>();
@@ -189,6 +238,11 @@ public class AvailabilityHelper {
 
             if (isSlotInPast(slot)) continue;
 
+            // Only show slots that are AVAILABLE (unbooked)
+            if (slot.getStatus() != null && !"available".equalsIgnoreCase(slot.getStatus().trim())) {
+                continue;
+            }
+
             filtered.add(slot);
         }
 
@@ -208,6 +262,9 @@ public class AvailabilityHelper {
         List<String> dates = new ArrayList<>();
         for (DoctorSlot slot : slots) {
             if (!isSlotInPast(slot) && slot.getSlotDate() != null) {
+                if (slot.getStatus() != null && !"available".equalsIgnoreCase(slot.getStatus().trim())) {
+                    continue;
+                }
                 if (!dates.contains(slot.getSlotDate())) {
                     dates.add(slot.getSlotDate());
                 }

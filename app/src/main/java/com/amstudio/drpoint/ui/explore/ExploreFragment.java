@@ -46,22 +46,7 @@ public class ExploreFragment extends Fragment {
             );
         }
 
-        binding.etSearch.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (s.length() >= 3) {
-                    Intent intent = new Intent(requireContext(), DoctorListActivity.class);
-                    intent.putExtra("search_query", s.toString());
-                    startActivity(intent);
-                }
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {}
-        });
 
         // Specialities Grid (4 Columns)
         binding.rvSpecialities.setLayoutManager(new GridLayoutManager(requireContext(), 4));

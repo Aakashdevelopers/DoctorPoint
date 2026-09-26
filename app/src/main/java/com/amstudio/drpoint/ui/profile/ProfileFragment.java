@@ -8,11 +8,19 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import android.net.Uri;
+import android.provider.MediaStore;
+import android.util.Base64;
+import android.util.Log;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.amstudio.drpoint.BuildConfig;
 import com.amstudio.drpoint.R;
 import com.amstudio.drpoint.adapter.ProfileMenuAdapter;
 import com.amstudio.drpoint.databinding.BottomSheetEditProfileBinding;
@@ -27,11 +35,22 @@ import com.amstudio.drpoint.util.DummyDataProvider;
 import com.amstudio.drpoint.util.PreferenceManager;
 import com.bumptech.glide.Glide;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
 
+import okhttp3.FormBody;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -40,6 +59,91 @@ public class ProfileFragment extends Fragment {
 
     private FragmentProfileBinding binding;
     private PatientProfile currentProfile = new PatientProfile();
+    private String pendingAvatarUrl = "";
+    private ActivityResultLauncher<Intent> editImagePickerLauncher;
+    private BottomSheetEditProfileBinding activeSheetBinding;
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setupEditImagePicker();
+    }
+
+    private void setupEditImagePicker() {
+        editImagePickerLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == getActivity().RESULT_OK && result.getData() != null && result.getData().getData() != null) {
+                        Uri imageUri = result.getData().getData();
+                        if (activeSheetBinding != null) {
+                            activeSheetBinding.ivEditProfilePic.setImageURI(imageUri);
+                            uploadEditImageToSupabaseStorage(imageUri);
+                        }
+                    }
+                }
+        );
+    }
+
+    private void uploadEditImageToSupabaseStorage(Uri imageUri) {
+        if (activeSheetBinding == null) return;
+        activeSheetBinding.tvEditUploadLabel.setText("⌛ Uploading photo to Supabase...");
+        Executors.newSingleThreadExecutor().execute(() -> {
+            try {
+                InputStream inputStream = requireContext().getContentResolver().openInputStream(imageUri);
+                byte[] imageBytes = getBytes(inputStream);
+
+                String fileName = "profile_" + System.currentTimeMillis() + ".jpg";
+                String uploadUrl = BuildConfig.SUPABASE_URL + "storage/v1/object/profiile/" + fileName;
+                String publicUrl = BuildConfig.SUPABASE_URL + "storage/v1/object/public/profiile/" + fileName;
+
+                OkHttpClient client = new OkHttpClient();
+                RequestBody requestBody = RequestBody.create(imageBytes, MediaType.parse("image/jpeg"));
+
+                Request request = new Request.Builder()
+                        .url(uploadUrl)
+                        .post(requestBody)
+                        .addHeader("Authorization", "Bearer " + BuildConfig.SUPABASE_KEY)
+                        .addHeader("apikey", BuildConfig.SUPABASE_KEY)
+                        .addHeader("x-upsert", "true")
+                        .addHeader("Content-Type", "image/jpeg")
+                        .build();
+
+                okhttp3.Response response = client.newCall(request).execute();
+                if (response.isSuccessful() || response.code() == 200 || response.code() == 201) {
+                    pendingAvatarUrl = publicUrl;
+                    if (isAdded() && getActivity() != null) {
+                        getActivity().runOnUiThread(() -> {
+                            if (activeSheetBinding != null) {
+                                activeSheetBinding.tvEditUploadLabel.setText("✅ Photo Uploaded!");
+                                Toast.makeText(requireContext(), "Profile Photo Uploaded to Supabase!", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+                    return;
+                }
+            } catch (Exception e) {
+                Log.e("ProfileFragment", "Supabase image upload failed: " + e.getMessage());
+            }
+            if (isAdded() && getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    if (activeSheetBinding != null) {
+                        activeSheetBinding.tvEditUploadLabel.setText("📷 Tap to Change Profile Photo");
+                    }
+                });
+            }
+        });
+    }
+
+    private byte[] getBytes(InputStream inputStream) throws IOException {
+        ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
+        int bufferSize = 1024;
+        byte[] buffer = new byte[bufferSize];
+        int len;
+        while ((len = inputStream.read(buffer)) != -1) {
+            byteBuffer.write(buffer, 0, len);
+        }
+        return byteBuffer.toByteArray();
+    }
 
     @Nullable
     @Override
@@ -104,6 +208,8 @@ public class ProfileFragment extends Fragment {
         PreferenceManager prefManager = PreferenceManager.getInstance(requireContext());
         String name = prefManager.getUserName();
         String email = prefManager.getUserEmail();
+        String avatar = (currentProfile.getAvatarUrl() != null && !currentProfile.getAvatarUrl().isEmpty())
+                ? currentProfile.getAvatarUrl() : prefManager.getUserAvatar();
 
         if (currentProfile.getFullName() != null && !currentProfile.getFullName().isEmpty()) {
             name = currentProfile.getFullName();
@@ -115,9 +221,9 @@ public class ProfileFragment extends Fragment {
         binding.tvUserName.setText(name);
         binding.tvUserEmail.setText(email);
 
-        if (currentProfile.getAvatarUrl() != null && !currentProfile.getAvatarUrl().isEmpty()) {
+        if (avatar != null && !avatar.trim().isEmpty()) {
             Glide.with(this)
-                    .load(currentProfile.getAvatarUrl())
+                    .load(avatar)
                     .placeholder(R.drawable.ic_user)
                     .error(R.drawable.ic_user)
                     .into(binding.ivUserAvatar);
@@ -190,9 +296,30 @@ public class ProfileFragment extends Fragment {
 
         BottomSheetDialog dialog = new BottomSheetDialog(requireContext());
         BottomSheetEditProfileBinding sheetBinding = BottomSheetEditProfileBinding.inflate(getLayoutInflater());
+        activeSheetBinding = sheetBinding;
+        pendingAvatarUrl = "";
         dialog.setContentView(sheetBinding.getRoot());
 
         PreferenceManager prefManager = PreferenceManager.getInstance(requireContext());
+
+        String existingAvatar = (currentProfile.getAvatarUrl() != null && !currentProfile.getAvatarUrl().isEmpty())
+                ? currentProfile.getAvatarUrl() : prefManager.getUserAvatar();
+
+        if (existingAvatar != null && !existingAvatar.isEmpty()) {
+            Glide.with(this)
+                    .load(existingAvatar)
+                    .placeholder(R.drawable.ic_user)
+                    .into(sheetBinding.ivEditProfilePic);
+        }
+
+        View.OnClickListener pickListener = v -> {
+            Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+            editImagePickerLauncher.launch(intent);
+        };
+
+        sheetBinding.ivEditProfilePic.setOnClickListener(pickListener);
+        sheetBinding.flEditCameraBtn.setOnClickListener(pickListener);
+        sheetBinding.tvEditUploadLabel.setOnClickListener(pickListener);
 
         // Pre-populate fields
         sheetBinding.etFullName.setText(currentProfile.getFullName() != null ? currentProfile.getFullName() : prefManager.getUserName());
@@ -251,12 +378,14 @@ public class ProfileFragment extends Fragment {
         profileMap.put("id", userId);
         profileMap.put("full_name", name);
         if (!phone.isEmpty()) profileMap.put("phone", phone);
+        if (!pendingAvatarUrl.isEmpty()) profileMap.put("avatar_url", pendingAvatarUrl);
 
         // Map for patients table
         Map<String, Object> patientMap = new HashMap<>();
         patientMap.put("id", userId);
         patientMap.put("full_name", name);
         if (!phone.isEmpty()) patientMap.put("phone", phone);
+        if (!pendingAvatarUrl.isEmpty()) patientMap.put("avatar_url", pendingAvatarUrl);
         if (!dob.isEmpty()) patientMap.put("date_of_birth", dob);
         if (!gender.isEmpty()) patientMap.put("gender", gender);
         if (!bloodGroup.isEmpty()) patientMap.put("blood_group", bloodGroup);

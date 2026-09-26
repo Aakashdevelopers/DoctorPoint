@@ -44,6 +44,54 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- Profile Picture Edit Section -->
+            <RelativeLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="8dp">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/iv_edit_profile_pic"
+                    android:layout_width="84dp"
+                    android:layout_height="84dp"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_user"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.Circle"
+                    app:strokeColor="@color/primary"
+                    app:strokeWidth="2dp" />
+
+                <FrameLayout
+                    android:id="@+id/fl_edit_camera_btn"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_alignBottom="@id/iv_edit_profile_pic"
+                    android:layout_alignEnd="@id/iv_edit_profile_pic"
+                    android:background="@drawable/bg_squircle_icon"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="Camera"
+                        android:src="@drawable/ic_settings"
+                        app:tint="@color/primary" />
+                </FrameLayout>
+            </RelativeLayout>
+
+            <TextView
+                android:id="@+id/tv_edit_upload_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="16dp"
+                android:text="📷 Tap to Change Profile Photo"
+                android:textColor="@color/primary"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
             <!-- Full Name Input -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/til_full_name"

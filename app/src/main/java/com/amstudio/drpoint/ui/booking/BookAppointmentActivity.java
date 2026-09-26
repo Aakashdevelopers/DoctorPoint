@@ -19,6 +19,7 @@ import com.amstudio.drpoint.model.Appointment;
 import com.amstudio.drpoint.model.Clinic;
 import com.amstudio.drpoint.model.Doctor;
 import com.amstudio.drpoint.model.DoctorSlot;
+import com.amstudio.drpoint.model.PatientProfile;
 import com.amstudio.drpoint.network.SupabaseClient;
 import com.amstudio.drpoint.network.model.BookAppointmentRpcRequest;
 import com.amstudio.drpoint.network.model.BookAppointmentRpcResponse;
@@ -538,17 +539,45 @@ public class BookAppointmentActivity extends AppCompatActivity {
             return;
         }
 
-        String userAvatar = PreferenceManager.getInstance(this).getUserAvatar();
-        if (userAvatar == null || userAvatar.trim().isEmpty()) {
-            promptProfilePhotoUpload(userId, selectedSlotId);
+        binding.btnConfirmBooking.setEnabled(false);
+        binding.btnConfirmBooking.setText("Verifying Profile...");
+
+        String cachedAvatar = PreferenceManager.getInstance(this).getUserAvatar();
+        if (cachedAvatar != null && !cachedAvatar.trim().isEmpty()) {
+            binding.btnConfirmBooking.setText("Booking Appointment...");
+            executeClientSideBookingFallback(userId, selectedSlotId);
             return;
         }
 
-        binding.btnConfirmBooking.setEnabled(false);
-        binding.btnConfirmBooking.setText("Booking Appointment...");
+        // Live check Supabase profiles table for avatar_url
+        SupabaseClient.getPatientService().getProfile("eq." + userId).enqueue(new Callback<List<PatientProfile>>() {
+            @Override
+            public void onResponse(Call<List<PatientProfile>> call, Response<List<PatientProfile>> response) {
+                String fetchedAvatar = "";
+                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                    PatientProfile p = response.body().get(0);
+                    if (p.getAvatarUrl() != null && !p.getAvatarUrl().trim().isEmpty()) {
+                        fetchedAvatar = p.getAvatarUrl().trim();
+                        PreferenceManager.getInstance(BookAppointmentActivity.this).setUserAvatar(fetchedAvatar);
+                    }
+                }
 
-        // Directly execute client-side appointment insertion into Supabase REST endpoint
-        executeClientSideBookingFallback(userId, selectedSlotId);
+                if (!fetchedAvatar.isEmpty()) {
+                    binding.btnConfirmBooking.setText("Booking Appointment...");
+                    executeClientSideBookingFallback(userId, selectedSlotId);
+                } else {
+                    binding.btnConfirmBooking.setEnabled(true);
+                    binding.btnConfirmBooking.setText("Confirm Booking");
+                    promptProfilePhotoUpload(userId, selectedSlotId);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<PatientProfile>> call, Throwable t) {
+                binding.btnConfirmBooking.setText("Booking Appointment...");
+                executeClientSideBookingFallback(userId, selectedSlotId);
+            }
+        });
     }
 
     private void promptProfilePhotoUpload(String userId, String slotId) {
@@ -631,20 +660,41 @@ public class BookAppointmentActivity extends AppCompatActivity {
         if (patientNameVal == null || patientNameVal.trim().isEmpty()) {
             patientNameVal = "Patient User";
         }
+        String patientPhoneVal = PreferenceManager.getInstance(this).getUserPhone();
+
+        // Upsert user profile to public.profiles table so joins work
+        if (validPatientId != null) {
+            Map<String, Object> profMap = new HashMap<>();
+            profMap.put("id", validPatientId);
+            profMap.put("full_name", patientNameVal);
+            if (patientPhoneVal != null && !patientPhoneVal.trim().isEmpty()) {
+                profMap.put("phone", patientPhoneVal.trim());
+            }
+            profMap.put("role", "patient");
+            SupabaseClient.getPatientService().updateProfile("eq." + validPatientId, profMap).enqueue(new Callback<Void>() {
+                @Override public void onResponse(Call<Void> call, Response<Void> response) {}
+                @Override public void onFailure(Call<Void> call, Throwable t) {}
+            });
+        }
+
+        String targetDateVal = selectedDateRaw != null ? selectedDateRaw : new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("id", apptId);
         if (validDoctorId != null) payload.put("doctor_id", validDoctorId);
         if (validPatientId != null) payload.put("patient_id", validPatientId);
         if (validSlotId != null) payload.put("slot_id", validSlotId);
-        payload.put("appointment_date", selectedDateRaw != null ? selectedDateRaw : new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date()));
+        payload.put("appointment_date", targetDateVal);
         payload.put("start_time", startTimeVal);
         payload.put("end_time", endTimeVal);
         payload.put("appointment_type", "clinic");
-        payload.put("token_number", 1);
         payload.put("status", "Confirmed");
         payload.put("clinic_name", clinicNameVal);
         payload.put("patient_name", patientNameVal);
+        payload.put("patient_full_name", patientNameVal);
+        if (patientPhoneVal != null && !patientPhoneVal.trim().isEmpty()) {
+            payload.put("patient_phone", patientPhoneVal.trim());
+        }
         payload.put("notes", patientReasonInput);
         payload.put("patient_reason", patientReasonInput);
         String userAvatarUrl = PreferenceManager.getInstance(this).getUserAvatar();
@@ -653,6 +703,38 @@ public class BookAppointmentActivity extends AppCompatActivity {
         }
 
         final String finalApptId = apptId;
+        final String finalValidDoctorId = validDoctorId;
+
+        // Fetch existing appointments for doctor & date to calculate auto-incrementing sequential token
+        SupabaseClient.getAppointmentService().getAllAppointments().enqueue(new Callback<List<Appointment>>() {
+            @Override
+            public void onResponse(Call<List<Appointment>> call, Response<List<Appointment>> response) {
+                int nextToken = 1;
+                if (response.isSuccessful() && response.body() != null) {
+                    int maxToken = 0;
+                    for (Appointment a : response.body()) {
+                        if (targetDateVal.equals(a.getAppointmentDate()) && (finalValidDoctorId == null || finalValidDoctorId.equals(a.getDoctorId()))) {
+                            if (a.getTokenNumber() > maxToken) {
+                                maxToken = a.getTokenNumber();
+                            }
+                        }
+                    }
+                    nextToken = maxToken + 1;
+                }
+
+                payload.put("token_number", nextToken);
+                submitFinalAppointmentPayload(payload, nextToken, userId, slotId, finalApptId);
+            }
+
+            @Override
+            public void onFailure(Call<List<Appointment>> call, Throwable t) {
+                payload.put("token_number", 1);
+                submitFinalAppointmentPayload(payload, 1, userId, slotId, finalApptId);
+            }
+        });
+    }
+
+    private void submitFinalAppointmentPayload(Map<String, Object> payload, int assignedToken, String userId, String slotId, String finalApptId) {
         SupabaseClient.getAppointmentService().createAppointmentPayload("return=representation", payload)
                 .enqueue(new Callback<List<Map<String, Object>>>() {
                     @Override
@@ -663,7 +745,7 @@ public class BookAppointmentActivity extends AppCompatActivity {
                             Map<String, Object> created = response.body().get(0);
                             String resId = created.get("id") != null ? created.get("id").toString() : finalApptId;
                             rpcResp.setAppointmentId(resId);
-                            Log.d("BookAppointment", "SUCCESS! Appointment inserted into Supabase ID=" + resId);
+                            Log.d("BookAppointment", "SUCCESS! Appointment inserted into Supabase ID=" + resId + " Token=" + assignedToken);
                         } else {
                             try {
                                 if (response.errorBody() != null) {
@@ -679,7 +761,7 @@ public class BookAppointmentActivity extends AppCompatActivity {
                         rpcResp.setSlotDate(selectedDateRaw);
                         rpcResp.setStartTime(selectedTimeFormatted != null ? selectedTimeFormatted : "10:00 AM");
                         rpcResp.setAmount(doctor.getFee());
-                        rpcResp.setTokenNumber(1);
+                        rpcResp.setTokenNumber(assignedToken);
                         rpcResp.setMessage("Appointment successfully booked!");
 
                         navigateToConfirmation(rpcResp);
@@ -701,6 +783,10 @@ public class BookAppointmentActivity extends AppCompatActivity {
         if (doctor != null && doctor.getId() != null && doctor.getId().matches("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")) {
             safePayload.put("doctor_id", doctor.getId());
         }
+
+        if (originalPayload.get("patient_id") != null) {
+            safePayload.put("patient_id", originalPayload.get("patient_id"));
+        }
         
         safePayload.put("appointment_date", originalPayload.get("appointment_date"));
         safePayload.put("start_time", originalPayload.get("start_time"));
@@ -709,6 +795,13 @@ public class BookAppointmentActivity extends AppCompatActivity {
         safePayload.put("token_number", 1);
         safePayload.put("status", "Confirmed");
         safePayload.put("clinic_name", originalPayload.get("clinic_name"));
+        safePayload.put("patient_name", originalPayload.get("patient_name"));
+        if (originalPayload.get("patient_full_name") != null) {
+            safePayload.put("patient_full_name", originalPayload.get("patient_full_name"));
+        }
+        if (originalPayload.get("patient_phone") != null) {
+            safePayload.put("patient_phone", originalPayload.get("patient_phone"));
+        }
 
         SupabaseClient.getAppointmentService().createAppointmentPayload("return=representation", safePayload)
                 .enqueue(new Callback<List<Map<String, Object>>>() {
