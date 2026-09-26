@@ -125,10 +125,18 @@ public class DummyDataProvider {
             @Override
             public void onResponse(Call<List<Speciality>> call, Response<List<Speciality>> response) {
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                    if (callback != null) {
-                        callback.onSpecialitiesLoaded(response.body());
+                    List<Speciality> validList = new ArrayList<>();
+                    for (Speciality s : response.body()) {
+                        if (s != null && s.getName() != null && !s.getName().trim().isEmpty() && !"Specialist".equalsIgnoreCase(s.getName().trim())) {
+                            validList.add(s);
+                        }
                     }
-                    return;
+                    if (!validList.isEmpty()) {
+                        if (callback != null) {
+                            callback.onSpecialitiesLoaded(validList);
+                        }
+                        return;
+                    }
                 }
                 if (callback != null) {
                     callback.onSpecialitiesLoaded(getSpecialities());

@@ -90,7 +90,7 @@ public class HomeFragment extends Fragment {
 
         // Explore Specialities Horizontal Carousel
         if (binding.rvSpecialities != null) {
-            binding.rvSpecialities.setLayoutManager(new GridLayoutManager(requireContext(), 4));
+            binding.rvSpecialities.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
             SpecialitiesAdapter specialitiesAdapter = new SpecialitiesAdapter(speciality -> {
                 Intent intent = new Intent(requireContext(), DoctorListActivity.class);
                 intent.putExtra("category_name", speciality.getName());

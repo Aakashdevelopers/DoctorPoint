@@ -28,11 +28,14 @@ public class SpecialitiesAdapter extends ListAdapter<Speciality, SpecialitiesAda
     private static final DiffUtil.ItemCallback<Speciality> DIFF_CALLBACK = new DiffUtil.ItemCallback<Speciality>() {
         @Override
         public boolean areItemsTheSame(@NonNull Speciality oldItem, @NonNull Speciality newItem) {
-            return oldItem.getName().equals(newItem.getName());
+            String name1 = oldItem != null ? oldItem.getName() : "";
+            String name2 = newItem != null ? newItem.getName() : "";
+            return name1.equalsIgnoreCase(name2);
         }
 
         @Override
         public boolean areContentsTheSame(@NonNull Speciality oldItem, @NonNull Speciality newItem) {
+            if (oldItem == null || newItem == null) return false;
             return oldItem.getIconRes() == newItem.getIconRes() && Objects.equals(oldItem.getIconUrl(), newItem.getIconUrl());
         }
     };
@@ -66,7 +69,7 @@ public class SpecialitiesAdapter extends ListAdapter<Speciality, SpecialitiesAda
 
         void bind(Speciality speciality, OnSpecialityClickListener listener) {
             Context context = itemView.getContext();
-            binding.tvSpecialityName.setText(speciality.getName());
+            binding.tvSpecialityName.setText(speciality != null ? speciality.getName() : "Specialist");
 
             // Adjust layout width dynamically based on parent LayoutManager
             ViewGroup.LayoutParams lp = itemView.getLayoutParams();
@@ -89,7 +92,7 @@ public class SpecialitiesAdapter extends ListAdapter<Speciality, SpecialitiesAda
                     .into(binding.ivSpecialityImage);
 
             itemView.setOnClickListener(v -> {
-                if (listener != null) {
+                if (listener != null && speciality != null) {
                     listener.onSpecialityClick(speciality);
                 }
             });

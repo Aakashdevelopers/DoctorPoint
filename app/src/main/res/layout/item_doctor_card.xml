@@ -5,6 +5,9 @@
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="16dp"
     android:layout_marginVertical="8dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
     app:cardBackgroundColor="@color/surface_white"
     app:cardCornerRadius="18dp"
     app:cardElevation="3dp"
@@ -68,6 +71,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:ellipsize="end"
+                        android:fontFamily="sans-serif-medium"
                         android:maxLines="1"
                         android:text="Dr. Akash Mishra"
                         android:textColor="@color/text_primary"
@@ -111,8 +115,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:background="@drawable/bg_search_field_elevated"
-                        android:paddingHorizontal="6dp"
-                        android:paddingVertical="2dp"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="3dp"
                         android:text="12 Yrs Exp"
                         android:textColor="@color/primary"
                         android:textSize="11sp"
@@ -150,7 +154,7 @@
                         android:background="@drawable/bg_badge_verified"
                         android:gravity="center_vertical"
                         android:paddingHorizontal="6dp"
-                        android:paddingVertical="2dp">
+                        android:paddingVertical="3dp">
 
                         <ImageView
                             android:layout_width="11dp"
@@ -176,7 +180,7 @@
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:layout_marginVertical="10dp"
+            android:layout_marginVertical="12dp"
             android:background="@color/divider" />
 
         <LinearLayout
@@ -208,7 +212,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="12dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -217,9 +221,10 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:fontFamily="sans-serif-medium"
                 android:text="₹500 Fee"
                 android:textColor="@color/primary"
-                android:textSize="15sp"
+                android:textSize="16sp"
                 android:textStyle="bold" />
 
             <com.google.android.material.button.MaterialButton
@@ -227,14 +232,15 @@
                 android:layout_width="wrap_content"
                 android:layout_height="38dp"
                 android:backgroundTint="@color/primary"
+                android:fontFamily="sans-serif-medium"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
-                android:paddingHorizontal="14dp"
+                android:paddingHorizontal="16dp"
                 android:text="Book Now"
                 android:textColor="@color/white"
                 android:textSize="12sp"
                 android:textStyle="bold"
-                app:cornerRadius="10dp" />
+                app:cornerRadius="12dp" />
         </LinearLayout>
 
     </LinearLayout>

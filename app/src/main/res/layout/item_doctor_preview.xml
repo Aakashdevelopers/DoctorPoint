@@ -4,6 +4,9 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="5dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
     app:cardBackgroundColor="@color/surface_white"
     app:cardCornerRadius="18dp"
     app:cardElevation="3dp"
@@ -15,7 +18,7 @@
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
         android:orientation="vertical"
-        android:padding="12dp">
+        android:padding="14dp">
 
         <FrameLayout
             android:layout_width="wrap_content"
@@ -24,8 +27,8 @@
 
             <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/iv_doctor_preview"
-                android:layout_width="70dp"
-                android:layout_height="70dp"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
                 android:layout_gravity="center"
                 android:contentDescription="Doctor Preview Image"
                 android:padding="2dp"
@@ -38,8 +41,8 @@
             <!-- Green Online Dot Badge -->
             <View
                 android:id="@+id/view_available_dot"
-                android:layout_width="13dp"
-                android:layout_height="13dp"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
                 android:layout_gravity="top|start"
                 android:background="@drawable/bg_badge_verified" />
 
@@ -55,8 +58,8 @@
                 android:paddingVertical="2dp">
 
                 <ImageView
-                    android:layout_width="10dp"
-                    android:layout_height="10dp"
+                    android:layout_width="11dp"
+                    android:layout_height="11dp"
                     android:contentDescription="Rating star"
                     android:src="@drawable/ic_star"
                     app:tint="@color/warning_yellow" />
@@ -65,7 +68,7 @@
                     android:id="@+id/tv_rating_preview"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="2dp"
+                    android:layout_marginStart="3dp"
                     android:text="4.8"
                     android:textColor="#92400E"
                     android:textSize="11sp"
@@ -78,13 +81,14 @@
             android:id="@+id/tv_doctor_name_preview"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="10dp"
             android:ellipsize="end"
+            android:fontFamily="sans-serif-medium"
             android:gravity="center"
             android:maxLines="1"
             android:text="Dr. Priya Sharma"
             android:textColor="@color/text_primary"
-            android:textSize="13sp"
+            android:textSize="14sp"
             android:textStyle="bold" />
 
         <TextView
@@ -97,22 +101,23 @@
             android:maxLines="1"
             android:text="Dermatologist"
             android:textColor="@color/text_secondary"
-            android:textSize="11sp" />
+            android:textSize="12sp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_book_preview"
             android:layout_width="match_parent"
             android:layout_height="36dp"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="12dp"
             android:backgroundTint="@color/primary"
+            android:fontFamily="sans-serif-medium"
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:padding="0dp"
             android:text="Book Now"
             android:textColor="@color/white"
-            android:textSize="11sp"
+            android:textSize="12sp"
             android:textStyle="bold"
-            app:cornerRadius="18dp" />
+            app:cornerRadius="12dp" />
 
     </LinearLayout>
 
