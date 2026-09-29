@@ -36,6 +36,15 @@ public class Doctor implements Serializable {
     @SerializedName("location")
     private String location;
 
+    @SerializedName("state")
+    private String state;
+
+    @SerializedName(value = "clinic_latitude", alternate = {"latitude", "lat"})
+    private Double clinicLatitude;
+
+    @SerializedName(value = "clinic_longitude", alternate = {"longitude", "lng", "lon"})
+    private Double clinicLongitude;
+
     @SerializedName("fee")
     private int fee;
 
@@ -152,6 +161,53 @@ public class Doctor implements Serializable {
 
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
+
+    public String getState() {
+        if (state != null && !state.trim().isEmpty()) {
+            return state.trim();
+        }
+        if (location != null && !location.trim().isEmpty()) {
+            String locLower = location.toLowerCase();
+            if (locLower.contains("bangalore") || locLower.contains("bengaluru") || locLower.contains("karnataka")) {
+                return "Karnataka";
+            } else if (locLower.contains("patna") || locLower.contains("bihar")) {
+                return "Bihar";
+            } else if (locLower.contains("delhi")) {
+                return "Delhi";
+            } else if (locLower.contains("mumbai") || locLower.contains("pune") || locLower.contains("maharashtra")) {
+                return "Maharashtra";
+            } else if (locLower.contains("kolkata") || locLower.contains("west bengal")) {
+                return "West Bengal";
+            } else if (locLower.contains("chennai") || locLower.contains("tamil nadu")) {
+                return "Tamil Nadu";
+            } else if (locLower.contains("hyderabad") || locLower.contains("telangana")) {
+                return "Telangana";
+            } else if (locLower.contains("jaipur") || locLower.contains("rajasthan")) {
+                return "Rajasthan";
+            } else if (locLower.contains("lucknow") || locLower.contains("uttar pradesh")) {
+                return "Uttar Pradesh";
+            } else if (locLower.contains("ahmedabad") || locLower.contains("gujarat")) {
+                return "Gujarat";
+            } else if (locLower.contains("chandigarh") || locLower.contains("punjab")) {
+                return "Punjab";
+            } else if (locLower.contains("kochi") || locLower.contains("kerala")) {
+                return "Kerala";
+            }
+        }
+        return "Karnataka";
+    }
+
+    public void setState(String state) { this.state = state; }
+
+    public Double getClinicLatitude() { return clinicLatitude; }
+    public void setClinicLatitude(Double clinicLatitude) { this.clinicLatitude = clinicLatitude; }
+
+    public Double getClinicLongitude() { return clinicLongitude; }
+    public void setClinicLongitude(Double clinicLongitude) { this.clinicLongitude = clinicLongitude; }
+
+    public boolean hasGpsLocation() {
+        return clinicLatitude != null && clinicLongitude != null && (clinicLatitude != 0 || clinicLongitude != 0);
+    }
 
     public int getFee() { return fee > 0 ? fee : 500; }
     public void setFee(int fee) { this.fee = fee; }

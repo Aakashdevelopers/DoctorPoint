@@ -54,44 +54,7 @@ public class AvailabilityHelper {
         if (slotDateStr.contains("T")) slotDateStr = slotDateStr.substring(0, slotDateStr.indexOf("T"));
         if (slotDateStr.contains(" ")) slotDateStr = slotDateStr.substring(0, slotDateStr.indexOf(" "));
 
-        if (isDateInPast(slotDateStr)) {
-            return true;
-        }
-
-        // If slot date is TODAY, compare current system time against slot end_time / start_time
-        try {
-            SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-            String todayStr = sdfDate.format(new Date());
-
-            if (todayStr.equals(slotDateStr)) {
-                String timeCheck = slot.getEndTime();
-                if (timeCheck == null || timeCheck.trim().isEmpty()) {
-                    timeCheck = slot.getStartTime();
-                }
-
-                if (timeCheck != null && !timeCheck.trim().isEmpty()) {
-                    String cleanTime = timeCheck.trim();
-                    if (cleanTime.contains(" ")) cleanTime = cleanTime.substring(0, cleanTime.indexOf(" "));
-                    String[] timeParts = cleanTime.split(":");
-
-                    if (timeParts.length >= 2) {
-                        int hour = Integer.parseInt(timeParts[0]);
-                        int min = Integer.parseInt(timeParts[1]);
-
-                        Calendar now = Calendar.getInstance();
-                        int nowHour = now.get(Calendar.HOUR_OF_DAY);
-                        int nowMin = now.get(Calendar.MINUTE);
-
-                        // If current system hour:min is past slot's end hour:min, mark as past
-                        if (nowHour > hour || (nowHour == hour && nowMin >= min)) {
-                            return true;
-                        }
-                    }
-                }
-            }
-        } catch (Exception ignored) {}
-
-        return false;
+        return isDateInPast(slotDateStr);
     }
 
     public static boolean isSlotValidAndBookable(DoctorSlot slot) {

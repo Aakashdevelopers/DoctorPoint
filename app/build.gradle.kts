@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.google.gms.google.services)
 }
 
 android {
@@ -46,6 +47,7 @@ dependencies {
     implementation(libs.appcompat)
     implementation(libs.cardview)
     implementation(libs.constraintlayout)
+    implementation(libs.firebase.database)
     implementation(libs.material)
     implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("com.github.bumptech.glide:glide:4.16.0")

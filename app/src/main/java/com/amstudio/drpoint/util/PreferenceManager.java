@@ -21,6 +21,13 @@ public class PreferenceManager {
     private static final String KEY_USER_ROLE = "user_role";
     private static final String KEY_SELECTED_DOCTOR_ID = "selected_doctor_id";
     private static final String KEY_USER_AVATAR = "user_avatar";
+    private static final String KEY_USER_GENDER = "user_gender";
+    private static final String KEY_USER_AGE = "user_age";
+    private static final String KEY_USER_BLOOD_GROUP = "user_blood_group";
+    private static final String KEY_USER_ADDRESS = "user_address";
+    private static final String KEY_USER_DOB = "user_dob";
+    private static final String KEY_USER_EMERGENCY_CONTACT = "user_emergency_contact";
+    private static final String KEY_SELECTED_STATE = "selected_state";
 
     private static PreferenceManager instance;
     private final SharedPreferences prefs;
@@ -74,6 +81,75 @@ public class PreferenceManager {
 
     public void setUserAvatar(String avatarUrl) {
         prefs.edit().putString(KEY_USER_AVATAR, avatarUrl).apply();
+    }
+
+    public String getUserGender() {
+        return prefs.getString(KEY_USER_GENDER, "");
+    }
+
+    public void setUserGender(String gender) {
+        prefs.edit().putString(KEY_USER_GENDER, gender).apply();
+    }
+
+    public int getUserAge() {
+        return prefs.getInt(KEY_USER_AGE, 0);
+    }
+
+    public void setUserAge(int age) {
+        prefs.edit().putInt(KEY_USER_AGE, age).apply();
+    }
+
+    public String getUserBloodGroup() {
+        return prefs.getString(KEY_USER_BLOOD_GROUP, "");
+    }
+
+    public void setUserBloodGroup(String bloodGroup) {
+        prefs.edit().putString(KEY_USER_BLOOD_GROUP, bloodGroup).apply();
+    }
+
+    public String getUserAddress() {
+        return prefs.getString(KEY_USER_ADDRESS, "");
+    }
+
+    public void setUserAddress(String address) {
+        prefs.edit().putString(KEY_USER_ADDRESS, address).apply();
+    }
+
+    public String getSelectedState() {
+        String selected = prefs.getString(KEY_SELECTED_STATE, "");
+        if (selected != null && !selected.trim().isEmpty()) {
+            return selected.trim();
+        }
+        String userAddr = getUserAddress();
+        if (userAddr != null && !userAddr.trim().isEmpty()) {
+            return userAddr.trim();
+        }
+        return "Karnataka";
+    }
+
+    public boolean isStateManuallySelected() {
+        String selected = prefs.getString(KEY_SELECTED_STATE, "");
+        return selected != null && !selected.trim().isEmpty();
+    }
+
+    public void setSelectedState(String state) {
+        prefs.edit().putString(KEY_SELECTED_STATE, state != null ? state.trim() : "").apply();
+    }
+
+    public String getUserDob() {
+        return prefs.getString(KEY_USER_DOB, "");
+    }
+
+    public void setUserDob(String dob) {
+        prefs.edit().putString(KEY_USER_DOB, dob).apply();
+    }
+
+    public String getUserEmergencyContact() {
+        return prefs.getString(KEY_USER_EMERGENCY_CONTACT, "");
+    }
+
+    public void setUserEmergencyContact(String emergencyContact) {
+        prefs.edit().putString(KEY_USER_EMERGENCY_CONTACT, emergencyContact).apply();
     }
 
     public String getUserId() {
@@ -168,6 +244,13 @@ public class PreferenceManager {
                 .remove(KEY_USER_NAME)
                 .remove(KEY_USER_EMAIL)
                 .remove(KEY_USER_PHONE)
+                .remove(KEY_USER_AVATAR)
+                .remove(KEY_USER_GENDER)
+                .remove(KEY_USER_AGE)
+                .remove(KEY_USER_BLOOD_GROUP)
+                .remove(KEY_USER_ADDRESS)
+                .remove(KEY_USER_DOB)
+                .remove(KEY_USER_EMERGENCY_CONTACT)
                 .apply();
     }
 }

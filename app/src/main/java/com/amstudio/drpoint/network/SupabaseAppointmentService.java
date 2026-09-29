@@ -1,6 +1,7 @@
 package com.amstudio.drpoint.network;
 
 import com.amstudio.drpoint.model.Appointment;
+import com.amstudio.drpoint.model.RefundRequest;
 
 import java.util.List;
 import java.util.Map;
@@ -15,16 +16,16 @@ import retrofit2.http.Query;
 
 public interface SupabaseAppointmentService {
 
-    @GET("rest/v1/appointments?select=*,doctor:doctors(*)&order=created_at.desc")
+    @GET("rest/v1/appointments?select=*&order=appointment_date.desc,start_time.asc")
     Call<List<Appointment>> getAppointmentsForPatient(@Query("patient_id") String patientIdQuery);
 
-    @GET("rest/v1/appointments?select=*,doctor:doctors(*)&order=created_at.desc")
+    @GET("rest/v1/appointments?select=*&order=appointment_date.desc,start_time.asc")
     Call<List<Appointment>> getAppointmentsForDoctor(@Query("doctor_id") String doctorIdQuery);
 
-    @GET("rest/v1/appointments?select=*,doctor:doctors(*)&order=created_at.desc")
+    @GET("rest/v1/appointments?select=*&order=appointment_date.desc,start_time.asc")
     Call<List<Appointment>> getAppointments(@Query("user_id") String userIdQuery);
 
-    @GET("rest/v1/appointments?select=*,doctor:doctors(*)&order=created_at.desc")
+    @GET("rest/v1/appointments?select=*&order=appointment_date.desc,start_time.asc")
     Call<List<Appointment>> getAllAppointments();
 
     @POST("rest/v1/appointments")
@@ -43,5 +44,14 @@ public interface SupabaseAppointmentService {
     Call<Void> updateAppointmentStatus(
             @Query("id") String idQuery,
             @Body Map<String, Object> statusMap
+    );
+
+    @GET("rest/v1/refund_requests?select=*")
+    Call<List<RefundRequest>> getRefundRequestByAppointment(@Query("appointment_id") String appointmentIdQuery);
+
+    @POST("rest/v1/refund_requests")
+    Call<Void> postRefundRequest(
+            @Header("Prefer") String preferHeader,
+            @Body RefundRequest refundRequest
     );
 }

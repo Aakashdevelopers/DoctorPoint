@@ -8,6 +8,8 @@ material = "1.14.0"
 activityKtx = "1.13.0"
 constraintlayout = "2.2.2"
 cardview = "1.0.0"
+googleGmsGoogleServices = "4.5.0"
+firebaseDatabase = "22.0.2"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -18,7 +20,9 @@ material = { group = "com.google.android.material", name = "material", version.r
 activity-ktx = { group = "androidx.activity", name = "activity-ktx", version.ref = "activityKtx" }
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 cardview = { group = "androidx.cardview", name = "cardview", version.ref = "cardview" }
+firebase-database = { group = "com.google.firebase", name = "firebase-database", version.ref = "firebaseDatabase" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+google-gms-google-services = { id = "com.google.gms.google-services", version.ref = "googleGmsGoogleServices" }
 

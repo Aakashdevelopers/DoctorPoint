@@ -26,7 +26,7 @@
                 android:layout_height="match_parent"
                 android:layout_gravity="center"
                 android:contentDescription="Doctor Point Logo"
-                android:padding="20dp"
+                android:padding="0dp"
                 android:src="@drawable/logo" />
         </com.google.android.material.card.MaterialCardView>
 

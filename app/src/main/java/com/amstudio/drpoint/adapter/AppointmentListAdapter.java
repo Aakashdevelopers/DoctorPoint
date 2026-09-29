@@ -24,6 +24,8 @@ public class AppointmentListAdapter extends ListAdapter<Appointment, Appointment
         void onItemClick(Appointment appointment);
         void onRescheduleClick(Appointment appointment);
         void onCancelClick(Appointment appointment);
+        void onRateDoctorClick(Appointment appointment);
+        void onRefundClick(Appointment appointment);
     }
 
     private static final DiffUtil.ItemCallback<Appointment> DIFF_CALLBACK = new DiffUtil.ItemCallback<Appointment>() {
@@ -97,23 +99,37 @@ public class AppointmentListAdapter extends ListAdapter<Appointment, Appointment
             String tokenPrefix = token > 0 ? "Token #" + String.format(Locale.US, "%02d", token) + " • " : "";
 
             if (st.contains("consultation") || st.contains("in_consultation")) {
-                binding.tvStatusText.setText("🟢 " + tokenPrefix + "IN CONSULTATION (LIVE)");
+                binding.tvStatusText.setText(tokenPrefix + "IN CONSULTATION (LIVE)");
                 binding.tvStatusText.setTextColor(ContextCompat.getColor(context, R.color.success_green));
                 binding.llStatusBadge.setBackgroundResource(R.drawable.bg_badge_verified);
                 binding.llActionButtons.setVisibility(View.GONE);
-            } else if ("completed".equals(st) || "cancelled".equals(st) || "rejected".equals(st) || "no_show".equals(st)) {
-                binding.llActionButtons.setVisibility(View.GONE);
-                if ("cancelled".equals(st) || "rejected".equals(st) || "no_show".equals(st)) {
-                    binding.tvStatusText.setText(tokenPrefix + appointment.getUserFriendlyStatus());
-                    binding.tvStatusText.setTextColor(ContextCompat.getColor(context, R.color.error_red));
-                    binding.llStatusBadge.setBackgroundResource(R.drawable.bg_date_chip_unselected);
-                } else {
-                    binding.tvStatusText.setText(tokenPrefix + "Completed");
-                    binding.tvStatusText.setTextColor(ContextCompat.getColor(context, R.color.primary));
-                    binding.llStatusBadge.setBackgroundResource(R.drawable.bg_badge_verified);
-                }
+            } else if ("completed".equals(st)) {
+                binding.tvStatusText.setText(tokenPrefix + "Completed");
+                binding.tvStatusText.setTextColor(ContextCompat.getColor(context, R.color.primary));
+                binding.llStatusBadge.setBackgroundResource(R.drawable.bg_badge_verified);
+
+                binding.llActionButtons.setVisibility(View.VISIBLE);
+                binding.btnReschedule.setVisibility(View.GONE);
+                binding.btnCancel.setVisibility(View.GONE);
+                binding.btnRateDoctor.setVisibility(View.VISIBLE);
+                binding.btnRequestRefund.setVisibility(View.GONE);
+            } else if ("cancelled".equals(st) || "rejected".equals(st) || "no_show".equals(st)) {
+                binding.tvStatusText.setText(tokenPrefix + appointment.getUserFriendlyStatus());
+                binding.tvStatusText.setTextColor(ContextCompat.getColor(context, R.color.error_red));
+                binding.llStatusBadge.setBackgroundResource(R.drawable.bg_date_chip_unselected);
+
+                binding.llActionButtons.setVisibility(View.VISIBLE);
+                binding.btnReschedule.setVisibility(View.GONE);
+                binding.btnCancel.setVisibility(View.GONE);
+                binding.btnRateDoctor.setVisibility(View.GONE);
+                binding.btnRequestRefund.setVisibility(View.VISIBLE);
             } else {
                 binding.llActionButtons.setVisibility(View.VISIBLE);
+                binding.btnReschedule.setVisibility(View.VISIBLE);
+                binding.btnCancel.setVisibility(View.VISIBLE);
+                binding.btnRateDoctor.setVisibility(View.GONE);
+                binding.btnRequestRefund.setVisibility(View.GONE);
+
                 binding.tvStatusText.setText(tokenPrefix + appointment.getUserFriendlyStatus());
                 binding.tvStatusText.setTextColor(ContextCompat.getColor(context, R.color.success_green));
                 binding.llStatusBadge.setBackgroundResource(R.drawable.bg_badge_verified);
@@ -129,6 +145,14 @@ public class AppointmentListAdapter extends ListAdapter<Appointment, Appointment
 
             binding.btnCancel.setOnClickListener(v -> {
                 if (listener != null) listener.onCancelClick(appointment);
+            });
+
+            binding.btnRateDoctor.setOnClickListener(v -> {
+                if (listener != null) listener.onRateDoctorClick(appointment);
+            });
+
+            binding.btnRequestRefund.setOnClickListener(v -> {
+                if (listener != null) listener.onRefundClick(appointment);
             });
         }
 

@@ -24,8 +24,8 @@
         android:paddingVertical="8dp">
 
         <FrameLayout
-            android:layout_width="56dp"
-            android:layout_height="56dp"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
             android:background="@drawable/bg_squircle_icon">
 
             <com.google.android.material.imageview.ShapeableImageView

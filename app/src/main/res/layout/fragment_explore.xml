@@ -66,7 +66,7 @@
                     android:foreground="?attr/selectableItemBackgroundBorderless"
                     android:paddingHorizontal="12dp"
                     android:paddingVertical="8dp"
-                    android:text="📍 Bangalore ▾"
+                    android:text="Bangalore ▾"
                     android:textColor="@color/primary"
                     android:textSize="12sp"
                     android:textStyle="bold" />
@@ -124,7 +124,7 @@
 
         </RelativeLayout>
 
-        <!-- Shimmer Placeholder for Specialities Grid -->
+        <!-- Shimmer Placeholder for Specialities Grid (2 rows horizontal) -->
         <com.facebook.shimmer.ShimmerFrameLayout
             android:id="@+id/shimmer_specialities"
             android:layout_width="match_parent"
@@ -145,27 +145,23 @@
 
                     <include
                         layout="@layout/shimmer_speciality_item"
-                        android:layout_width="0dp"
-                        android:layout_height="110dp"
-                        android:layout_weight="1" />
+                        android:layout_width="88dp"
+                        android:layout_height="114dp" />
 
                     <include
                         layout="@layout/shimmer_speciality_item"
-                        android:layout_width="0dp"
-                        android:layout_height="110dp"
-                        android:layout_weight="1" />
+                        android:layout_width="88dp"
+                        android:layout_height="114dp" />
 
                     <include
                         layout="@layout/shimmer_speciality_item"
-                        android:layout_width="0dp"
-                        android:layout_height="110dp"
-                        android:layout_weight="1" />
+                        android:layout_width="88dp"
+                        android:layout_height="114dp" />
 
                     <include
                         layout="@layout/shimmer_speciality_item"
-                        android:layout_width="0dp"
-                        android:layout_height="110dp"
-                        android:layout_weight="1" />
+                        android:layout_width="88dp"
+                        android:layout_height="114dp" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -175,32 +171,28 @@
 
                     <include
                         layout="@layout/shimmer_speciality_item"
-                        android:layout_width="0dp"
-                        android:layout_height="110dp"
-                        android:layout_weight="1" />
+                        android:layout_width="88dp"
+                        android:layout_height="114dp" />
 
                     <include
                         layout="@layout/shimmer_speciality_item"
-                        android:layout_width="0dp"
-                        android:layout_height="110dp"
-                        android:layout_weight="1" />
+                        android:layout_width="88dp"
+                        android:layout_height="114dp" />
 
                     <include
                         layout="@layout/shimmer_speciality_item"
-                        android:layout_width="0dp"
-                        android:layout_height="110dp"
-                        android:layout_weight="1" />
+                        android:layout_width="88dp"
+                        android:layout_height="114dp" />
 
                     <include
                         layout="@layout/shimmer_speciality_item"
-                        android:layout_width="0dp"
-                        android:layout_height="110dp"
-                        android:layout_weight="1" />
+                        android:layout_width="88dp"
+                        android:layout_height="114dp" />
                 </LinearLayout>
             </LinearLayout>
         </com.facebook.shimmer.ShimmerFrameLayout>
 
-        <!-- Grid RecyclerView for Specialities (4 columns) -->
+        <!-- Horizontal RecyclerView for Specialities (2 rows) -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rv_specialities"
             android:layout_width="match_parent"
@@ -208,6 +200,7 @@
             android:layout_marginHorizontal="10dp"
             android:layout_marginTop="10dp"
             android:clipToPadding="false"
+            android:orientation="horizontal"
             android:nestedScrollingEnabled="false"
             android:visibility="gone" />
 
@@ -272,7 +265,7 @@
                 android:textStyle="bold" />
         </RelativeLayout>
 
-        <!-- Shimmer Placeholder for Top Doctors Grid -->
+        <!-- Shimmer Placeholder for Top Doctors (1 row horizontal) -->
         <com.facebook.shimmer.ShimmerFrameLayout
             android:id="@+id/shimmer_top_doctors"
             android:layout_width="match_parent"
@@ -284,47 +277,26 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="horizontal">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                <include
+                    layout="@layout/shimmer_doctor_preview"
+                    android:layout_width="160dp"
+                    android:layout_height="wrap_content" />
 
-                    <include
-                        layout="@layout/shimmer_doctor_preview"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1" />
+                <include
+                    layout="@layout/shimmer_doctor_preview"
+                    android:layout_width="160dp"
+                    android:layout_height="wrap_content" />
 
-                    <include
-                        layout="@layout/shimmer_doctor_preview"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <include
-                        layout="@layout/shimmer_doctor_preview"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1" />
-
-                    <include
-                        layout="@layout/shimmer_doctor_preview"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1" />
-                </LinearLayout>
+                <include
+                    layout="@layout/shimmer_doctor_preview"
+                    android:layout_width="160dp"
+                    android:layout_height="wrap_content" />
             </LinearLayout>
         </com.facebook.shimmer.ShimmerFrameLayout>
 
-        <!-- Grid RecyclerView for Doctor Previews (2 columns) -->
+        <!-- Horizontal RecyclerView for Doctor Previews (1 row) -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rv_top_doctors"
             android:layout_width="match_parent"
@@ -332,6 +304,7 @@
             android:layout_marginHorizontal="10dp"
             android:layout_marginTop="10dp"
             android:clipToPadding="false"
+            android:orientation="horizontal"
             android:nestedScrollingEnabled="false"
             android:visibility="gone" />
 

@@ -14,6 +14,9 @@ public class Appointment implements Serializable {
     @SerializedName(value = "patient_id", alternate = {"user_id"})
     private String patientId;
 
+    @SerializedName(value = "patient_name", alternate = {"patient_full_name", "userName", "patientName"})
+    private String patientName;
+
     @SerializedName("doctor_id")
     private String doctorId;
 
@@ -102,6 +105,9 @@ public class Appointment implements Serializable {
 
     public String getPatientId() { return patientId; }
     public void setPatientId(String patientId) { this.patientId = patientId; }
+
+    public String getPatientName() { return patientName; }
+    public void setPatientName(String patientName) { this.patientName = patientName; }
 
     public String getUserId() { return patientId; }
     public void setUserId(String userId) { this.patientId = userId; }
@@ -234,7 +240,7 @@ public class Appointment implements Serializable {
         if (status == null) return "Pending";
         String s = status.trim().toLowerCase();
         switch (s) {
-            case "confirmed": return "✓ Confirmed";
+            case "confirmed": return "Confirmed";
             case "checked_in": return "Checked In";
             case "waiting": return "In Waiting Room";
             case "in_consultation": return "In Consultation";

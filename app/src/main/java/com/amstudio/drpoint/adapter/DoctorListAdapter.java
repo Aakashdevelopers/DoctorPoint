@@ -1,13 +1,14 @@
 package com.amstudio.drpoint.adapter;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.DiffUtil;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
@@ -43,7 +44,8 @@ public class DoctorListAdapter extends ListAdapter<Doctor, RecyclerView.ViewHold
         public boolean areContentsTheSame(@NonNull Doctor oldItem, @NonNull Doctor newItem) {
             return oldItem.getName().equals(newItem.getName()) &&
                    oldItem.getFee() == newItem.getFee() &&
-                   oldItem.getRating() == newItem.getRating();
+                   oldItem.getRating() == newItem.getRating() &&
+                   oldItem.isAvailableToday() == newItem.isAvailableToday();
         }
     };
 
@@ -67,7 +69,7 @@ public class DoctorListAdapter extends ListAdapter<Doctor, RecyclerView.ViewHold
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
         if (viewType == TYPE_HORIZONTAL) {
             ItemDoctorPreviewBinding binding = ItemDoctorPreviewBinding.inflate(inflater, parent, false);
-            return new HorizontalViewHolder(binding);
+            return new HorizontalViewHolder(binding, parent);
         } else {
             ItemDoctorCardBinding binding = ItemDoctorCardBinding.inflate(inflater, parent, false);
             return new VerticalViewHolder(binding);
@@ -87,23 +89,34 @@ public class DoctorListAdapter extends ListAdapter<Doctor, RecyclerView.ViewHold
     static class HorizontalViewHolder extends RecyclerView.ViewHolder {
         private final ItemDoctorPreviewBinding binding;
 
-        HorizontalViewHolder(@NonNull ItemDoctorPreviewBinding binding) {
+        HorizontalViewHolder(@NonNull ItemDoctorPreviewBinding binding, ViewGroup parent) {
             super(binding.getRoot());
             this.binding = binding;
+
+            if (parent instanceof RecyclerView) {
+                RecyclerView rv = (RecyclerView) parent;
+                RecyclerView.LayoutManager lm = rv.getLayoutManager();
+                if (lm instanceof LinearLayoutManager) {
+                    if (((LinearLayoutManager) lm).getOrientation() == LinearLayoutManager.HORIZONTAL) {
+                        ViewGroup.LayoutParams lp = binding.getRoot().getLayoutParams();
+                        if (lp != null) {
+                            lp.width = dpToPx(parent.getContext(), 160);
+                            binding.getRoot().setLayoutParams(lp);
+                        }
+                    }
+                }
+            }
         }
 
         void bind(Doctor doctor, OnDoctorClickListener listener) {
             Context context = itemView.getContext();
 
-            // Adjust width dynamically for horizontal scroll vs 2-column grid
             ViewGroup.LayoutParams lp = itemView.getLayoutParams();
             if (lp != null) {
                 if (isParentHorizontalLinear(itemView)) {
                     lp.width = dpToPx(context, 160);
-                } else {
-                    lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+                    itemView.setLayoutParams(lp);
                 }
-                itemView.setLayoutParams(lp);
             }
 
             binding.tvDoctorNamePreview.setText(doctor.getName() != null ? doctor.getName() : "Dr. Medical Specialist");
@@ -114,8 +127,17 @@ public class DoctorListAdapter extends ListAdapter<Doctor, RecyclerView.ViewHold
             double rating = doctor.getRating() > 0 ? doctor.getRating() : 4.8;
             binding.tvRatingPreview.setText(String.format(Locale.getDefault(), "%.1f", rating));
 
+            boolean isAvailable = doctor.isAvailableToday();
             if (binding.viewAvailableDot != null) {
-                binding.viewAvailableDot.setVisibility(doctor.isAvailableToday() ? View.VISIBLE : View.GONE);
+                binding.viewAvailableDot.setVisibility(isAvailable ? View.VISIBLE : View.GONE);
+            }
+
+            if (isAvailable) {
+                binding.ivDoctorPreview.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(context, R.color.success_green)));
+                binding.ivDoctorPreview.setStrokeWidth(dpToPx(context, 3));
+            } else {
+                binding.ivDoctorPreview.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(context, R.color.card_stroke)));
+                binding.ivDoctorPreview.setStrokeWidth(dpToPx(context, 1));
             }
 
             Object imageSource = (doctor.getImageUrl() != null && !doctor.getImageUrl().trim().isEmpty())
@@ -129,6 +151,9 @@ public class DoctorListAdapter extends ListAdapter<Doctor, RecyclerView.ViewHold
                     .error(R.drawable.banner_1)
                     .into(binding.ivDoctorPreview);
 
+            binding.getRoot().setOnClickListener(v -> {
+                if (listener != null) listener.onDoctorClick(doctor);
+            });
             itemView.setOnClickListener(v -> {
                 if (listener != null) listener.onDoctorClick(doctor);
             });
@@ -143,7 +168,7 @@ public class DoctorListAdapter extends ListAdapter<Doctor, RecyclerView.ViewHold
             if (view.getParent() instanceof RecyclerView) {
                 RecyclerView rv = (RecyclerView) view.getParent();
                 RecyclerView.LayoutManager lm = rv.getLayoutManager();
-                if (lm instanceof LinearLayoutManager && !(lm instanceof GridLayoutManager)) {
+                if (lm instanceof LinearLayoutManager) {
                     return ((LinearLayoutManager) lm).getOrientation() == LinearLayoutManager.HORIZONTAL;
                 }
             }
@@ -188,6 +213,22 @@ public class DoctorListAdapter extends ListAdapter<Doctor, RecyclerView.ViewHold
                 binding.tvExperience.setVisibility(View.GONE);
             }
 
+            boolean isAvailable = doctor.isAvailableToday();
+            if (binding.viewOnlineStatus != null) {
+                binding.viewOnlineStatus.setVisibility(isAvailable ? View.VISIBLE : View.GONE);
+            }
+            if (binding.tvAvailableToday != null) {
+                binding.tvAvailableToday.setVisibility(isAvailable ? View.VISIBLE : View.GONE);
+            }
+
+            if (isAvailable) {
+                binding.ivDoctor.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(context, R.color.success_green)));
+                binding.ivDoctor.setStrokeWidth(dpToPx(context, 3));
+            } else {
+                binding.ivDoctor.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(context, R.color.card_stroke)));
+                binding.ivDoctor.setStrokeWidth(dpToPx(context, 1));
+            }
+
             double rating = doctor.getRating() > 0 ? doctor.getRating() : 4.8;
             int reviews = doctor.getReviewCount() > 0 ? doctor.getReviewCount() : 120;
             binding.tvRating.setText(String.format(Locale.getDefault(), "%.1f (%d reviews)", rating, reviews));
@@ -224,12 +265,19 @@ public class DoctorListAdapter extends ListAdapter<Doctor, RecyclerView.ViewHold
                 if (listener != null) listener.onFavoriteClick(doctor);
             });
 
+            binding.getRoot().setOnClickListener(v -> {
+                if (listener != null) listener.onDoctorClick(doctor);
+            });
             itemView.setOnClickListener(v -> {
                 if (listener != null) listener.onDoctorClick(doctor);
             });
             binding.btnBookNow.setOnClickListener(v -> {
                 if (listener != null) listener.onBookClick(doctor);
             });
+        }
+
+        private static int dpToPx(Context context, float dp) {
+            return Math.round(dp * context.getResources().getDisplayMetrics().density);
         }
     }
 }

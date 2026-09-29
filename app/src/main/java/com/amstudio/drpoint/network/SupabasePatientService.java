@@ -44,4 +44,16 @@ public interface SupabasePatientService {
             @Header("Prefer") String preferHeader,
             @Body Map<String, Object> profileData
     );
+
+    @POST("rest/v1/profiles")
+    Call<Void> upsertProfile(
+            @Header("Prefer") String preferHeader,
+            @Body Map<String, Object> profileData
+    );
+
+    @POST("rest/v1/patients")
+    Call<Void> upsertPatientDetails(
+            @Header("Prefer") String preferHeader,
+            @Body Map<String, Object> patientData
+    );
 }

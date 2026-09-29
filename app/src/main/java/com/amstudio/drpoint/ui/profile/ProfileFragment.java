@@ -1,5 +1,6 @@
 package com.amstudio.drpoint.ui.profile;
 
+import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -30,19 +31,24 @@ import com.amstudio.drpoint.model.PatientProfile;
 import com.amstudio.drpoint.network.SupabaseClient;
 import com.amstudio.drpoint.ui.auth.LoginActivity;
 import com.amstudio.drpoint.ui.doctor.DoctorListActivity;
+import com.amstudio.drpoint.ui.explore.FindDoctorsActivity;
+import com.amstudio.drpoint.ui.home.NotificationsActivity;
 import com.amstudio.drpoint.ui.main.MainActivity;
 import com.amstudio.drpoint.util.DummyDataProvider;
 import com.amstudio.drpoint.util.PreferenceManager;
 import com.bumptech.glide.Glide;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
@@ -86,7 +92,7 @@ public class ProfileFragment extends Fragment {
 
     private void uploadEditImageToSupabaseStorage(Uri imageUri) {
         if (activeSheetBinding == null) return;
-        activeSheetBinding.tvEditUploadLabel.setText("⌛ Uploading photo to Supabase...");
+        activeSheetBinding.tvEditUploadLabel.setText("Uploading photo to Supabase...");
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
                 InputStream inputStream = requireContext().getContentResolver().openInputStream(imageUri);
@@ -114,7 +120,7 @@ public class ProfileFragment extends Fragment {
                     if (isAdded() && getActivity() != null) {
                         getActivity().runOnUiThread(() -> {
                             if (activeSheetBinding != null) {
-                                activeSheetBinding.tvEditUploadLabel.setText("✅ Photo Uploaded!");
+                                activeSheetBinding.tvEditUploadLabel.setText("Photo Uploaded!");
                                 Toast.makeText(requireContext(), "Profile Photo Uploaded to Supabase!", Toast.LENGTH_SHORT).show();
                             }
                         });
@@ -127,7 +133,7 @@ public class ProfileFragment extends Fragment {
             if (isAdded() && getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
                     if (activeSheetBinding != null) {
-                        activeSheetBinding.tvEditUploadLabel.setText("📷 Tap to Change Profile Photo");
+                        activeSheetBinding.tvEditUploadLabel.setText("Tap to Change Profile Photo");
                     }
                 });
             }
@@ -158,42 +164,78 @@ public class ProfileFragment extends Fragment {
 
         updateProfileHeader();
 
-        binding.ivSettings.setOnClickListener(v ->
-                Toast.makeText(requireContext(), "Opening Settings...", Toast.LENGTH_SHORT).show()
-        );
-
+        binding.ivEditProfileTop.setOnClickListener(v -> openEditProfileBottomSheet());
+        binding.flEditProfileTop.setOnClickListener(v -> openEditProfileBottomSheet());
         binding.tvEditProfile.setOnClickListener(v -> openEditProfileBottomSheet());
 
-        binding.rvProfileMenu.setLayoutManager(new LinearLayoutManager(requireContext()));
-        List<MenuItem> menuItems = DummyDataProvider.getProfileMenuItems();
-        ProfileMenuAdapter adapter = new ProfileMenuAdapter(item -> {
-            String title = item.getTitle();
-            if ("Logout".equalsIgnoreCase(title)) {
-                PreferenceManager.getInstance(requireContext()).clearSession();
-                Intent intent = new Intent(requireContext(), LoginActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(intent);
-                if (getActivity() != null) {
-                    getActivity().finish();
-                }
-            } else if (title != null && title.toLowerCase().contains("appointment")) {
-                if (getActivity() instanceof MainActivity) {
-                    ((MainActivity) getActivity()).selectTab(MainActivity.TAB_APPOINTMENTS);
-                }
-            } else if (title != null && (title.toLowerCase().contains("saved") || title.toLowerCase().contains("favorite"))) {
-                Intent intent = new Intent(requireContext(), DoctorListActivity.class);
-                intent.putExtra("category_name", "Saved Doctors");
-                startActivity(intent);
-            } else if (title != null && (title.toLowerCase().contains("apply") || title.toLowerCase().contains("doctor"))) {
-                Toast.makeText(requireContext(), "Thank you for your interest! Doctor onboarding form will open shortly.", Toast.LENGTH_LONG).show();
-            } else {
-                Toast.makeText(requireContext(), title + " clicked", Toast.LENGTH_SHORT).show();
-            }
-        });
-        binding.rvProfileMenu.setAdapter(adapter);
-        adapter.submitList(menuItems);
+        setupProfileSections();
 
         loadProfileFromSupabase();
+    }
+
+    private void setupProfileSections() {
+        ProfileMenuAdapter.OnMenuItemClickListener clickListener = this::handleMenuItemClick;
+
+        // Section 1: My History
+        ProfileMenuAdapter historyAdapter = new ProfileMenuAdapter(clickListener);
+        binding.rvHistoryMenu.setLayoutManager(new LinearLayoutManager(requireContext()));
+        binding.rvHistoryMenu.setAdapter(historyAdapter);
+        historyAdapter.submitList(DummyDataProvider.getHistoryMenuItems());
+
+        // Section 2: Help & Support
+        ProfileMenuAdapter helpAdapter = new ProfileMenuAdapter(clickListener);
+        binding.rvHelpMenu.setLayoutManager(new LinearLayoutManager(requireContext()));
+        binding.rvHelpMenu.setAdapter(helpAdapter);
+        helpAdapter.submitList(DummyDataProvider.getHelpSupportMenuItems());
+
+        // Section 3: More
+        ProfileMenuAdapter moreAdapter = new ProfileMenuAdapter(clickListener);
+        binding.rvMoreMenu.setLayoutManager(new LinearLayoutManager(requireContext()));
+        binding.rvMoreMenu.setAdapter(moreAdapter);
+        moreAdapter.submitList(DummyDataProvider.getMoreMenuItems());
+    }
+
+    private void handleMenuItemClick(MenuItem item) {
+        if (item == null || item.getTitle() == null) return;
+        String title = item.getTitle().trim();
+
+        if ("Logout".equalsIgnoreCase(title)) {
+            PreferenceManager.getInstance(requireContext()).clearSession();
+            Intent intent = new Intent(requireContext(), LoginActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            if (getActivity() != null) {
+                getActivity().finish();
+            }
+        } else if (title.toLowerCase().contains("appointment")) {
+            if (getActivity() instanceof MainActivity) {
+                ((MainActivity) getActivity()).selectTab(MainActivity.TAB_APPOINTMENTS);
+            } else {
+                Toast.makeText(requireContext(), "Opening My Appointments", Toast.LENGTH_SHORT).show();
+            }
+        } else if (title.toLowerCase().contains("saved") || title.toLowerCase().contains("favorite")) {
+            Intent intent = new Intent(requireContext(), DoctorListActivity.class);
+            intent.putExtra("category_name", "Saved Doctors");
+            startActivity(intent);
+        } else if (title.toLowerCase().contains("find") || title.toLowerCase().contains("specialist")) {
+            Intent intent = new Intent(requireContext(), FindDoctorsActivity.class);
+            startActivity(intent);
+        } else if (title.toLowerCase().contains("notification")) {
+            Intent intent = new Intent(requireContext(), NotificationsActivity.class);
+            startActivity(intent);
+        } else if (title.toLowerCase().contains("help") || title.toLowerCase().contains("support")) {
+            Toast.makeText(requireContext(), "Help Center & Support active", Toast.LENGTH_SHORT).show();
+        } else if (title.toLowerCase().contains("are you a doctor") || title.toLowerCase().contains("apply")) {
+            Toast.makeText(requireContext(), "Thank you for your interest! Doctor onboarding form will open shortly.", Toast.LENGTH_LONG).show();
+        } else if (title.toLowerCase().contains("privacy")) {
+            Toast.makeText(requireContext(), "Opening Privacy Policy...", Toast.LENGTH_SHORT).show();
+        } else if (title.toLowerCase().contains("term")) {
+            Toast.makeText(requireContext(), "Opening Terms & Conditions...", Toast.LENGTH_SHORT).show();
+        } else if (title.toLowerCase().contains("star") || title.toLowerCase().contains("rate") || title.toLowerCase().contains("like")) {
+            Toast.makeText(requireContext(), "Thank you for giving DoctorPoint 5 stars!", Toast.LENGTH_LONG).show();
+        } else {
+            Toast.makeText(requireContext(), title + " clicked", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
@@ -330,19 +372,143 @@ public class ProfileFragment extends Fragment {
         sheetBinding.etEmergencyContact.setText(currentProfile.getEmergencyContact() != null ? currentProfile.getEmergencyContact() : "");
         sheetBinding.etAddress.setText(currentProfile.getAddress() != null ? currentProfile.getAddress() : "");
 
+        // Setup Date of Birth Calendar Picker
+        View.OnClickListener dobListener = v -> {
+            Calendar calendar = Calendar.getInstance();
+            String currentDob = sheetBinding.etDob.getText() != null ? sheetBinding.etDob.getText().toString().trim() : "";
+            if (!currentDob.isEmpty() && currentDob.matches("\\d{4}-\\d{2}-\\d{2}")) {
+                try {
+                    String[] parts = currentDob.split("-");
+                    calendar.set(Calendar.YEAR, Integer.parseInt(parts[0]));
+                    calendar.set(Calendar.MONTH, Integer.parseInt(parts[1]) - 1);
+                    calendar.set(Calendar.DAY_OF_MONTH, Integer.parseInt(parts[2]));
+                } catch (Exception ignored) {}
+            }
+
+            DatePickerDialog datePickerDialog = new DatePickerDialog(
+                    requireContext(),
+                    (view1, year, month, dayOfMonth) -> {
+                        String formattedDate = String.format(Locale.US, "%04d-%02d-%02d", year, month + 1, dayOfMonth);
+                        sheetBinding.etDob.setText(formattedDate);
+                        sheetBinding.tilDob.setError(null);
+                    },
+                    calendar.get(Calendar.YEAR),
+                    calendar.get(Calendar.MONTH),
+                    calendar.get(Calendar.DAY_OF_MONTH)
+            );
+            datePickerDialog.getDatePicker().setMaxDate(System.currentTimeMillis());
+            datePickerDialog.show();
+        };
+
+        sheetBinding.etDob.setOnClickListener(dobListener);
+        sheetBinding.tilDob.setOnClickListener(dobListener);
+        sheetBinding.tilDob.setEndIconOnClickListener(dobListener);
+
+        // Setup Gender Selection Dialog (Male, Female, Prefer not to say)
+        String[] genderOptions = new String[]{"Male", "Female", "Prefer not to say"};
+        View.OnClickListener genderListener = v -> new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Select Gender")
+                .setItems(genderOptions, (dialogInterface, which) -> {
+                    sheetBinding.etGender.setText(genderOptions[which]);
+                    sheetBinding.tilGender.setError(null);
+                })
+                .show();
+
+        sheetBinding.etGender.setOnClickListener(genderListener);
+        sheetBinding.tilGender.setOnClickListener(genderListener);
+        sheetBinding.tilGender.setEndIconOnClickListener(genderListener);
+
+        // Setup State Selection Dialog
+        String[] indianStates = new String[]{
+                "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+                "Delhi", "Goa", "Gujarat", "Haryana", "Himachal Pradesh",
+                "Jammu and Kashmir", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh",
+                "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland",
+                "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
+                "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"
+        };
+        View.OnClickListener stateListener = v -> new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Select State")
+                .setItems(indianStates, (dialogInterface, which) -> {
+                    sheetBinding.etAddress.setText(indianStates[which]);
+                    sheetBinding.tilAddress.setError(null);
+                })
+                .show();
+
+        sheetBinding.etAddress.setOnClickListener(stateListener);
+        sheetBinding.tilAddress.setOnClickListener(stateListener);
+        sheetBinding.tilAddress.setEndIconOnClickListener(stateListener);
+
         sheetBinding.btnCancel.setOnClickListener(v -> dialog.dismiss());
 
         sheetBinding.btnSaveProfile.setOnClickListener(v -> {
-            String name = sheetBinding.etFullName.getText().toString().trim();
-            String phone = sheetBinding.etPhone.getText().toString().trim();
-            String dob = sheetBinding.etDob.getText().toString().trim();
-            String gender = sheetBinding.etGender.getText().toString().trim();
-            String bloodGroup = sheetBinding.etBloodGroup.getText().toString().trim();
-            String emergencyContact = sheetBinding.etEmergencyContact.getText().toString().trim();
-            String address = sheetBinding.etAddress.getText().toString().trim();
+            String name = sheetBinding.etFullName.getText() != null ? sheetBinding.etFullName.getText().toString().trim() : "";
+            String phone = sheetBinding.etPhone.getText() != null ? sheetBinding.etPhone.getText().toString().trim() : "";
+            String dob = sheetBinding.etDob.getText() != null ? sheetBinding.etDob.getText().toString().trim() : "";
+            String gender = sheetBinding.etGender.getText() != null ? sheetBinding.etGender.getText().toString().trim() : "";
+            String bloodGroup = sheetBinding.etBloodGroup.getText() != null ? sheetBinding.etBloodGroup.getText().toString().trim() : "";
+            String emergencyContact = sheetBinding.etEmergencyContact.getText() != null ? sheetBinding.etEmergencyContact.getText().toString().trim() : "";
+            String address = sheetBinding.etAddress.getText() != null ? sheetBinding.etAddress.getText().toString().trim() : "";
+
+            boolean isValid = true;
 
             if (TextUtils.isEmpty(name)) {
                 sheetBinding.tilFullName.setError("Full name is required");
+                isValid = false;
+            } else {
+                sheetBinding.tilFullName.setError(null);
+            }
+
+            if (TextUtils.isEmpty(phone)) {
+                sheetBinding.tilPhone.setError("Phone number is required");
+                isValid = false;
+            } else if (!phone.matches("\\d{10}")) {
+                sheetBinding.tilPhone.setError("Enter valid 10-digit phone number");
+                isValid = false;
+            } else {
+                sheetBinding.tilPhone.setError(null);
+            }
+
+            if (TextUtils.isEmpty(dob)) {
+                sheetBinding.tilDob.setError("Date of birth is required");
+                isValid = false;
+            } else {
+                sheetBinding.tilDob.setError(null);
+            }
+
+            if (TextUtils.isEmpty(gender)) {
+                sheetBinding.tilGender.setError("Gender is required");
+                isValid = false;
+            } else {
+                sheetBinding.tilGender.setError(null);
+            }
+
+            if (TextUtils.isEmpty(bloodGroup)) {
+                sheetBinding.tilBloodGroup.setError("Blood group is required");
+                isValid = false;
+            } else {
+                sheetBinding.tilBloodGroup.setError(null);
+            }
+
+            if (TextUtils.isEmpty(emergencyContact)) {
+                sheetBinding.tilEmergencyContact.setError("Emergency contact is required");
+                isValid = false;
+            } else if (!emergencyContact.matches("\\d{10}")) {
+                sheetBinding.tilEmergencyContact.setError("Enter valid 10-digit emergency contact");
+                isValid = false;
+            } else {
+                sheetBinding.tilEmergencyContact.setError(null);
+            }
+
+            if (TextUtils.isEmpty(address)) {
+                sheetBinding.tilAddress.setError("Address is required");
+                isValid = false;
+            } else {
+                sheetBinding.tilAddress.setError(null);
+            }
+
+            if (!isValid) {
+                Toast.makeText(requireContext(), "Please fill all mandatory profile details", Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -429,6 +595,14 @@ public class ProfileFragment extends Fragment {
                 PreferenceManager prefManager = PreferenceManager.getInstance(requireContext());
                 prefManager.setUserName(name);
                 prefManager.setUserPhone(phone);
+                prefManager.setUserGender(gender);
+                prefManager.setUserBloodGroup(bloodGroup);
+                prefManager.setUserAddress(address);
+                prefManager.setUserDob(dob);
+                prefManager.setUserEmergencyContact(emergencyContact);
+                if (!pendingAvatarUrl.isEmpty()) {
+                    prefManager.setUserAvatar(pendingAvatarUrl);
+                }
 
                 updateProfileHeader();
                 Toast.makeText(requireContext(), "Profile updated successfully!", Toast.LENGTH_SHORT).show();

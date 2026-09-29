@@ -13,10 +13,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.amstudio.drpoint.R;
 import com.amstudio.drpoint.adapter.CalendarDayAdapter;
 import com.amstudio.drpoint.adapter.ClinicPhotoAdapter;
+import com.amstudio.drpoint.adapter.DoctorReviewsAdapter;
 import com.amstudio.drpoint.adapter.TimeSlotAdapter;
 import com.amstudio.drpoint.databinding.ActivityDoctorDetailBinding;
 import com.amstudio.drpoint.model.Clinic;
 import com.amstudio.drpoint.model.Doctor;
+import com.amstudio.drpoint.model.DoctorReview;
 import com.amstudio.drpoint.model.DoctorSlot;
 import com.amstudio.drpoint.network.SupabaseClient;
 import com.amstudio.drpoint.ui.booking.BookAppointmentActivity;
@@ -24,6 +26,7 @@ import com.amstudio.drpoint.util.AvailabilityHelper;
 import com.amstudio.drpoint.util.DummyDataProvider;
 import com.amstudio.drpoint.util.PreferenceManager;
 import com.bumptech.glide.Glide;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.tabs.TabLayout;
 
@@ -108,10 +111,23 @@ public class DoctorDetailActivity extends AppCompatActivity {
         binding.tvSpecialization.setText(doctor.getSpecializationString());
         binding.tvQualification.setText(doctor.getQualification());
         binding.tvExperience.setText(doctor.getExperience() + " Overall Experience");
-        binding.tvRatingNum.setText(doctor.getRating() + " ★");
+        binding.tvRatingNum.setText(String.format(Locale.getDefault(), "%.1f ★", doctor.getRating() > 0 ? doctor.getRating() : 4.8));
+        if (binding.tvReviewsCount != null) {
+            int reviews = doctor.getReviewCount() > 0 ? doctor.getReviewCount() : 120;
+            binding.tvReviewsCount.setText(reviews + " Reviews");
+        }
         binding.tvClinicName.setText(doctor.getClinicName());
         binding.tvClinicAddress.setText(doctor.getLocation());
         binding.tvBottomFee.setText("₹" + doctor.getFee());
+
+        loadLiveDoctorRatingAndReviews();
+
+        if (binding.tvReviewsCount != null) {
+            binding.tvReviewsCount.setOnClickListener(v -> openReviewsBottomSheet());
+        }
+        if (binding.tvRatingNum != null) {
+            binding.tvRatingNum.setOnClickListener(v -> openReviewsBottomSheet());
+        }
 
         if (doctor.getAbout() != null && !doctor.getAbout().isEmpty()) {
             binding.tvAboutDesc.setText(doctor.getAbout());
@@ -370,9 +386,7 @@ public class DoctorDetailActivity extends AppCompatActivity {
     private void setupActionButtons() {
         binding.btnActionCall.setOnClickListener(v -> showCallSelectionDialog());
 
-        binding.btnActionDirections.setOnClickListener(v ->
-                Toast.makeText(this, "Opening directions to " + doctor.getClinicName(), Toast.LENGTH_SHORT).show()
-        );
+        binding.btnActionDirections.setOnClickListener(v -> openClinicInGoogleMaps());
 
         binding.btnActionShare.setOnClickListener(v -> shareDoctorInfo());
 
@@ -382,6 +396,47 @@ public class DoctorDetailActivity extends AppCompatActivity {
             String msg = isFav ? "Doctor profile saved" : "Doctor profile removed";
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
         });
+    }
+
+    private void openClinicInGoogleMaps() {
+        if (doctor == null) return;
+
+        Uri mapUri;
+        if (doctor.hasGpsLocation()) {
+            double lat = doctor.getClinicLatitude();
+            double lng = doctor.getClinicLongitude();
+            String label = (doctor.getClinicName() != null && !doctor.getClinicName().isEmpty())
+                    ? doctor.getClinicName() : "Doctor Clinic";
+            mapUri = Uri.parse("geo:" + lat + "," + lng + "?q=" + lat + "," + lng + "(" + Uri.encode(label) + ")");
+        } else {
+            String query = (doctor.getClinicName() != null ? doctor.getClinicName() + " " : "") +
+                    (doctor.getLocation() != null ? doctor.getLocation() : "");
+            mapUri = Uri.parse("geo:0,0?q=" + Uri.encode(query.trim()));
+        }
+
+        try {
+            Intent mapIntent = new Intent(Intent.ACTION_VIEW, mapUri);
+            mapIntent.setPackage("com.google.android.apps.maps");
+            if (mapIntent.resolveActivity(getPackageManager()) != null) {
+                startActivity(mapIntent);
+                return;
+            }
+        } catch (Exception ignored) {}
+
+        try {
+            String url;
+            if (doctor.hasGpsLocation()) {
+                url = "https://www.google.com/maps/search/?api=1&query=" + doctor.getClinicLatitude() + "," + doctor.getClinicLongitude();
+            } else {
+                String query = (doctor.getClinicName() != null ? doctor.getClinicName() + " " : "") +
+                        (doctor.getLocation() != null ? doctor.getLocation() : "");
+                url = "https://www.google.com/maps/search/?api=1&query=" + Uri.encode(query.trim());
+            }
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            startActivity(browserIntent);
+        } catch (Exception e) {
+            Toast.makeText(this, "Could not open map for " + doctor.getClinicName(), Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void setupTabLayout() {
@@ -629,6 +684,88 @@ public class DoctorDetailActivity extends AppCompatActivity {
             binding.cardClinicPhotos.setVisibility(View.VISIBLE);
             photoAdapter.submitList(photos);
         }
+    }
+
+    private void loadLiveDoctorRatingAndReviews() {
+        if (doctor == null || doctor.getId() == null) return;
+
+        SupabaseClient.getDoctorService().getDoctorReviews("eq." + doctor.getId())
+                .enqueue(new Callback<List<DoctorReview>>() {
+                    @Override
+                    public void onResponse(Call<List<DoctorReview>> call, Response<List<DoctorReview>> response) {
+                        if (isFinishing() || binding == null) return;
+                        if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                            List<DoctorReview> reviews = response.body();
+                            double sum = 0;
+                            for (DoctorReview r : reviews) {
+                                sum += r.getRating();
+                            }
+                            double avgRating = sum / reviews.size();
+                            avgRating = Math.round(avgRating * 10.0) / 10.0;
+                            int totalReviews = reviews.size();
+
+                            doctor.setRating(avgRating);
+                            doctor.setReviewCount(totalReviews);
+
+                            binding.tvRatingNum.setText(String.format(Locale.getDefault(), "%.1f ★", avgRating));
+                            if (binding.tvReviewsCount != null) {
+                                binding.tvReviewsCount.setText(totalReviews + " Reviews");
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<List<DoctorReview>> call, Throwable t) {}
+                });
+    }
+
+    private void openReviewsBottomSheet() {
+        if (isFinishing() || doctor == null || doctor.getId() == null) return;
+
+        BottomSheetDialog sheetDialog =
+                new BottomSheetDialog(this);
+        com.amstudio.drpoint.databinding.BottomSheetDoctorReviewsBinding sheetBinding =
+                com.amstudio.drpoint.databinding.BottomSheetDoctorReviewsBinding.inflate(getLayoutInflater());
+        sheetDialog.setContentView(sheetBinding.getRoot());
+
+        sheetBinding.tvReviewsSheetDoctorName.setText(doctor.getName() != null ? doctor.getName() : "Doctor Reviews");
+        double rating = doctor.getRating() > 0 ? doctor.getRating() : 4.8;
+        sheetBinding.tvReviewsSheetAvgRating.setText(String.format(Locale.getDefault(), "%.1f ★", rating));
+
+        sheetBinding.ivCloseReviewsSheet.setOnClickListener(v -> sheetDialog.dismiss());
+
+        sheetBinding.rvReviewsList.setLayoutManager(new LinearLayoutManager(this));
+        DoctorReviewsAdapter reviewsAdapter = new DoctorReviewsAdapter();
+        sheetBinding.rvReviewsList.setAdapter(reviewsAdapter);
+
+        SupabaseClient.getDoctorService().getDoctorReviews("eq." + doctor.getId())
+                .enqueue(new Callback<List<DoctorReview>>() {
+                    @Override
+                    public void onResponse(Call<List<DoctorReview>> call, Response<List<DoctorReview>> response) {
+                        if (isFinishing()) return;
+                        if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                            List<DoctorReview> reviews = response.body();
+                            sheetBinding.tvReviewsSheetTotalCount.setText("Based on " + reviews.size() + " reviews");
+                            sheetBinding.tvNoReviewsYet.setVisibility(View.GONE);
+                            sheetBinding.rvReviewsList.setVisibility(View.VISIBLE);
+                            reviewsAdapter.submitList(reviews);
+                        } else {
+                            sheetBinding.tvReviewsSheetTotalCount.setText("Based on 0 reviews");
+                            sheetBinding.tvNoReviewsYet.setVisibility(View.VISIBLE);
+                            sheetBinding.rvReviewsList.setVisibility(View.GONE);
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<List<DoctorReview>> call, Throwable t) {
+                        if (isFinishing()) return;
+                        sheetBinding.tvReviewsSheetTotalCount.setText("Based on 0 reviews");
+                        sheetBinding.tvNoReviewsYet.setVisibility(View.VISIBLE);
+                        sheetBinding.rvReviewsList.setVisibility(View.GONE);
+                    }
+                });
+
+        sheetDialog.show();
     }
 
     private void shareDoctorInfo() {

@@ -2,12 +2,10 @@ package com.amstudio.drpoint.adapter;
 
 import android.content.Context;
 import android.view.LayoutInflater;
-import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DiffUtil;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
@@ -51,12 +49,35 @@ public class SpecialitiesAdapter extends ListAdapter<Speciality, SpecialitiesAda
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         ItemSpecialityBinding binding = ItemSpecialityBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false);
+        if (parent instanceof RecyclerView) {
+            RecyclerView rv = (RecyclerView) parent;
+            ViewGroup.LayoutParams lp = binding.getRoot().getLayoutParams();
+            if (lp != null && rv.getLayoutManager() != null) {
+                if (isHorizontalLayoutManager(rv.getLayoutManager())) {
+                    lp.width = dpToPx(parent.getContext(), 88);
+                } else {
+                    lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+                }
+                binding.getRoot().setLayoutParams(lp);
+            }
+        }
         return new ViewHolder(binding);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         holder.bind(getItem(position), listener);
+    }
+
+    private static boolean isHorizontalLayoutManager(RecyclerView.LayoutManager lm) {
+        if (lm instanceof LinearLayoutManager) {
+            return ((LinearLayoutManager) lm).getOrientation() == LinearLayoutManager.HORIZONTAL;
+        }
+        return false;
+    }
+
+    private static int dpToPx(Context context, float dp) {
+        return Math.round(dp * context.getResources().getDisplayMetrics().density);
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
@@ -70,17 +91,6 @@ public class SpecialitiesAdapter extends ListAdapter<Speciality, SpecialitiesAda
         void bind(Speciality speciality, OnSpecialityClickListener listener) {
             Context context = itemView.getContext();
             binding.tvSpecialityName.setText(speciality != null ? speciality.getName() : "Specialist");
-
-            // Adjust layout width dynamically based on parent LayoutManager
-            ViewGroup.LayoutParams lp = itemView.getLayoutParams();
-            if (lp != null) {
-                if (isParentHorizontalLinear(itemView)) {
-                    lp.width = dpToPx(context, 92);
-                } else {
-                    lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-                }
-                itemView.setLayoutParams(lp);
-            }
 
             String imageUrl = getPhotoUrlForSpeciality(speciality);
 
@@ -96,21 +106,6 @@ public class SpecialitiesAdapter extends ListAdapter<Speciality, SpecialitiesAda
                     listener.onSpecialityClick(speciality);
                 }
             });
-        }
-
-        private static boolean isParentHorizontalLinear(View view) {
-            if (view.getParent() instanceof RecyclerView) {
-                RecyclerView rv = (RecyclerView) view.getParent();
-                RecyclerView.LayoutManager lm = rv.getLayoutManager();
-                if (lm instanceof LinearLayoutManager && !(lm instanceof GridLayoutManager)) {
-                    return ((LinearLayoutManager) lm).getOrientation() == LinearLayoutManager.HORIZONTAL;
-                }
-            }
-            return false;
-        }
-
-        private static int dpToPx(Context context, float dp) {
-            return Math.round(dp * context.getResources().getDisplayMetrics().density);
         }
     }
 

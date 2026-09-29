@@ -86,7 +86,7 @@ public class MedicalRecordsActivity extends AppCompatActivity {
                         selectedFileUri = result.getData().getData();
                         selectedFileType = getContentResolver().getType(selectedFileUri);
                         if (selectedFileType == null) selectedFileType = "image/jpeg";
-                        updateFileSelectedStatus("🖼 Gallery image attached");
+                        updateFileSelectedStatus("Gallery image attached");
                     }
                 }
         );
@@ -97,7 +97,7 @@ public class MedicalRecordsActivity extends AppCompatActivity {
                     if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null && result.getData().getData() != null) {
                         selectedFileUri = result.getData().getData();
                         selectedFileType = "application/pdf";
-                        updateFileSelectedStatus("📄 PDF Document attached");
+                        updateFileSelectedStatus("PDF Document attached");
                     }
                 }
         );
@@ -110,7 +110,7 @@ public class MedicalRecordsActivity extends AppCompatActivity {
                             selectedFileUri = result.getData().getData();
                         }
                         selectedFileType = "image/jpeg";
-                        updateFileSelectedStatus("📷 Camera image captured");
+                        updateFileSelectedStatus("Camera image captured");
                     }
                 }
         );

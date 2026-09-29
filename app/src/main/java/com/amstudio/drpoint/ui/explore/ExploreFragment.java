@@ -3,8 +3,6 @@ package com.amstudio.drpoint.ui.explore;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.amstudio.drpoint.adapter.DoctorListAdapter;
 import com.amstudio.drpoint.adapter.SpecialitiesAdapter;
@@ -22,10 +21,14 @@ import com.amstudio.drpoint.model.Doctor;
 import com.amstudio.drpoint.ui.doctor.DoctorDetailActivity;
 import com.amstudio.drpoint.ui.doctor.DoctorListActivity;
 import com.amstudio.drpoint.util.DummyDataProvider;
+import com.amstudio.drpoint.util.PreferenceManager;
+
+import java.util.List;
 
 public class ExploreFragment extends Fragment {
 
     private FragmentExploreBinding binding;
+    private DoctorListAdapter doctorListAdapter;
 
     @Nullable
     @Override
@@ -38,18 +41,15 @@ public class ExploreFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-
-
         if (binding.tvLocationChip != null) {
             binding.tvLocationChip.setOnClickListener(v ->
-                Toast.makeText(requireContext(), "Selected Location: Bangalore", Toast.LENGTH_SHORT).show()
+                DummyDataProvider.showStatePickerDialog(requireContext(), selectedState -> updateLocationChipAndDoctors())
             );
         }
+        updateLocationChipText();
 
-
-
-        // Specialities Grid (4 Columns)
-        binding.rvSpecialities.setLayoutManager(new GridLayoutManager(requireContext(), 4));
+        // Specialities Horizontal Grid (2 Rows)
+        binding.rvSpecialities.setLayoutManager(new GridLayoutManager(requireContext(), 2, GridLayoutManager.HORIZONTAL, false));
         SpecialitiesAdapter specialitiesAdapter = new SpecialitiesAdapter(speciality -> {
             Intent intent = new Intent(requireContext(), DoctorListActivity.class);
             intent.putExtra("category_name", speciality.getName());
@@ -66,9 +66,9 @@ public class ExploreFragment extends Fragment {
             binding.rvSpecialities.setVisibility(View.VISIBLE);
         });
 
-        // Top Doctors Grid (2 Columns)
-        binding.rvTopDoctors.setLayoutManager(new GridLayoutManager(requireContext(), 2));
-        DoctorListAdapter doctorListAdapter = new DoctorListAdapter(true, new DoctorListAdapter.OnDoctorClickListener() {
+        // Top Doctors Horizontal List (1 Row)
+        binding.rvTopDoctors.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
+        doctorListAdapter = new DoctorListAdapter(true, new DoctorListAdapter.OnDoctorClickListener() {
             @Override
             public void onDoctorClick(Doctor doctor) {
                 Intent intent = new Intent(requireContext(), DoctorDetailActivity.class);
@@ -103,20 +103,48 @@ public class ExploreFragment extends Fragment {
         });
         binding.rvTopDoctors.setAdapter(doctorListAdapter);
 
+        loadTopDoctors();
+
+        binding.tvSeeAllDoctors.setOnClickListener(v -> {
+            Intent intent = new Intent(requireContext(), DoctorListActivity.class);
+            intent.putExtra("category_name", "Top Doctors Near You");
+            startActivity(intent);
+        });
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        updateLocationChipAndDoctors();
+    }
+
+    private void updateLocationChipText() {
+        if (binding == null || !isAdded()) return;
+        String selectedState = PreferenceManager.getInstance(requireContext()).getSelectedState();
+        if (binding.tvLocationChip != null) {
+            binding.tvLocationChip.setText("📍 " + selectedState + " ▾");
+        }
+    }
+
+    private void updateLocationChipAndDoctors() {
+        updateLocationChipText();
+        loadTopDoctors();
+    }
+
+    private void loadTopDoctors() {
+        if (binding == null || !isAdded()) return;
+        String currentState = PreferenceManager.getInstance(requireContext()).getSelectedState();
         DummyDataProvider.fetchDoctorsFromSupabase(list -> {
-            if (binding == null) return;
-            doctorListAdapter.submitList(list);
+            if (binding == null || !isAdded()) return;
+            List<Doctor> filtered = DummyDataProvider.filterDoctorsByState(list, currentState);
+            if (doctorListAdapter != null) {
+                doctorListAdapter.submitList(filtered);
+            }
             if (binding.shimmerTopDoctors != null) {
                 binding.shimmerTopDoctors.stopShimmer();
                 binding.shimmerTopDoctors.setVisibility(View.GONE);
             }
             binding.rvTopDoctors.setVisibility(View.VISIBLE);
-        });
-
-        binding.tvSeeAllDoctors.setOnClickListener(v -> {
-            Intent intent = new Intent(requireContext(), DoctorListActivity.class);
-            intent.putExtra("category_name", "All Doctors");
-            startActivity(intent);
         });
     }
 

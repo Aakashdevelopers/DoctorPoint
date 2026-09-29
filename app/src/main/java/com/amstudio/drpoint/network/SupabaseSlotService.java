@@ -12,6 +12,7 @@ import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
+import retrofit2.http.PATCH;
 import retrofit2.http.POST;
 import retrofit2.http.Query;
 
@@ -66,5 +67,11 @@ public interface SupabaseSlotService {
     @POST("rest/v1/rpc/cancel_appointment")
     Call<Map<String, Object>> cancelAppointment(
             @Body CancelAppointmentRpcRequest request
+    );
+
+    @PATCH("rest/v1/doctor_slots")
+    Call<Void> updateSlotStatus(
+            @Query("id") String idQuery,
+            @Body Map<String, Object> statusMap
     );
 }

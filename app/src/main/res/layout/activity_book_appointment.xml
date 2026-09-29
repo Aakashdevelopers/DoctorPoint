@@ -145,156 +145,405 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Date Selection Section -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="20dp"
-                android:layout_marginTop="22dp"
-                android:text="Select Date"
-                android:textColor="@color/text_primary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rv_dates"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:clipToPadding="false"
-                android:paddingHorizontal="16dp" />
-
-            <!-- Time Slots Section Header -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="20dp"
-                android:layout_marginTop="24dp"
-                android:text="Select Time Slot"
-                android:textColor="@color/text_primary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <!-- Morning Slots -->
+            <!-- Booking Form Container -->
             <LinearLayout
+                android:id="@+id/ll_booking_form_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="20dp"
-                android:layout_marginTop="12dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:orientation="vertical">
 
-                <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:contentDescription="Sun icon"
-                    android:src="@drawable/ic_sun"
-                    app:tint="@color/warning_yellow" />
-
+                <!-- Date Selection Section -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="Morning Slots"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="13sp"
+                    android:layout_marginHorizontal="20dp"
+                    android:layout_marginTop="22dp"
+                    android:text="Select Date"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
                     android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/tv_morning_timing"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12sp"
-                    android:visibility="gone" />
-            </LinearLayout>
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rv_morning_slots"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="12dp"
-                android:layout_marginTop="8dp"
-                android:nestedScrollingEnabled="false" />
-
-            <!-- Afternoon / Night Slots -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="20dp"
-                android:layout_marginTop="16dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:contentDescription="Moon icon"
-                    android:src="@drawable/ic_moon"
-                    app:tint="@color/secondary" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="Afternoon &amp; Evening Slots"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tv_evening_timing"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12sp"
-                    android:visibility="gone" />
-            </LinearLayout>
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rv_evening_slots"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="12dp"
-                android:layout_marginTop="8dp"
-                android:nestedScrollingEnabled="false" />
-
-            <!-- Illness / Symptoms Description Input Section -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="20dp"
-                android:layout_marginTop="20dp"
-                android:text="Describe Symptoms / Reason for Visit"
-                android:textColor="@color/text_primary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp"
-                android:layout_marginTop="8dp"
-                app:cardBackgroundColor="@color/surface_white"
-                app:cardCornerRadius="12dp"
-                app:strokeColor="@color/card_stroke"
-                app:strokeWidth="1dp">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/et_patient_reason"
+                <!-- Shimmer Placeholder for Dates -->
+                <com.facebook.shimmer.ShimmerFrameLayout
+                    android:id="@+id/shimmer_dates"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@android:color/transparent"
-                    android:hint="e.g. Fever, Cough, Skin Allergy or Routine Followup"
-                    android:inputType="textMultiLine"
-                    android:minLines="2"
-                    android:padding="14dp"
+                    android:layout_marginTop="10dp"
+                    android:paddingHorizontal="16dp"
+                    app:shimmer_auto_start="true">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <include layout="@layout/shimmer_date_chip" />
+
+                        <include layout="@layout/shimmer_date_chip" />
+
+                        <include layout="@layout/shimmer_date_chip" />
+
+                        <include layout="@layout/shimmer_date_chip" />
+
+                        <include layout="@layout/shimmer_date_chip" />
+                    </LinearLayout>
+                </com.facebook.shimmer.ShimmerFrameLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_dates"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:clipToPadding="false"
+                    android:paddingHorizontal="16dp"
+                    android:visibility="gone" />
+
+                <!-- Time Slots Section Header -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="20dp"
+                    android:layout_marginTop="24dp"
+                    android:text="Select Time Slot"
                     android:textColor="@color/text_primary"
-                    android:textColorHint="@color/text_muted"
-                    android:textSize="14sp" />
-            </com.google.android.material.card.MaterialCardView>
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <!-- Morning Slots -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="20dp"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:contentDescription="Sun icon"
+                        android:src="@drawable/ic_sun"
+                        app:tint="@color/warning_yellow" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="Morning Slots"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_morning_timing"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+                <!-- Shimmer Placeholder for Morning Slots -->
+                <com.facebook.shimmer.ShimmerFrameLayout
+                    android:id="@+id/shimmer_morning_slots"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="12dp"
+                    android:layout_marginTop="8dp"
+                    app:shimmer_auto_start="true">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <include
+                                layout="@layout/shimmer_time_slot"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_weight="1" />
+
+                            <include
+                                layout="@layout/shimmer_time_slot"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_weight="1" />
+
+                            <include
+                                layout="@layout/shimmer_time_slot"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_weight="1" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <include
+                                layout="@layout/shimmer_time_slot"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_weight="1" />
+
+                            <include
+                                layout="@layout/shimmer_time_slot"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_weight="1" />
+
+                            <include
+                                layout="@layout/shimmer_time_slot"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_weight="1" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.facebook.shimmer.ShimmerFrameLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_morning_slots"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="12dp"
+                    android:layout_marginTop="8dp"
+                    android:nestedScrollingEnabled="false"
+                    android:visibility="gone" />
+
+                <!-- Afternoon / Night Slots -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="20dp"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:contentDescription="Moon icon"
+                        android:src="@drawable/ic_moon"
+                        app:tint="@color/secondary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="Afternoon &amp; Evening Slots"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_evening_timing"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+                <!-- Shimmer Placeholder for Evening Slots -->
+                <com.facebook.shimmer.ShimmerFrameLayout
+                    android:id="@+id/shimmer_evening_slots"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="12dp"
+                    android:layout_marginTop="8dp"
+                    app:shimmer_auto_start="true">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <include
+                                layout="@layout/shimmer_time_slot"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_weight="1" />
+
+                            <include
+                                layout="@layout/shimmer_time_slot"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_weight="1" />
+
+                            <include
+                                layout="@layout/shimmer_time_slot"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_weight="1" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <include
+                                layout="@layout/shimmer_time_slot"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_weight="1" />
+
+                            <include
+                                layout="@layout/shimmer_time_slot"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_weight="1" />
+
+                            <include
+                                layout="@layout/shimmer_time_slot"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_weight="1" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.facebook.shimmer.ShimmerFrameLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_evening_slots"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="12dp"
+                    android:layout_marginTop="8dp"
+                    android:nestedScrollingEnabled="false"
+                    android:visibility="gone" />
+
+                <!-- Illness / Symptoms Description Input Section -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="20dp"
+                    android:layout_marginTop="20dp"
+                    android:text="Describe Symptoms / Reason for Visit"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="16dp"
+                    android:layout_marginTop="8dp"
+                    app:cardBackgroundColor="@color/surface_white"
+                    app:cardCornerRadius="12dp"
+                    app:strokeColor="@color/card_stroke"
+                    app:strokeWidth="1dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_patient_reason"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@android:color/transparent"
+                        android:hint="e.g. Fever, Cough, Skin Allergy or Routine Followup"
+                        android:inputType="textMultiLine"
+                        android:minLines="2"
+                        android:padding="14dp"
+                        android:textColor="@color/text_primary"
+                        android:textColorHint="@color/text_muted"
+                        android:textSize="14sp" />
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+
+            <!-- Professional Empty State View when Doctor has not created appointment slots -->
+            <LinearLayout
+                android:id="@+id/ll_no_slots_empty_state"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="28dp"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="28dp"
+                android:background="@drawable/bg_date_chip_unselected"
+                android:visibility="gone">
+
+                <FrameLayout
+                    android:layout_width="88dp"
+                    android:layout_height="88dp"
+                    android:background="@drawable/bg_squircle_icon">
+
+                    <ImageView
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="Calendar icon"
+                        android:src="@drawable/ic_calendar"
+                        app:tint="@color/primary" />
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/tv_no_slots_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:gravity="center"
+                    android:text="No Appointment Slots Created"
+                    android:textColor="@color/text_primary"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_no_slots_desc"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center"
+                    android:lineSpacingExtra="3dp"
+                    android:text="This doctor has not created or published any appointment slots yet. Please check back later or explore other available doctors."
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_no_slots_go_back"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:backgroundTint="@color/primary"
+                        android:text="Go Back to Doctors"
+                        android:textColor="@color/white"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="14dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_no_slots_refresh"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="10dp"
+                        android:text="Refresh Availability"
+                        android:textColor="@color/primary"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="14dp"
+                        app:strokeColor="@color/primary" />
+                </LinearLayout>
+
+            </LinearLayout>
 
         </LinearLayout>
     </ScrollView>

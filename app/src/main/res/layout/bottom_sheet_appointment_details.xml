@@ -41,7 +41,7 @@
                 android:id="@+id/tv_detail_status"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="✓ Confirmed"
+                android:text="Confirmed"
                 android:textColor="@color/success_green"
                 android:textSize="12sp"
                 android:textStyle="bold" />
@@ -148,7 +148,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="📞 Reception: +91 9876543210"
+                        android:text="Reception: +91 9876543210"
                         android:textColor="@color/primary"
                         android:textSize="12sp"
                         android:textStyle="bold" />
@@ -257,7 +257,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="🏥 Clinic Live Queue Status"
+                            android:text="Clinic Live Queue Status"
                             android:textColor="@color/primary"
                             android:textSize="14sp"
                             android:textStyle="bold" />
@@ -402,7 +402,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="💊 Doctor Prescription &amp; Medicines"
+                        android:text="Doctor Prescription &amp; Medicines"
                         android:textColor="#166534"
                         android:textSize="13sp"
                         android:textStyle="bold" />

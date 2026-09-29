@@ -81,12 +81,38 @@ public class DoctorListActivity extends AppCompatActivity {
             public void afterTextChanged(Editable s) {}
         });
 
+        if (binding.tvLocationChip != null) {
+            binding.tvLocationChip.setOnClickListener(v ->
+                    DummyDataProvider.showStatePickerDialog(DoctorListActivity.this, state -> updateLocationChipAndFilter())
+            );
+        }
+
         setupFilterChips();
         setupRecyclerView();
 
         binding.swipeRefreshLayout.setOnRefreshListener(this::loadDoctorsAndFilter);
 
+        updateLocationChipText();
         loadDoctorsAndFilter();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateLocationChipAndFilter();
+    }
+
+    private void updateLocationChipText() {
+        if (binding == null) return;
+        String selectedState = PreferenceManager.getInstance(this).getSelectedState();
+        if (binding.tvLocationChip != null) {
+            binding.tvLocationChip.setText("📍 " + selectedState + " ▾");
+        }
+    }
+
+    private void updateLocationChipAndFilter() {
+        updateLocationChipText();
+        filterAndDisplayDoctors();
     }
 
     private void setupRecyclerView() {
@@ -210,12 +236,18 @@ public class DoctorListActivity extends AppCompatActivity {
     private boolean isCategoryMatching(String cat1, String cat2) {
         if (cat1 == null || cat2 == null) return false;
         if (cat1.equalsIgnoreCase(cat2)) return true;
-        if ("All Doctors".equalsIgnoreCase(cat1) && ("All".equalsIgnoreCase(cat2) || "All Doctors".equalsIgnoreCase(cat2))) return true;
-        if ("All".equalsIgnoreCase(cat1) && ("All".equalsIgnoreCase(cat2) || "All Doctors".equalsIgnoreCase(cat2))) return true;
+        if (isAllCategory(cat1) && isAllCategory(cat2)) return true;
 
         Doctor dummyDoc = new Doctor();
         dummyDoc.setSpecialization(cat1);
         return DummyDataProvider.isDoctorMatchingCategory(dummyDoc, cat2);
+    }
+
+    private boolean isAllCategory(String cat) {
+        if (cat == null) return false;
+        String lower = cat.toLowerCase().trim();
+        return lower.equalsIgnoreCase("all") || lower.equalsIgnoreCase("all doctors")
+                || lower.contains("top doctor") || lower.contains("popular") || lower.contains("see all");
     }
 
     private int dpToPx(int dp) {
@@ -236,7 +268,8 @@ public class DoctorListActivity extends AppCompatActivity {
             binding.shimmerDoctorList.setVisibility(View.GONE);
         }
 
-        List<Doctor> filtered = DummyDataProvider.getFilteredDoctors(searchQuery, categoryName, selectedChip);
+        String currentState = PreferenceManager.getInstance(this).getSelectedState();
+        List<Doctor> filtered = DummyDataProvider.getFilteredDoctors(searchQuery, categoryName, selectedChip, currentState);
 
         if (filtered.isEmpty()) {
             binding.llEmptyState.setVisibility(View.VISIBLE);

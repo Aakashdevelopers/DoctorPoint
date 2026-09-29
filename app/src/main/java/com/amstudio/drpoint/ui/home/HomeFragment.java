@@ -11,7 +11,6 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.amstudio.drpoint.R;
@@ -42,6 +41,8 @@ import retrofit2.Response;
 public class HomeFragment extends Fragment {
 
     private FragmentHomeBinding binding;
+    private DoctorListAdapter availableAdapter;
+    private DoctorListAdapter doctorAdapter;
 
     @Nullable
     @Override
@@ -56,6 +57,13 @@ public class HomeFragment extends Fragment {
 
         updateGreeting();
 
+        if (binding.llLocationContainer != null) {
+            binding.llLocationContainer.setOnClickListener(v ->
+                DummyDataProvider.showStatePickerDialog(requireContext(), state -> updateLocationChipAndDoctors())
+            );
+        }
+        updateLocationChipText();
+
         // Clicks
         binding.cardCarePlan.setOnClickListener(v -> openFindDoctors());
         binding.layoutSearch.setOnClickListener(v -> openFindDoctors());
@@ -64,13 +72,11 @@ public class HomeFragment extends Fragment {
             Intent intent = new Intent(requireContext(), NotificationsActivity.class);
             startActivity(intent);
         });
-        binding.tvSeeAllDoctors.setOnClickListener(v -> openFindDoctors());
+        binding.tvSeeAllDoctors.setOnClickListener(v -> openDoctorList("Top Doctors Near You"));
 
         if (binding.tvSeeAllSpecialities != null) {
-            binding.tvSeeAllSpecialities.setOnClickListener(v -> openFindDoctors());
+            binding.tvSeeAllSpecialities.setOnClickListener(v -> openDoctorList("All Doctors"));
         }
-
-
 
         // Image Slideshow Setup (denzcoskun/ImageSlideshow)
         List<SlideModel> slideList = new ArrayList<>();
@@ -92,9 +98,7 @@ public class HomeFragment extends Fragment {
         if (binding.rvSpecialities != null) {
             binding.rvSpecialities.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
             SpecialitiesAdapter specialitiesAdapter = new SpecialitiesAdapter(speciality -> {
-                Intent intent = new Intent(requireContext(), DoctorListActivity.class);
-                intent.putExtra("category_name", speciality.getName());
-                startActivity(intent);
+                openDoctorList(speciality.getName());
             });
             binding.rvSpecialities.setAdapter(specialitiesAdapter);
             DummyDataProvider.fetchSpecialitiesFromSupabase(list -> {
@@ -110,11 +114,11 @@ public class HomeFragment extends Fragment {
 
         // Available Today Section (Horizontal Carousel)
         if (binding.tvSeeAllAvailable != null) {
-            binding.tvSeeAllAvailable.setOnClickListener(v -> openFindDoctors());
+            binding.tvSeeAllAvailable.setOnClickListener(v -> openDoctorList("All Doctors"));
         }
 
-        binding.rvAvailableToday.setLayoutManager(new GridLayoutManager(requireContext(), 2));
-        DoctorListAdapter availableAdapter = new DoctorListAdapter(true, new DoctorListAdapter.OnDoctorClickListener() {
+        binding.rvAvailableToday.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
+        availableAdapter = new DoctorListAdapter(true, new DoctorListAdapter.OnDoctorClickListener() {
             @Override
             public void onDoctorClick(Doctor doctor) {
                 Intent intent = new Intent(requireContext(), DoctorDetailActivity.class);
@@ -149,9 +153,9 @@ public class HomeFragment extends Fragment {
         });
         binding.rvAvailableToday.setAdapter(availableAdapter);
 
-        // Top Doctors Section (2-Column Grid)
-        binding.rvTopDoctors.setLayoutManager(new GridLayoutManager(requireContext(), 2));
-        DoctorListAdapter doctorAdapter = new DoctorListAdapter(true, new DoctorListAdapter.OnDoctorClickListener() {
+        // Top Doctors Section (Horizontal Carousel)
+        binding.rvTopDoctors.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
+        doctorAdapter = new DoctorListAdapter(true, new DoctorListAdapter.OnDoctorClickListener() {
             @Override
             public void onDoctorClick(Doctor doctor) {
                 Intent intent = new Intent(requireContext(), DoctorDetailActivity.class);
@@ -186,19 +190,55 @@ public class HomeFragment extends Fragment {
         });
         binding.rvTopDoctors.setAdapter(doctorAdapter);
 
+        loadDoctors();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        updateGreeting();
+        updateNotificationBadge();
+        updateLocationChipAndDoctors();
+    }
+
+    private void updateLocationChipText() {
+        if (binding == null || !isAdded()) return;
+        String selectedState = PreferenceManager.getInstance(requireContext()).getSelectedState();
+        if (binding.tvLocationChip != null) {
+            binding.tvLocationChip.setText("📍 " + selectedState + " ▾");
+        }
+    }
+
+    private void updateLocationChipAndDoctors() {
+        updateLocationChipText();
+        loadDoctors();
+    }
+
+    private void loadDoctors() {
+        if (binding == null || !isAdded()) return;
+        String currentState = PreferenceManager.getInstance(requireContext()).getSelectedState();
+
         DummyDataProvider.fetchDoctorsFromSupabase(doctors -> {
-            if (binding == null) return;
+            if (binding == null || !isAdded()) return;
+
+            List<Doctor> stateFilteredDoctors = DummyDataProvider.filterDoctorsByState(doctors, currentState);
+
             List<Doctor> availableTodayList = new ArrayList<>();
-            for (Doctor d : doctors) {
+            for (Doctor d : stateFilteredDoctors) {
                 if (d.isAvailableToday()) {
                     availableTodayList.add(d);
                 }
             }
             if (availableTodayList.isEmpty()) {
-                availableTodayList.addAll(doctors);
+                availableTodayList.addAll(stateFilteredDoctors);
             }
-            availableAdapter.submitList(availableTodayList);
-            doctorAdapter.submitList(doctors);
+
+            if (availableAdapter != null) {
+                availableAdapter.submitList(availableTodayList);
+            }
+            if (doctorAdapter != null) {
+                doctorAdapter.submitList(stateFilteredDoctors);
+            }
 
             if (binding.shimmerAvailableToday != null) {
                 binding.shimmerAvailableToday.stopShimmer();
@@ -211,13 +251,6 @@ public class HomeFragment extends Fragment {
             binding.rvAvailableToday.setVisibility(View.VISIBLE);
             binding.rvTopDoctors.setVisibility(View.VISIBLE);
         });
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        updateGreeting();
-        updateNotificationBadge();
     }
 
     private void updateNotificationBadge() {
@@ -254,7 +287,7 @@ public class HomeFragment extends Fragment {
         PreferenceManager prefManager = PreferenceManager.getInstance(requireContext());
         String userName = prefManager.getUserName();
         if (userName != null && !userName.isEmpty()) {
-            binding.tvUsername.setText(userName + " 👋");
+            binding.tvUsername.setText(userName);
         }
 
         String userAvatar = prefManager.getUserAvatar();
@@ -294,6 +327,12 @@ public class HomeFragment extends Fragment {
 
     private void openFindDoctors() {
         Intent intent = new Intent(requireContext(), FindDoctorsActivity.class);
+        startActivity(intent);
+    }
+
+    private void openDoctorList(String categoryName) {
+        Intent intent = new Intent(requireContext(), DoctorListActivity.class);
+        intent.putExtra("category_name", categoryName);
         startActivity(intent);
     }
 
