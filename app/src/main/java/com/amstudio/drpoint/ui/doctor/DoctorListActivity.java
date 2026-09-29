@@ -52,20 +52,17 @@ public class DoctorListActivity extends AppCompatActivity {
             binding.llSearchContainer.setVisibility(View.VISIBLE);
         }
 
-        binding.tvCategoryTitle.setText(categoryName);
-        binding.ivBack.setOnClickListener(v -> finish());
+        String displayTitle = categoryName;
+        if ("Specialist".equalsIgnoreCase(categoryName) || "Specialities".equalsIgnoreCase(categoryName) || "Explore Specialities".equalsIgnoreCase(categoryName)) {
+            displayTitle = "Specialists";
+        } else if ("Available Today".equalsIgnoreCase(categoryName)) {
+            displayTitle = "Available Today Doctors";
+        } else if ("Top Rated Doctors".equalsIgnoreCase(categoryName) || "Top Doctors Near You".equalsIgnoreCase(categoryName) || "Top Rated".equalsIgnoreCase(categoryName)) {
+            displayTitle = "Top Rated Doctors";
+        }
 
-        binding.ivSearch.setOnClickListener(v -> {
-            if (binding.llSearchContainer.getVisibility() == View.VISIBLE) {
-                binding.llSearchContainer.setVisibility(View.GONE);
-                searchQuery = "";
-                binding.etSearch.setText("");
-                filterAndDisplayDoctors();
-            } else {
-                binding.llSearchContainer.setVisibility(View.VISIBLE);
-                binding.etSearch.requestFocus();
-            }
-        });
+        binding.tvCategoryTitle.setText(displayTitle);
+        binding.ivBack.setOnClickListener(v -> finish());
 
         binding.etSearch.addTextChangedListener(new TextWatcher() {
             @Override
@@ -81,37 +78,17 @@ public class DoctorListActivity extends AppCompatActivity {
             public void afterTextChanged(Editable s) {}
         });
 
-        if (binding.tvLocationChip != null) {
-            binding.tvLocationChip.setOnClickListener(v ->
-                    DummyDataProvider.showStatePickerDialog(DoctorListActivity.this, state -> updateLocationChipAndFilter())
-            );
-        }
-
         setupFilterChips();
         setupRecyclerView();
 
         binding.swipeRefreshLayout.setOnRefreshListener(this::loadDoctorsAndFilter);
 
-        updateLocationChipText();
         loadDoctorsAndFilter();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        updateLocationChipAndFilter();
-    }
-
-    private void updateLocationChipText() {
-        if (binding == null) return;
-        String selectedState = PreferenceManager.getInstance(this).getSelectedState();
-        if (binding.tvLocationChip != null) {
-            binding.tvLocationChip.setText("📍 " + selectedState + " ▾");
-        }
-    }
-
-    private void updateLocationChipAndFilter() {
-        updateLocationChipText();
         filterAndDisplayDoctors();
     }
 
@@ -237,17 +214,29 @@ public class DoctorListActivity extends AppCompatActivity {
         if (cat1 == null || cat2 == null) return false;
         if (cat1.equalsIgnoreCase(cat2)) return true;
         if (isAllCategory(cat1) && isAllCategory(cat2)) return true;
+        if (isAllCategory(cat1) || isAllCategory(cat2)) return false;
 
-        Doctor dummyDoc = new Doctor();
-        dummyDoc.setSpecialization(cat1);
-        return DummyDataProvider.isDoctorMatchingCategory(dummyDoc, cat2);
+        String c1 = cleanCategoryName(cat1);
+        String c2 = cleanCategoryName(cat2);
+        return !c1.isEmpty() && c1.equalsIgnoreCase(c2);
+    }
+
+    private String cleanCategoryName(String cat) {
+        if (cat == null) return "";
+        return cat.toLowerCase()
+                .replace("specialist", "")
+                .replace("specialities", "")
+                .replace("speciality", "")
+                .replace("doctor", "")
+                .replace("doctors", "")
+                .replace("care", "")
+                .trim();
     }
 
     private boolean isAllCategory(String cat) {
         if (cat == null) return false;
         String lower = cat.toLowerCase().trim();
-        return lower.equalsIgnoreCase("all") || lower.equalsIgnoreCase("all doctors")
-                || lower.contains("top doctor") || lower.contains("popular") || lower.contains("see all");
+        return lower.equalsIgnoreCase("all") || lower.equalsIgnoreCase("all doctors") || lower.equalsIgnoreCase("all specialists");
     }
 
     private int dpToPx(int dp) {

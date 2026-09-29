@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.amstudio.drpoint.R;
 import com.amstudio.drpoint.databinding.ItemQuickAccessBinding;
 import com.amstudio.drpoint.model.QuickAccessItem;
 
@@ -69,6 +70,18 @@ public class QuickAccessAdapter extends ListAdapter<QuickAccessItem, QuickAccess
             }
             binding.ivIcon.setImageResource(item.getIconRes());
             binding.flIconBg.setBackgroundTintList(ContextCompat.getColorStateList(context, item.getBgColorRes()));
+
+            if (item.getBgColorRes() == R.color.bg_blue_light) {
+                binding.ivIcon.setImageTintList(ContextCompat.getColorStateList(context, R.color.secondary));
+            } else if (item.getBgColorRes() == R.color.bg_green_light) {
+                binding.ivIcon.setImageTintList(ContextCompat.getColorStateList(context, R.color.success_green));
+            } else if (item.getBgColorRes() == R.color.bg_orange_light) {
+                binding.ivIcon.setImageTintList(ContextCompat.getColorStateList(context, R.color.warning_yellow));
+            } else if (item.getBgColorRes() == R.color.bg_purple_light) {
+                binding.ivIcon.setImageTintList(ContextCompat.getColorStateList(context, R.color.primary));
+            } else {
+                binding.ivIcon.setImageTintList(ContextCompat.getColorStateList(context, R.color.primary));
+            }
 
             itemView.setOnClickListener(v -> {
                 if (listener != null) {

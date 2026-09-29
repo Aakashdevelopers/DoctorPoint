@@ -92,8 +92,7 @@
                                 android:layout_height="20dp"
                                 android:layout_gravity="center"
                                 android:contentDescription="@string/app_name"
-                                android:src="@drawable/ic_heart"
-                                app:tint="@color/text_primary" />
+                                android:src="@drawable/ic_heart" />
                         </FrameLayout>
 
                         <FrameLayout
@@ -288,13 +287,14 @@
                             android:orientation="vertical">
 
                             <TextView
+                                android:id="@+id/tv_patient_count"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:fontFamily="sans-serif-medium"
-                                android:text="1,500+"
                                 android:textColor="@color/primary"
                                 android:textSize="16sp"
-                                android:textStyle="bold" />
+                                android:textStyle="bold"
+                                tools:text="1,500+" />
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -318,13 +318,14 @@
                             android:orientation="vertical">
 
                             <TextView
+                                android:id="@+id/tv_satisfaction_num"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:fontFamily="sans-serif-medium"
-                                android:text="98%"
                                 android:textColor="@color/success_green"
                                 android:textSize="16sp"
-                                android:textStyle="bold" />
+                                android:textStyle="bold"
+                                tools:text="98%" />
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -471,12 +472,14 @@
                     android:paddingVertical="4dp">
 
                     <FrameLayout
+                        android:id="@+id/fl_action_save_bg"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
                         android:background="@drawable/bg_squircle_icon"
                         android:foreground="?attr/selectableItemBackground">
 
                         <ImageView
+                            android:id="@+id/iv_action_save"
                             android:layout_width="22dp"
                             android:layout_height="22dp"
                             android:layout_gravity="center"
@@ -486,6 +489,7 @@
                     </FrameLayout>
 
                     <TextView
+                        android:id="@+id/tv_action_save"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
@@ -498,7 +502,7 @@
 
             </LinearLayout>
 
-            <!-- 3 Options TabLayout: Appointment, Emergency, About Doctor -->
+            <!-- 3 Options TabLayout: Appointment, Review, About -->
             <com.google.android.material.tabs.TabLayout
                 android:id="@+id/tab_layout"
                 android:layout_width="match_parent"
@@ -700,99 +704,142 @@
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
 
-            <!-- TAB 2: EMERGENCY SECTION -->
+            <!-- TAB 2: REVIEW SECTION -->
             <LinearLayout
-                android:id="@+id/layout_tab_emergency"
+                android:id="@+id/layout_tab_review"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:visibility="gone">
 
+                <!-- Reviews Summary Card -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginHorizontal="16dp"
                     android:layout_marginTop="16dp"
-                    app:cardBackgroundColor="#FEF2F2"
+                    app:cardBackgroundColor="@color/surface_white"
                     app:cardCornerRadius="20dp"
                     app:cardElevation="2dp"
-                    app:strokeColor="#FCA5A5"
+                    app:strokeColor="@color/card_stroke"
                     app:strokeWidth="1dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="20dp">
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="18dp">
 
                         <LinearLayout
-                            android:layout_width="match_parent"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
+                            android:gravity="center"
+                            android:orientation="vertical">
 
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:contentDescription="@string/app_name"
-                                android:src="@drawable/ic_flask"
-                                app:tint="#DC2626" />
+                            <TextView
+                                android:id="@+id/tv_tab_review_avg_rating"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:textColor="#D97706"
+                                android:textSize="32sp"
+                                android:textStyle="bold"
+                                tools:text="4.8 ★" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginStart="8dp"
+                                android:layout_marginTop="2dp"
+                                android:text="Overall Rating"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="1dp"
+                            android:layout_height="48dp"
+                            android:layout_marginHorizontal="18dp"
+                            android:background="@color/divider" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/tv_tab_review_total_count"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
                                 android:fontFamily="sans-serif-medium"
-                                android:text="24/7 Emergency Assistance"
-                                android:textColor="#991B1B"
-                                android:textSize="16sp"
+                                android:textColor="@color/text_primary"
+                                android:textSize="15sp"
+                                android:textStyle="bold"
+                                tools:text="Based on 12 reviews" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="100% verified patient feedback"
+                                android:textColor="@color/success_green"
+                                android:textSize="12sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:lineSpacingExtra="2dp"
-                            android:text="For critical medical emergencies, call the national emergency helpline or connect with clinic emergency reception immediately."
-                            android:textColor="#7F1D1D"
-                            android:textSize="13sp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btn_emergency_call_108"
-                            android:layout_width="match_parent"
-                            android:layout_height="46dp"
-                            android:layout_marginTop="16dp"
-                            android:backgroundTint="#DC2626"
-                            android:fontFamily="sans-serif-medium"
-                            android:text="Call Ambulance / Emergency (108)"
-                            android:textColor="@color/white"
-                            android:textSize="13sp"
-                            android:textStyle="bold"
-                            app:cornerRadius="12dp"
-                            app:icon="@drawable/ic_phone"
-                            app:iconGravity="textStart"
-                            app:iconTint="@color/white" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btn_emergency_call_clinic"
-                            style="@style/Widget.Material3.Button.OutlinedButton"
-                            android:layout_width="match_parent"
-                            android:layout_height="46dp"
-                            android:layout_marginTop="8dp"
-                            android:fontFamily="sans-serif-medium"
-                            android:text="Call Clinic Reception"
-                            android:textColor="#991B1B"
-                            android:textSize="13sp"
-                            android:textStyle="bold"
-                            app:cornerRadius="12dp"
-                            app:icon="@drawable/ic_phone"
-                            app:iconGravity="textStart"
-                            app:iconTint="#991B1B"
-                            app:strokeColor="#FCA5A5"
-                            app:strokeWidth="1dp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
+
+                <!-- Patient Reviews List Section -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="16dp"
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Patient Feedback &amp; Reviews"
+                        android:textColor="@color/text_primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <!-- Loading Progress Indicator -->
+                    <ProgressBar
+                        android:id="@+id/pb_tab_reviews_loading"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_gravity="center"
+                        android:layout_marginVertical="20dp"
+                        android:indeterminateTint="@color/primary"
+                        android:visibility="gone" />
+
+                    <!-- Empty State Text -->
+                    <TextView
+                        android:id="@+id/tv_tab_no_reviews"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginVertical="24dp"
+                        android:gravity="center"
+                        android:text="No patient reviews available yet for this doctor."
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp"
+                        android:visibility="gone" />
+
+                    <!-- RecyclerView for Reviews -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rv_tab_reviews_list"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:nestedScrollingEnabled="false" />
+
+                </LinearLayout>
+
             </LinearLayout>
 
             <!-- TAB 3: ABOUT DOCTOR SECTION -->
@@ -1196,4 +1243,3 @@
     </LinearLayout>
 
 </RelativeLayout>
-

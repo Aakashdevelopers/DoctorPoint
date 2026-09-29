@@ -1210,14 +1210,27 @@ public class BookAppointmentActivity extends AppCompatActivity {
                 int nextToken = 1;
                 if (response.isSuccessful() && response.body() != null) {
                     int maxToken = 0;
+                    int countForDoctorAndDate = 0;
+                    String cleanTargetDate = normalizeDateString(targetDateVal);
+
                     for (Appointment a : response.body()) {
-                        if (targetDateVal.equals(a.getAppointmentDate()) && (finalValidDoctorId == null || finalValidDoctorId.equals(a.getDoctorId()))) {
+                        if (a == null) continue;
+                        String cleanApptDate = normalizeDateString(a.getAppointmentDate());
+
+                        boolean isSameDate = !cleanTargetDate.isEmpty() && !cleanApptDate.isEmpty() &&
+                                (cleanTargetDate.equalsIgnoreCase(cleanApptDate)
+                                || (cleanTargetDate.length() >= 10 && cleanApptDate.length() >= 10 && cleanTargetDate.substring(0, 10).equalsIgnoreCase(cleanApptDate.substring(0, 10))));
+
+                        boolean isSameDoctor = (finalValidDoctorId == null || finalValidDoctorId.trim().isEmpty() || finalValidDoctorId.equalsIgnoreCase(a.getDoctorId()));
+
+                        if (isSameDate && isSameDoctor) {
+                            countForDoctorAndDate++;
                             if (a.getTokenNumber() > maxToken) {
                                 maxToken = a.getTokenNumber();
                             }
                         }
                     }
-                    nextToken = maxToken + 1;
+                    nextToken = Math.max(maxToken + 1, countForDoctorAndDate + 1);
                 }
 
                 payload.put("token_number", nextToken);
@@ -1230,6 +1243,17 @@ public class BookAppointmentActivity extends AppCompatActivity {
                 submitFinalAppointmentPayload(payload, 1, userId, slotId, finalApptId);
             }
         });
+    }
+
+    private static String normalizeDateString(String rawDate) {
+        if (rawDate == null) return "";
+        String clean = rawDate.trim();
+        if (clean.contains("T")) {
+            clean = clean.split("T")[0];
+        } else if (clean.contains(" ")) {
+            clean = clean.split("\\s+")[0];
+        }
+        return clean.toLowerCase(Locale.US);
     }
 
     private void submitFinalAppointmentPayload(Map<String, Object> payload, int assignedToken, String userId, String slotId, String finalApptId) {

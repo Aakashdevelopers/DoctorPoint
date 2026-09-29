@@ -502,12 +502,13 @@
             background: #ffffff;
             border: 1px solid var(--border);
             border-radius: var(--radius-md);
-            box-shadow: var(--shadow-md);
-            z-index: 1000;
-            min-width: 170px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            z-index: 9999;
+            min-width: 195px;
+            max-height: 280px;
+            overflow-y: auto;
             display: none;
             flex-direction: column;
-            overflow: hidden;
         }
 
         .dropdown-wrapper.open .dropdown-menu {
@@ -3136,13 +3137,45 @@
         }
 
         window.toggleRowDropdown = (evt, apptId) => {
-            if (evt) evt.stopPropagation();
+            if (evt) {
+                evt.stopPropagation();
+                evt.preventDefault();
+            }
             const wrapper = document.getElementById(`drop-${apptId}`);
             if (!wrapper) return;
 
             const isOpen = wrapper.classList.contains('open');
             document.querySelectorAll('.dropdown-wrapper').forEach(w => w.classList.remove('open'));
-            if (!isOpen) wrapper.classList.add('open');
+
+            if (!isOpen) {
+                wrapper.classList.add('open');
+                const menu = wrapper.querySelector('.dropdown-menu');
+                if (menu) {
+                    const rect = menu.getBoundingClientRect();
+                    if (rect.bottom > window.innerHeight - 20) {
+                        menu.style.top = 'auto';
+                        menu.style.bottom = '100%';
+                        menu.style.marginTop = '0';
+                        menu.style.marginBottom = '4px';
+                    } else {
+                        menu.style.top = '100%';
+                        menu.style.bottom = 'auto';
+                        menu.style.marginTop = '4px';
+                        menu.style.marginBottom = '0';
+                    }
+                }
+            }
+        };
+
+        window.handleDropdownAction = (evt, actionFn) => {
+            if (evt) {
+                evt.stopPropagation();
+                evt.preventDefault();
+            }
+            document.querySelectorAll('.dropdown-wrapper').forEach(w => w.classList.remove('open'));
+            if (typeof actionFn === 'function') {
+                setTimeout(actionFn, 50);
+            }
         };
 
         document.addEventListener('click', () => {
@@ -3182,8 +3215,12 @@
         window.currentConsultationIndex = 0;
 
         window.openConsultationMode = (apptId) => {
-            const queue = getSortedQueueForCurrentView();
+            let queue = getSortedQueueForCurrentView();
             let idx = queue.findIndex(a => a.id === apptId);
+            if (idx === -1 && cachedAppointments) {
+                queue = cachedAppointments;
+                idx = queue.findIndex(a => a.id === apptId);
+            }
             if (idx === -1) idx = 0;
 
             const appt = queue[idx];
@@ -3813,12 +3850,11 @@
                         <div class="dropdown-wrapper" id="drop-${appt.id}">
                             <button class="btn btn-outline btn-sm" onclick="window.toggleRowDropdown(event, '${appt.id}')">⋮ More</button>
                             <div class="dropdown-menu">
-                                <button class="dropdown-item" onclick="window.openQueueBottomSheet(${idx})">📱 Quick Patient Profile Sheet</button>
-                                <button class="dropdown-item" onclick="window.openConsultationMode('${appt.id}')">📋 Open Consultation Mode</button>
-                                ${!st.includes('consultation') ? `<button class="dropdown-item" onclick="window.updateApptStatus('${appt.id}', 'In Consultation')">▶️ Start Consultation</button>` : ''}
-                                ${!st.includes('completed') ? `<button class="dropdown-item" onclick="window.updateApptStatus('${appt.id}', 'Completed')">✅ Complete</button>` : ''}
-                                ${!st.includes('cancel') ? `<button class="dropdown-item danger" onclick="window.updateApptStatus('${appt.id}', 'Cancelled')">🚫 Cancel</button>` : ''}
-                                <button class="dropdown-item danger" onclick="window.deleteAppointment('${appt.id}')">🗑️ Delete</button>
+                                <button class="dropdown-item" onclick="window.handleDropdownAction(event, () => window.openQueueBottomSheet('${appt.id}'))">📱 Quick Patient Profile Sheet</button>
+                                <button class="dropdown-item" onclick="window.handleDropdownAction(event, () => window.openConsultationMode('${appt.id}'))">📋 Open Consultation Mode</button>
+                                ${!st.includes('consultation') ? `<button class="dropdown-item" onclick="window.handleDropdownAction(event, () => window.updateApptStatus('${appt.id}', 'In Consultation'))">▶️ Start Consultation</button>` : ''}
+                                ${!st.includes('completed') ? `<button class="dropdown-item" onclick="window.handleDropdownAction(event, () => window.updateApptStatus('${appt.id}', 'Completed'))">✅ Complete</button>` : ''}
+                                ${!st.includes('cancel') ? `<button class="dropdown-item danger" onclick="window.handleDropdownAction(event, () => window.updateApptStatus('${appt.id}', 'Cancelled'))">🚫 Cancel</button>` : ''}
                             </div>
                         </div>
                     `;
@@ -4131,12 +4167,11 @@
                     <div class="dropdown-wrapper" id="drop-${appt.id}">
                         <button class="btn btn-outline btn-sm" onclick="window.toggleRowDropdown(event, '${appt.id}')">⋮ More</button>
                         <div class="dropdown-menu">
-                            <button class="dropdown-item" onclick="window.openQueueBottomSheet(${idx})">📱 Quick Patient Profile Sheet</button>
-                            <button class="dropdown-item" onclick="window.openConsultationMode('${appt.id}')">📋 Open Consultation Mode</button>
-                            ${!st.includes('consultation') ? `<button class="dropdown-item" onclick="window.updateApptStatus('${appt.id}', 'In Consultation')">▶️ Start Consultation</button>` : ''}
-                            ${!st.includes('completed') ? `<button class="dropdown-item" onclick="window.updateApptStatus('${appt.id}', 'Completed')">✅ Complete</button>` : ''}
-                            ${!st.includes('cancel') ? `<button class="dropdown-item danger" onclick="window.updateApptStatus('${appt.id}', 'Cancelled')">🚫 Cancel</button>` : ''}
-                            <button class="dropdown-item danger" onclick="window.deleteAppointment('${appt.id}')">🗑️ Delete</button>
+                            <button class="dropdown-item" onclick="window.handleDropdownAction(event, () => window.openQueueBottomSheet('${appt.id}'))">📱 Quick Patient Profile Sheet</button>
+                            <button class="dropdown-item" onclick="window.handleDropdownAction(event, () => window.openConsultationMode('${appt.id}'))">📋 Open Consultation Mode</button>
+                            ${!st.includes('consultation') ? `<button class="dropdown-item" onclick="window.handleDropdownAction(event, () => window.updateApptStatus('${appt.id}', 'In Consultation'))">▶️ Start Consultation</button>` : ''}
+                            ${!st.includes('completed') ? `<button class="dropdown-item" onclick="window.handleDropdownAction(event, () => window.updateApptStatus('${appt.id}', 'Completed'))">✅ Complete</button>` : ''}
+                            ${!st.includes('cancel') ? `<button class="dropdown-item danger" onclick="window.handleDropdownAction(event, () => window.updateApptStatus('${appt.id}', 'Cancelled'))">🚫 Cancel</button>` : ''}
                         </div>
                     </div>
                 `;
@@ -4301,17 +4336,25 @@
 
         window.currentQueueSheetIndex = 0;
 
-        window.openQueueBottomSheet = (startIndex = 0) => {
-            const queue = (window.todayApptsList && window.todayApptsList.length > 0)
-                ? window.todayApptsList
-                : (cachedAppointments || []);
+        window.openQueueBottomSheet = (target = 0) => {
+            const queue = (cachedAppointments && cachedAppointments.length > 0)
+                ? cachedAppointments
+                : (window.todayApptsList || []);
 
             if (!queue || queue.length === 0) {
                 if (window.showToast) window.showToast("⚠️ No patient appointments in queue.", "warning", 2500);
                 return;
             }
 
-            window.currentQueueSheetIndex = Math.max(0, Math.min(startIndex, queue.length - 1));
+            let idx = 0;
+            if (typeof target === 'string') {
+                idx = queue.findIndex(a => a.id === target);
+                if (idx === -1) idx = 0;
+            } else if (typeof target === 'number') {
+                idx = Math.max(0, Math.min(target, queue.length - 1));
+            }
+
+            window.currentQueueSheetIndex = idx;
             renderQueueBottomSheetItem();
         };
 

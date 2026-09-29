@@ -42,6 +42,9 @@ public class RefundRequest implements Serializable {
     @SerializedName("reason")
     private String reason;
 
+    @SerializedName(value = "patient_upi", alternate = {"upi_id", "patientUpi", "upi"})
+    private String patientUpi;
+
     @SerializedName("status")
     private String status = "pending";
 
@@ -103,6 +106,9 @@ public class RefundRequest implements Serializable {
 
     public String getReason() { return reason; }
     public void setReason(String reason) { this.reason = reason; }
+
+    public String getPatientUpi() { return patientUpi; }
+    public void setPatientUpi(String patientUpi) { this.patientUpi = patientUpi; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }

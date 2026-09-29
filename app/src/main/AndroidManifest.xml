@@ -56,6 +56,11 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
+            android:name=".ui.doctor.SavedDoctorsActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
             android:name=".ui.booking.BookAppointmentActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />

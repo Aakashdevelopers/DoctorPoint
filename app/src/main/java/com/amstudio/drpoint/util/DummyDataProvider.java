@@ -18,6 +18,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -387,35 +388,50 @@ public class DummyDataProvider {
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                     List<Doctor> fetchedDocs = response.body();
 
-                    SupabaseClient.getSlotService().getAllFutureAvailableSlots("gte." + todayDate)
-                            .enqueue(new Callback<List<DoctorSlot>>() {
-                                @Override
-                                public void onResponse(Call<List<DoctorSlot>> c, Response<List<DoctorSlot>> r) {
-                                    Set<String> activeSlotDoctorIds = new HashSet<>();
-                                    if (r.isSuccessful() && r.body() != null) {
-                                        for (DoctorSlot slot : r.body()) {
-                                            if (slot.getDoctorId() != null) {
-                                                activeSlotDoctorIds.add(slot.getDoctorId());
-                                            }
+                    // Calculate average ratings and total review counts from doctor_reviews table
+                    SupabaseClient.getDoctorService().getDoctorReviews(null).enqueue(new Callback<List<DoctorReview>>() {
+                        @Override
+                        public void onResponse(Call<List<DoctorReview>> revCall, Response<List<DoctorReview>> revResponse) {
+                            if (revResponse.isSuccessful() && revResponse.body() != null) {
+                                Map<String, List<DoctorReview>> reviewMap = new HashMap<>();
+                                for (DoctorReview r : revResponse.body()) {
+                                    if (r != null && r.getDoctorId() != null) {
+                                        if (!reviewMap.containsKey(r.getDoctorId())) {
+                                            reviewMap.put(r.getDoctorId(), new ArrayList<>());
+                                        }
+                                        List<DoctorReview> list = reviewMap.get(r.getDoctorId());
+                                        if (list != null) {
+                                            list.add(r);
                                         }
                                     }
-                                    for (Doctor d : fetchedDocs) {
-                                        d.setAvailableToday(activeSlotDoctorIds.contains(d.getId()));
-                                    }
-                                    synchronized (DummyDataProvider.class) {
-                                        doctors = new ArrayList<>(fetchedDocs);
-                                    }
-                                    if (callback != null) callback.onDoctorsLoaded(getDoctors());
                                 }
+                                for (Doctor d : fetchedDocs) {
+                                    if (d != null && d.getId() != null) {
+                                        List<DoctorReview> docReviews = reviewMap.get(d.getId());
+                                        if (docReviews != null && !docReviews.isEmpty()) {
+                                            double sum = 0;
+                                            for (DoctorReview r : docReviews) {
+                                                sum += r.getRating();
+                                            }
+                                            double rawAvg = sum / docReviews.size();
+                                            double finalAvg = Math.round(rawAvg * 10.0) / 10.0;
+                                            d.setRating(finalAvg);
+                                            d.setReviewCount(docReviews.size());
+                                        } else {
+                                            d.setRating(0.0);
+                                            d.setReviewCount(0);
+                                        }
+                                    }
+                                }
+                            }
+                            fetchSlotsAndUpdateDoctors(fetchedDocs, todayDate, callback);
+                        }
 
-                                @Override
-                                public void onFailure(Call<List<DoctorSlot>> c, Throwable t) {
-                                    synchronized (DummyDataProvider.class) {
-                                        doctors = new ArrayList<>(fetchedDocs);
-                                    }
-                                    if (callback != null) callback.onDoctorsLoaded(getDoctors());
-                                }
-                            });
+                        @Override
+                        public void onFailure(Call<List<DoctorReview>> revCall, Throwable t) {
+                            fetchSlotsAndUpdateDoctors(fetchedDocs, todayDate, callback);
+                        }
+                    });
                 } else {
                     if (doctors == null) getDoctors();
                     if (callback != null) callback.onDoctorsLoaded(getDoctors());
@@ -428,6 +444,38 @@ public class DummyDataProvider {
                 if (callback != null) callback.onDoctorsLoaded(getDoctors());
             }
         });
+    }
+
+    private static void fetchSlotsAndUpdateDoctors(List<Doctor> fetchedDocs, String todayDate, DoctorsCallback callback) {
+        SupabaseClient.getSlotService().getAllFutureAvailableSlots("gte." + todayDate)
+                .enqueue(new Callback<List<DoctorSlot>>() {
+                    @Override
+                    public void onResponse(Call<List<DoctorSlot>> c, Response<List<DoctorSlot>> r) {
+                        Set<String> activeSlotDoctorIds = new HashSet<>();
+                        if (r.isSuccessful() && r.body() != null) {
+                            for (DoctorSlot slot : r.body()) {
+                                if (slot.getDoctorId() != null) {
+                                    activeSlotDoctorIds.add(slot.getDoctorId());
+                                }
+                            }
+                        }
+                        for (Doctor d : fetchedDocs) {
+                            d.setAvailableToday(activeSlotDoctorIds.contains(d.getId()));
+                        }
+                        synchronized (DummyDataProvider.class) {
+                            doctors = new ArrayList<>(fetchedDocs);
+                        }
+                        if (callback != null) callback.onDoctorsLoaded(getDoctors());
+                    }
+
+                    @Override
+                    public void onFailure(Call<List<DoctorSlot>> c, Throwable t) {
+                        synchronized (DummyDataProvider.class) {
+                            doctors = new ArrayList<>(fetchedDocs);
+                        }
+                        if (callback != null) callback.onDoctorsLoaded(getDoctors());
+                    }
+                });
     }
 
     public static void recalculateAndUpdateDoctorRating(String doctorId) {
@@ -443,16 +491,16 @@ public class DummyDataProvider {
                             for (DoctorReview r : reviews) {
                                 sum += r.getRating();
                             }
-                            double avgRating = sum / reviews.size();
-                            avgRating = Math.round(avgRating * 10.0) / 10.0;
-                            int totalCount = reviews.size();
+                            double rawAvg = sum / reviews.size();
+                            final double finalAvgRating = Math.round(rawAvg * 10.0) / 10.0;
+                            final int finalTotalCount = reviews.size();
 
                             synchronized (DummyDataProvider.class) {
                                 if (doctors != null) {
                                     for (Doctor d : doctors) {
                                         if (d.getId().equals(doctorId)) {
-                                            d.setRating(avgRating);
-                                            d.setReviewCount(totalCount);
+                                            d.setRating(finalAvgRating);
+                                            d.setReviewCount(finalTotalCount);
                                             break;
                                         }
                                     }
@@ -460,14 +508,38 @@ public class DummyDataProvider {
                             }
 
                             Map<String, Object> updateMap = new HashMap<>();
-                            updateMap.put("rating", avgRating);
-                            updateMap.put("review_count", totalCount);
-                            updateMap.put("total_reviews", totalCount);
+                            updateMap.put("rating", finalAvgRating);
+                            updateMap.put("review_count", finalTotalCount);
 
                             SupabaseClient.getDoctorService().updateDoctorRating("eq." + doctorId, "return=minimal", updateMap)
                                     .enqueue(new Callback<Void>() {
                                         @Override
-                                        public void onResponse(Call<Void> c, Response<Void> r) {}
+                                        public void onResponse(Call<Void> c, Response<Void> r) {
+                                            if (!r.isSuccessful()) {
+                                                // Fallback if review_count fails: try total_reviews or rating only
+                                                Map<String, Object> fallbackMap = new HashMap<>();
+                                                fallbackMap.put("rating", finalAvgRating);
+                                                fallbackMap.put("total_reviews", finalTotalCount);
+                                                SupabaseClient.getDoctorService().updateDoctorRating("eq." + doctorId, "return=minimal", fallbackMap)
+                                                        .enqueue(new Callback<Void>() {
+                                                            @Override
+                                                            public void onResponse(Call<Void> c2, Response<Void> r2) {
+                                                                if (!r2.isSuccessful()) {
+                                                                    Map<String, Object> ratingOnlyMap = new HashMap<>();
+                                                                    ratingOnlyMap.put("rating", finalAvgRating);
+                                                                    SupabaseClient.getDoctorService().updateDoctorRating("eq." + doctorId, "return=minimal", ratingOnlyMap).enqueue(new Callback<Void>() {
+                                                                        @Override
+                                                                        public void onResponse(Call<Void> c3, Response<Void> r3) {}
+                                                                        @Override
+                                                                        public void onFailure(Call<Void> c3, Throwable t3) {}
+                                                                    });
+                                                                }
+                                                            }
+                                                            @Override
+                                                            public void onFailure(Call<Void> c2, Throwable t2) {}
+                                                        });
+                                            }
+                                        }
 
                                         @Override
                                         public void onFailure(Call<Void> c, Throwable t) {}
@@ -482,13 +554,36 @@ public class DummyDataProvider {
 
     public static boolean isDoctorMatchingCategory(Doctor d, String category) {
         if (d == null) return false;
-        if (category == null || category.trim().isEmpty() || "All Doctors".equalsIgnoreCase(category) || "All".equalsIgnoreCase(category) || "AI Recommended Doctors".equalsIgnoreCase(category)) {
+        if (category == null || category.trim().isEmpty() || "All Doctors".equalsIgnoreCase(category.trim()) || "All".equalsIgnoreCase(category.trim()) || "AI Recommended Doctors".equalsIgnoreCase(category.trim())) {
             return true;
         }
 
         String cat = category.toLowerCase().trim();
-        if (cat.equalsIgnoreCase("all doctors") || cat.equalsIgnoreCase("all")
-                || cat.contains("top doctor") || cat.contains("popular") || cat.contains("see all")) {
+
+        // 1. Available Today filter
+        if (cat.contains("available today") || cat.equalsIgnoreCase("available")) {
+            return d.isAvailableToday();
+        }
+
+        // 2. Top Rated / Top Doctors filter
+        if (cat.contains("top rated") || cat.contains("top doctor") || cat.contains("popular")) {
+            return d.getRating() > 2.0;
+        }
+
+        // 3. Saved Doctors filter
+        if (cat.contains("saved") || cat.contains("favorite")) {
+            return true;
+        }
+
+        // 4. Generic Specialist / Specialities page title filter (only when category name is literally "Specialist", "Specialities", or "Explore Specialities")
+        if (cat.equalsIgnoreCase("specialist") || cat.equalsIgnoreCase("specialists") || cat.equalsIgnoreCase("specialities") || cat.equalsIgnoreCase("speciality") || cat.equalsIgnoreCase("explore specialities")) {
+            String spec = (d.getSpecialization() != null ? d.getSpecialization() : "").trim();
+            String qual = (d.getQualification() != null ? d.getQualification() : "").trim();
+            String specStr = d.getSpecializationString().trim();
+            return !spec.isEmpty() || !qual.isEmpty() || !specStr.isEmpty();
+        }
+
+        if (cat.equalsIgnoreCase("all doctors") || cat.equalsIgnoreCase("all") || cat.equalsIgnoreCase("see all")) {
             return true;
         }
 
@@ -502,9 +597,22 @@ public class DummyDataProvider {
             return false;
         }
 
-        // 1. Keyword/Domain specific exact category matching
-        if (cat.contains("skin") || cat.contains("derma")) {
-            return allDocText.contains("derma") || allDocText.contains("skin") || allDocText.contains("cosmeto");
+        // Clean both category and doctor's specialization strings by removing common noise words
+        String cleanCat = cat.replace("specialist", "").replace("specialities", "").replace("speciality", "").replace("doctor", "").replace("doctors", "").replace("care", "").trim();
+        String cleanSpec = spec.replace("specialist", "").replace("specialities", "").replace("speciality", "").replace("doctor", "").replace("doctors", "").replace("care", "").trim();
+
+        // Direct match on clean specialization
+        if (!cleanSpec.isEmpty() && !cleanCat.isEmpty()) {
+            if (cleanSpec.equalsIgnoreCase(cleanCat) ||
+               (cleanCat.length() >= 3 && cleanSpec.contains(cleanCat)) ||
+               (cleanSpec.length() >= 3 && cleanCat.contains(cleanSpec))) {
+                return true;
+            }
+        }
+
+        // Domain & Keyword specific exact matching
+        if (cat.contains("skin") || cat.contains("derma") || cat.contains("cosmeto") || cat.contains("hair")) {
+            return allDocText.contains("derma") || allDocText.contains("skin") || allDocText.contains("cosmeto") || allDocText.contains("hair");
         }
         if (cat.contains("women") || cat.contains("gynaec") || cat.contains("gynec") || cat.contains("maternity") || cat.contains("obstetric")) {
             return allDocText.contains("gynaec") || allDocText.contains("gynec") || allDocText.contains("women") || allDocText.contains("obstetric") || allDocText.contains("maternity");
@@ -523,10 +631,6 @@ public class DummyDataProvider {
         }
         if (cat.contains("dent") || cat.contains("teeth") || cat.contains("orthodont")) {
             return allDocText.contains("dent") || allDocText.contains("teeth") || allDocText.contains("orthodont") || allDocText.contains("bds") || allDocText.contains("mds");
-        }
-        if (cat.contains("general") || cat.contains("physician") || cat.contains("fever") || cat.contains("internal")) {
-            return allDocText.contains("general") || allDocText.contains("physician") || allDocText.contains("internal") || allDocText.contains("fever")
-                    || (allDocText.contains("mbbs") && !allDocText.contains("derma") && !allDocText.contains("cardio") && !allDocText.contains("gynaec") && !allDocText.contains("pediatr") && !allDocText.contains("dent"));
         }
         if (cat.contains("ortho") || cat.contains("bone") || cat.contains("joint")) {
             return allDocText.contains("ortho") || allDocText.contains("bone") || allDocText.contains("joint");
@@ -552,15 +656,18 @@ public class DummyDataProvider {
         if (cat.contains("onco") || cat.contains("cancer")) {
             return allDocText.contains("onco") || allDocText.contains("cancer");
         }
-
-        // 2. Direct contains check for exact category substring match
-        if (allDocText.contains(cat)) {
-            return true;
+        if (cat.contains("general") || cat.contains("physician") || cat.contains("fever") || cat.contains("internal")) {
+            boolean isOtherSpecialist = allDocText.contains("derma") || allDocText.contains("cardio") || allDocText.contains("gynaec")
+                    || allDocText.contains("gynec") || allDocText.contains("pediatr") || allDocText.contains("dent")
+                    || allDocText.contains("ortho") || allDocText.contains("neuro") || allDocText.contains("eye")
+                    || allDocText.contains("ophthalm") || allDocText.contains("ent") || allDocText.contains("psych")
+                    || allDocText.contains("gastro") || allDocText.contains("pulmo") || allDocText.contains("nephro")
+                    || allDocText.contains("uro") || allDocText.contains("onco");
+            return !isOtherSpecialist && (allDocText.contains("general") || allDocText.contains("physician") || allDocText.contains("internal") || allDocText.contains("fever") || allDocText.contains("mbbs"));
         }
 
-        // 3. Fallback: Check clean category word stems
-        String cleanCat = cat.replace("specialist", "").replace("doctor", "").replace("clinic", "").replace("&", "").trim();
-        if (cleanCat.length() >= 3 && allDocText.contains(cleanCat)) {
+        // Substring check on allDocText
+        if (allDocText.contains(cat)) {
             return true;
         }
 
@@ -734,6 +841,20 @@ public class DummyDataProvider {
 
             result.add(d);
         }
+
+        if (category != null) {
+            String lowerCat = category.toLowerCase().trim();
+            if (lowerCat.contains("top rated") || lowerCat.contains("top doctor") || lowerCat.contains("popular")) {
+                Collections.sort(result, (a, b) -> {
+                    int reviewCompare = Integer.compare(b.getReviewCount(), a.getReviewCount());
+                    if (reviewCompare != 0) {
+                        return reviewCompare;
+                    }
+                    return Double.compare(b.getRating(), a.getRating());
+                });
+            }
+        }
+
         return result;
     }
 
@@ -762,7 +883,8 @@ public class DummyDataProvider {
                     "Confirmed",
                     900,
                     "Patient reported skin rashes.",
-                    R.drawable.ic_user
+                    R.drawable.ic_user,
+                    1
             ));
             appointments.add(new Appointment(
                     "appt_2",
@@ -777,7 +899,8 @@ public class DummyDataProvider {
                     "Confirmed",
                     1200,
                     "Routine checkup.",
-                    R.drawable.ic_user
+                    R.drawable.ic_user,
+                    2
             ));
             appointments.add(new Appointment(
                     "appt_3",
@@ -792,7 +915,8 @@ public class DummyDataProvider {
                     "Completed",
                     800,
                     "Prescribed vitamins.",
-                    R.drawable.ic_user
+                    R.drawable.ic_user,
+                    1
             ));
             appointments.add(new Appointment(
                     "appt_4",
@@ -807,7 +931,8 @@ public class DummyDataProvider {
                     "Pending",
                     900,
                     "Follow up consultation.",
-                    R.drawable.ic_user
+                    R.drawable.ic_user,
+                    2
             ));
         }
         return new ArrayList<>(appointments);
@@ -873,10 +998,10 @@ public class DummyDataProvider {
 
     public static synchronized List<MenuItem> getAccountMenuItems() {
         List<MenuItem> items = new ArrayList<>();
-        items.add(new MenuItem("My Appointments", R.drawable.ic_calendar, R.color.text_primary));
-        items.add(new MenuItem("Saved Doctors", R.drawable.ic_heart_filled, R.color.text_primary));
-        items.add(new MenuItem("Find Doctors & Specialists", R.drawable.ic_search, R.color.text_primary));
-        items.add(new MenuItem("Notifications", R.drawable.ic_bell, R.color.text_primary));
+        items.add(new MenuItem("My Appointments", "View & manage booked appointments", R.drawable.ic_calendar, R.color.secondary, R.color.bg_blue_light, R.color.text_primary));
+        items.add(new MenuItem("Saved Doctors", "Your favorite doctors & specialists", R.drawable.ic_heart_filled, R.color.error_red, R.color.bg_pink_light, R.color.text_primary));
+        items.add(new MenuItem("Find Doctors & Specialists", "Explore top doctors near you", R.drawable.ic_search, R.color.accent, R.color.bg_teal_light, R.color.text_primary));
+        items.add(new MenuItem("Notifications", "Reminders & health updates", R.drawable.ic_bell, R.color.warning_yellow, R.color.bg_yellow_light, R.color.text_primary));
         return items;
     }
 
@@ -886,17 +1011,17 @@ public class DummyDataProvider {
 
     public static synchronized List<MenuItem> getHelpSupportMenuItems() {
         List<MenuItem> items = new ArrayList<>();
-        items.add(new MenuItem("Help & Support", R.drawable.ic_help, R.color.text_primary));
-        items.add(new MenuItem("Are you a doctor?", R.drawable.ic_stethoscope, R.color.text_primary, "JOIN"));
+        items.add(new MenuItem("Help & Support", "24/7 patient support center", R.drawable.ic_help, R.color.success_green, R.color.bg_green_light, R.color.text_primary));
+        items.add(new MenuItem("Are you a doctor?", "Join DoctorPoint network", R.drawable.ic_stethoscope, R.color.primary, R.color.primary_light, R.color.text_primary, "JOIN"));
         return items;
     }
 
     public static synchronized List<MenuItem> getMoreMenuItems() {
         List<MenuItem> items = new ArrayList<>();
-        items.add(new MenuItem("Privacy Policy", R.drawable.ic_file, R.color.text_primary));
-        items.add(new MenuItem("Terms & Conditions", R.drawable.ic_file, R.color.text_primary));
-        items.add(new MenuItem("Like us? Give us 5 stars", R.drawable.ic_star, R.color.text_primary));
-        items.add(new MenuItem("Logout", R.drawable.ic_logout, R.color.error_red));
+        items.add(new MenuItem("Privacy Policy", "Data privacy & security guidelines", R.drawable.ic_privacy, R.color.secondary, R.color.bg_indigo_light, R.color.text_primary));
+        items.add(new MenuItem("Terms & Conditions", "Terms of service & user agreement", R.drawable.ic_terms, R.color.text_secondary, R.color.bg_purple_light, R.color.text_primary));
+        items.add(new MenuItem("Like us? Give us 5 stars", "Rate your experience on Play Store", R.drawable.ic_star, R.color.warning_yellow, R.color.bg_orange_light, R.color.text_primary));
+        items.add(new MenuItem("Logout", "Sign out of your account", R.drawable.ic_logout, R.color.error_red, R.color.error_light, R.color.error_red));
         return items;
     }
 

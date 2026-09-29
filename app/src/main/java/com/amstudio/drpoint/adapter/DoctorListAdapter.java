@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
+import androidx.core.widget.ImageViewCompat;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.ListAdapter;
@@ -124,8 +125,13 @@ public class DoctorListAdapter extends ListAdapter<Doctor, RecyclerView.ViewHold
             String spec = doctor.getSpecializationString();
             binding.tvSpecializationPreview.setText((spec != null && !spec.isEmpty()) ? spec : "General Physician");
 
-            double rating = doctor.getRating() > 0 ? doctor.getRating() : 4.8;
-            binding.tvRatingPreview.setText(String.format(Locale.getDefault(), "%.1f", rating));
+            double rating = doctor.getRating();
+            int reviews = doctor.getReviewCount();
+            if (reviews > 0 && rating > 0) {
+                binding.tvRatingPreview.setText(String.format(Locale.getDefault(), "%.1f", rating));
+            } else {
+                binding.tvRatingPreview.setText("0");
+            }
 
             boolean isAvailable = doctor.isAvailableToday();
             if (binding.viewAvailableDot != null) {
@@ -229,9 +235,13 @@ public class DoctorListAdapter extends ListAdapter<Doctor, RecyclerView.ViewHold
                 binding.ivDoctor.setStrokeWidth(dpToPx(context, 1));
             }
 
-            double rating = doctor.getRating() > 0 ? doctor.getRating() : 4.8;
-            int reviews = doctor.getReviewCount() > 0 ? doctor.getReviewCount() : 120;
-            binding.tvRating.setText(String.format(Locale.getDefault(), "%.1f (%d reviews)", rating, reviews));
+            double rating = doctor.getRating();
+            int reviews = doctor.getReviewCount();
+            if (reviews > 0 && rating > 0) {
+                binding.tvRating.setText(String.format(Locale.getDefault(), "%.1f (%d reviews)", rating, reviews));
+            } else {
+                binding.tvRating.setText("0 (0 reviews)");
+            }
 
             String clinic = doctor.getClinicName() != null ? doctor.getClinicName() : "Care Clinic";
             String location = doctor.getLocation() != null ? doctor.getLocation() : "Main Branch";
@@ -257,11 +267,11 @@ public class DoctorListAdapter extends ListAdapter<Doctor, RecyclerView.ViewHold
 
             // Favorite state
             boolean isFav = PreferenceManager.getInstance(context).isFavoriteDoctor(doctor.getId());
-            binding.ivFavorite.setImageResource(isFav ? R.drawable.ic_heart_filled : R.drawable.ic_heart);
+            updateFavoriteState(binding, context, isFav);
 
             binding.ivFavorite.setOnClickListener(v -> {
                 boolean newFav = PreferenceManager.getInstance(context).toggleFavoriteDoctor(doctor.getId());
-                binding.ivFavorite.setImageResource(newFav ? R.drawable.ic_heart_filled : R.drawable.ic_heart);
+                updateFavoriteState(binding, context, newFav);
                 if (listener != null) listener.onFavoriteClick(doctor);
             });
 
@@ -274,6 +284,16 @@ public class DoctorListAdapter extends ListAdapter<Doctor, RecyclerView.ViewHold
             binding.btnBookNow.setOnClickListener(v -> {
                 if (listener != null) listener.onBookClick(doctor);
             });
+        }
+
+        private static void updateFavoriteState(ItemDoctorCardBinding binding, Context context, boolean isFav) {
+            if (isFav) {
+                binding.ivFavorite.setImageResource(R.drawable.ic_heart_filled);
+                ImageViewCompat.setImageTintList(binding.ivFavorite, ColorStateList.valueOf(ContextCompat.getColor(context, R.color.error_red)));
+            } else {
+                binding.ivFavorite.setImageResource(R.drawable.ic_heart);
+                ImageViewCompat.setImageTintList(binding.ivFavorite, ColorStateList.valueOf(ContextCompat.getColor(context, R.color.text_secondary)));
+            }
         }
 
         private static int dpToPx(Context context, float dp) {

@@ -54,13 +54,14 @@ public interface SupabaseDoctorService {
     );
 
     @POST("rest/v1/doctor_reviews")
-    Call<Void> postDoctorReviewPayload(
+    Call<List<Map<String, Object>>> postDoctorReviewPayload(
+            @Query("on_conflict") String onConflictQuery,
             @Header("Prefer") String preferHeader,
             @Body Map<String, Object> reviewMap
     );
 
     @PATCH("rest/v1/doctor_reviews")
-    Call<Void> updateDoctorReview(
+    Call<List<Map<String, Object>>> updateDoctorReview(
             @Query("appointment_id") String appointmentIdQuery,
             @Header("Prefer") String preferHeader,
             @Body Map<String, Object> reviewMap

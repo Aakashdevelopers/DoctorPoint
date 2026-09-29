@@ -30,6 +30,9 @@ public class Doctor implements Serializable {
     @SerializedName(value = "review_count", alternate = {"total_reviews"})
     private int reviewCount;
 
+    @SerializedName(value = "patient_count", alternate = {"total_patients", "patientCount", "patients_count"})
+    private int patientCount = 0;
+
     @SerializedName("clinic_name")
     private String clinicName;
 
@@ -155,6 +158,9 @@ public class Doctor implements Serializable {
 
     public int getReviewCount() { return reviewCount; }
     public void setReviewCount(int reviewCount) { this.reviewCount = reviewCount; }
+
+    public int getPatientCount() { return patientCount; }
+    public void setPatientCount(int patientCount) { this.patientCount = patientCount; }
 
     public String getClinicName() { return clinicName; }
     public void setClinicName(String clinicName) { this.clinicName = clinicName; }

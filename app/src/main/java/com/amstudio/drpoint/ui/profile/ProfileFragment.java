@@ -1,18 +1,18 @@
 package com.amstudio.drpoint.ui.profile;
 
+import android.app.Activity;
 import android.app.DatePickerDialog;
+import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
-
-import android.net.Uri;
-import android.provider.MediaStore;
-import android.util.Base64;
-import android.util.Log;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -30,7 +30,7 @@ import com.amstudio.drpoint.model.MenuItem;
 import com.amstudio.drpoint.model.PatientProfile;
 import com.amstudio.drpoint.network.SupabaseClient;
 import com.amstudio.drpoint.ui.auth.LoginActivity;
-import com.amstudio.drpoint.ui.doctor.DoctorListActivity;
+import com.amstudio.drpoint.ui.doctor.SavedDoctorsActivity;
 import com.amstudio.drpoint.ui.explore.FindDoctorsActivity;
 import com.amstudio.drpoint.ui.home.NotificationsActivity;
 import com.amstudio.drpoint.ui.main.MainActivity;
@@ -39,8 +39,6 @@ import com.amstudio.drpoint.util.PreferenceManager;
 import com.bumptech.glide.Glide;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -52,7 +50,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
-import okhttp3.FormBody;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -79,7 +76,7 @@ public class ProfileFragment extends Fragment {
         editImagePickerLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
-                    if (result.getResultCode() == getActivity().RESULT_OK && result.getData() != null && result.getData().getData() != null) {
+                    if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null && result.getData().getData() != null) {
                         Uri imageUri = result.getData().getData();
                         if (activeSheetBinding != null) {
                             activeSheetBinding.ivEditProfilePic.setImageURI(imageUri);
@@ -91,11 +88,13 @@ public class ProfileFragment extends Fragment {
     }
 
     private void uploadEditImageToSupabaseStorage(Uri imageUri) {
-        if (activeSheetBinding == null) return;
+        Context context = getContext();
+        if (context == null || activeSheetBinding == null) return;
+
         activeSheetBinding.tvEditUploadLabel.setText("Uploading photo to Supabase...");
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
-                InputStream inputStream = requireContext().getContentResolver().openInputStream(imageUri);
+                InputStream inputStream = context.getContentResolver().openInputStream(imageUri);
                 byte[] imageBytes = getBytes(inputStream);
 
                 String fileName = "profile_" + System.currentTimeMillis() + ".jpg";
@@ -119,9 +118,10 @@ public class ProfileFragment extends Fragment {
                     pendingAvatarUrl = publicUrl;
                     if (isAdded() && getActivity() != null) {
                         getActivity().runOnUiThread(() -> {
-                            if (activeSheetBinding != null) {
+                            Context ctx = getContext();
+                            if (activeSheetBinding != null && ctx != null) {
                                 activeSheetBinding.tvEditUploadLabel.setText("Photo Uploaded!");
-                                Toast.makeText(requireContext(), "Profile Photo Uploaded to Supabase!", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(ctx, "Profile Photo Uploaded to Supabase!", Toast.LENGTH_SHORT).show();
                             }
                         });
                     }
@@ -174,34 +174,40 @@ public class ProfileFragment extends Fragment {
     }
 
     private void setupProfileSections() {
+        Context context = getContext();
+        if (context == null || binding == null) return;
+
         ProfileMenuAdapter.OnMenuItemClickListener clickListener = this::handleMenuItemClick;
 
         // Section 1: My History
         ProfileMenuAdapter historyAdapter = new ProfileMenuAdapter(clickListener);
-        binding.rvHistoryMenu.setLayoutManager(new LinearLayoutManager(requireContext()));
+        binding.rvHistoryMenu.setLayoutManager(new LinearLayoutManager(context));
         binding.rvHistoryMenu.setAdapter(historyAdapter);
         historyAdapter.submitList(DummyDataProvider.getHistoryMenuItems());
 
         // Section 2: Help & Support
         ProfileMenuAdapter helpAdapter = new ProfileMenuAdapter(clickListener);
-        binding.rvHelpMenu.setLayoutManager(new LinearLayoutManager(requireContext()));
+        binding.rvHelpMenu.setLayoutManager(new LinearLayoutManager(context));
         binding.rvHelpMenu.setAdapter(helpAdapter);
         helpAdapter.submitList(DummyDataProvider.getHelpSupportMenuItems());
 
         // Section 3: More
         ProfileMenuAdapter moreAdapter = new ProfileMenuAdapter(clickListener);
-        binding.rvMoreMenu.setLayoutManager(new LinearLayoutManager(requireContext()));
+        binding.rvMoreMenu.setLayoutManager(new LinearLayoutManager(context));
         binding.rvMoreMenu.setAdapter(moreAdapter);
         moreAdapter.submitList(DummyDataProvider.getMoreMenuItems());
     }
 
     private void handleMenuItemClick(MenuItem item) {
         if (item == null || item.getTitle() == null) return;
+        Context context = getContext();
+        if (context == null) return;
+
         String title = item.getTitle().trim();
 
         if ("Logout".equalsIgnoreCase(title)) {
-            PreferenceManager.getInstance(requireContext()).clearSession();
-            Intent intent = new Intent(requireContext(), LoginActivity.class);
+            PreferenceManager.getInstance(context).clearSession();
+            Intent intent = new Intent(context, LoginActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
             if (getActivity() != null) {
@@ -211,30 +217,29 @@ public class ProfileFragment extends Fragment {
             if (getActivity() instanceof MainActivity) {
                 ((MainActivity) getActivity()).selectTab(MainActivity.TAB_APPOINTMENTS);
             } else {
-                Toast.makeText(requireContext(), "Opening My Appointments", Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, "Opening My Appointments", Toast.LENGTH_SHORT).show();
             }
         } else if (title.toLowerCase().contains("saved") || title.toLowerCase().contains("favorite")) {
-            Intent intent = new Intent(requireContext(), DoctorListActivity.class);
-            intent.putExtra("category_name", "Saved Doctors");
+            Intent intent = new Intent(context, SavedDoctorsActivity.class);
             startActivity(intent);
         } else if (title.toLowerCase().contains("find") || title.toLowerCase().contains("specialist")) {
-            Intent intent = new Intent(requireContext(), FindDoctorsActivity.class);
+            Intent intent = new Intent(context, FindDoctorsActivity.class);
             startActivity(intent);
         } else if (title.toLowerCase().contains("notification")) {
-            Intent intent = new Intent(requireContext(), NotificationsActivity.class);
+            Intent intent = new Intent(context, NotificationsActivity.class);
             startActivity(intent);
         } else if (title.toLowerCase().contains("help") || title.toLowerCase().contains("support")) {
-            Toast.makeText(requireContext(), "Help Center & Support active", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "Help Center & Support active", Toast.LENGTH_SHORT).show();
         } else if (title.toLowerCase().contains("are you a doctor") || title.toLowerCase().contains("apply")) {
-            Toast.makeText(requireContext(), "Thank you for your interest! Doctor onboarding form will open shortly.", Toast.LENGTH_LONG).show();
+            Toast.makeText(context, "Thank you for your interest! Doctor onboarding form will open shortly.", Toast.LENGTH_LONG).show();
         } else if (title.toLowerCase().contains("privacy")) {
-            Toast.makeText(requireContext(), "Opening Privacy Policy...", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "Opening Privacy Policy...", Toast.LENGTH_SHORT).show();
         } else if (title.toLowerCase().contains("term")) {
-            Toast.makeText(requireContext(), "Opening Terms & Conditions...", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "Opening Terms & Conditions...", Toast.LENGTH_SHORT).show();
         } else if (title.toLowerCase().contains("star") || title.toLowerCase().contains("rate") || title.toLowerCase().contains("like")) {
-            Toast.makeText(requireContext(), "Thank you for giving DoctorPoint 5 stars!", Toast.LENGTH_LONG).show();
+            Toast.makeText(context, "Thank you for giving DoctorPoint 5 stars!", Toast.LENGTH_LONG).show();
         } else {
-            Toast.makeText(requireContext(), title + " clicked", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, title + " clicked", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -246,8 +251,11 @@ public class ProfileFragment extends Fragment {
     }
 
     private void updateProfileHeader() {
-        if (binding == null) return;
-        PreferenceManager prefManager = PreferenceManager.getInstance(requireContext());
+        if (binding == null || !isAdded()) return;
+        Context context = getContext();
+        if (context == null) return;
+
+        PreferenceManager prefManager = PreferenceManager.getInstance(context);
         String name = prefManager.getUserName();
         String email = prefManager.getUserEmail();
         String avatar = (currentProfile.getAvatarUrl() != null && !currentProfile.getAvatarUrl().isEmpty())
@@ -264,7 +272,7 @@ public class ProfileFragment extends Fragment {
         binding.tvUserEmail.setText(email);
 
         if (avatar != null && !avatar.trim().isEmpty()) {
-            Glide.with(this)
+            Glide.with(context)
                     .load(avatar)
                     .placeholder(R.drawable.ic_user)
                     .error(R.drawable.ic_user)
@@ -274,13 +282,17 @@ public class ProfileFragment extends Fragment {
 
     private void loadProfileFromSupabase() {
         if (!isAdded()) return;
-        String userId = PreferenceManager.getInstance(requireContext()).getUserId();
+        Context context = getContext();
+        if (context == null) return;
+
+        String userId = PreferenceManager.getInstance(context).getUserId();
         if (userId == null || userId.trim().isEmpty()) return;
 
         // Fetch from Supabase profiles table
         SupabaseClient.getPatientService().getProfile("eq." + userId).enqueue(new Callback<List<PatientProfile>>() {
             @Override
             public void onResponse(Call<List<PatientProfile>> call, Response<List<PatientProfile>> response) {
+                if (!isAdded() || getContext() == null) return;
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                     PatientProfile fetched = response.body().get(0);
                     updateCurrentProfileWith(fetched);
@@ -296,6 +308,7 @@ public class ProfileFragment extends Fragment {
         SupabaseClient.getPatientService().getPatientDetails("eq." + userId).enqueue(new Callback<List<PatientProfile>>() {
             @Override
             public void onResponse(Call<List<PatientProfile>> call, Response<List<PatientProfile>> response) {
+                if (!isAdded() || getContext() == null) return;
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                     PatientProfile fetched = response.body().get(0);
                     updateCurrentProfileWith(fetched);
@@ -310,18 +323,21 @@ public class ProfileFragment extends Fragment {
 
     private void updateCurrentProfileWith(PatientProfile fetched) {
         if (fetched == null) return;
+        Context context = getContext();
+        if (context == null) return;
+
         if (fetched.getId() != null) currentProfile.setId(fetched.getId());
         if (fetched.getFullName() != null && !fetched.getFullName().isEmpty()) {
             currentProfile.setFullName(fetched.getFullName());
-            PreferenceManager.getInstance(requireContext()).setUserName(fetched.getFullName());
+            PreferenceManager.getInstance(context).setUserName(fetched.getFullName());
         }
         if (fetched.getEmail() != null && !fetched.getEmail().isEmpty()) {
             currentProfile.setEmail(fetched.getEmail());
-            PreferenceManager.getInstance(requireContext()).setUserEmail(fetched.getEmail());
+            PreferenceManager.getInstance(context).setUserEmail(fetched.getEmail());
         }
         if (fetched.getPhone() != null && !fetched.getPhone().isEmpty()) {
             currentProfile.setPhone(fetched.getPhone());
-            PreferenceManager.getInstance(requireContext()).setUserPhone(fetched.getPhone());
+            PreferenceManager.getInstance(context).setUserPhone(fetched.getPhone());
         }
         if (fetched.getAvatarUrl() != null && !fetched.getAvatarUrl().isEmpty()) {
             currentProfile.setAvatarUrl(fetched.getAvatarUrl());
@@ -334,21 +350,22 @@ public class ProfileFragment extends Fragment {
     }
 
     private void openEditProfileBottomSheet() {
-        if (getContext() == null) return;
+        Context context = getContext();
+        if (!isAdded() || context == null) return;
 
-        BottomSheetDialog dialog = new BottomSheetDialog(requireContext());
+        BottomSheetDialog dialog = new BottomSheetDialog(context);
         BottomSheetEditProfileBinding sheetBinding = BottomSheetEditProfileBinding.inflate(getLayoutInflater());
         activeSheetBinding = sheetBinding;
         pendingAvatarUrl = "";
         dialog.setContentView(sheetBinding.getRoot());
 
-        PreferenceManager prefManager = PreferenceManager.getInstance(requireContext());
+        PreferenceManager prefManager = PreferenceManager.getInstance(context);
 
         String existingAvatar = (currentProfile.getAvatarUrl() != null && !currentProfile.getAvatarUrl().isEmpty())
                 ? currentProfile.getAvatarUrl() : prefManager.getUserAvatar();
 
         if (existingAvatar != null && !existingAvatar.isEmpty()) {
-            Glide.with(this)
+            Glide.with(context)
                     .load(existingAvatar)
                     .placeholder(R.drawable.ic_user)
                     .into(sheetBinding.ivEditProfilePic);
@@ -374,6 +391,8 @@ public class ProfileFragment extends Fragment {
 
         // Setup Date of Birth Calendar Picker
         View.OnClickListener dobListener = v -> {
+            Context ctx = getContext();
+            if (ctx == null) return;
             Calendar calendar = Calendar.getInstance();
             String currentDob = sheetBinding.etDob.getText() != null ? sheetBinding.etDob.getText().toString().trim() : "";
             if (!currentDob.isEmpty() && currentDob.matches("\\d{4}-\\d{2}-\\d{2}")) {
@@ -386,7 +405,7 @@ public class ProfileFragment extends Fragment {
             }
 
             DatePickerDialog datePickerDialog = new DatePickerDialog(
-                    requireContext(),
+                    ctx,
                     (view1, year, month, dayOfMonth) -> {
                         String formattedDate = String.format(Locale.US, "%04d-%02d-%02d", year, month + 1, dayOfMonth);
                         sheetBinding.etDob.setText(formattedDate);
@@ -406,13 +425,17 @@ public class ProfileFragment extends Fragment {
 
         // Setup Gender Selection Dialog (Male, Female, Prefer not to say)
         String[] genderOptions = new String[]{"Male", "Female", "Prefer not to say"};
-        View.OnClickListener genderListener = v -> new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Select Gender")
-                .setItems(genderOptions, (dialogInterface, which) -> {
-                    sheetBinding.etGender.setText(genderOptions[which]);
-                    sheetBinding.tilGender.setError(null);
-                })
-                .show();
+        View.OnClickListener genderListener = v -> {
+            Context ctx = getContext();
+            if (ctx == null) return;
+            new MaterialAlertDialogBuilder(ctx)
+                    .setTitle("Select Gender")
+                    .setItems(genderOptions, (dialogInterface, which) -> {
+                        sheetBinding.etGender.setText(genderOptions[which]);
+                        sheetBinding.tilGender.setError(null);
+                    })
+                    .show();
+        };
 
         sheetBinding.etGender.setOnClickListener(genderListener);
         sheetBinding.tilGender.setOnClickListener(genderListener);
@@ -427,13 +450,17 @@ public class ProfileFragment extends Fragment {
                 "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
                 "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"
         };
-        View.OnClickListener stateListener = v -> new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Select State")
-                .setItems(indianStates, (dialogInterface, which) -> {
-                    sheetBinding.etAddress.setText(indianStates[which]);
-                    sheetBinding.tilAddress.setError(null);
-                })
-                .show();
+        View.OnClickListener stateListener = v -> {
+            Context ctx = getContext();
+            if (ctx == null) return;
+            new MaterialAlertDialogBuilder(ctx)
+                    .setTitle("Select State")
+                    .setItems(indianStates, (dialogInterface, which) -> {
+                        sheetBinding.etAddress.setText(indianStates[which]);
+                        sheetBinding.tilAddress.setError(null);
+                    })
+                    .show();
+        };
 
         sheetBinding.etAddress.setOnClickListener(stateListener);
         sheetBinding.tilAddress.setOnClickListener(stateListener);
@@ -507,8 +534,11 @@ public class ProfileFragment extends Fragment {
                 sheetBinding.tilAddress.setError(null);
             }
 
+            Context ctx = getContext();
             if (!isValid) {
-                Toast.makeText(requireContext(), "Please fill all mandatory profile details", Toast.LENGTH_SHORT).show();
+                if (ctx != null) {
+                    Toast.makeText(ctx, "Please fill all mandatory profile details", Toast.LENGTH_SHORT).show();
+                }
                 return;
             }
 
@@ -532,9 +562,12 @@ public class ProfileFragment extends Fragment {
             String emergencyContact,
             String address
     ) {
-        String userId = PreferenceManager.getInstance(requireContext()).getUserId();
+        Context context = getContext();
+        if (!isAdded() || context == null) return;
+
+        String userId = PreferenceManager.getInstance(context).getUserId();
         if (userId == null || userId.trim().isEmpty()) {
-            Toast.makeText(requireContext(), "User session not found", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "User session not found", Toast.LENGTH_SHORT).show();
             dialog.dismiss();
             return;
         }
@@ -580,6 +613,9 @@ public class ProfileFragment extends Fragment {
         SupabaseClient.getPatientService().updatePatientDetails("eq." + userId, patientMap).enqueue(new Callback<Void>() {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
+                Context ctx = getContext();
+                if (!isAdded() || ctx == null) return;
+
                 sheetBinding.btnSaveProfile.setEnabled(true);
                 sheetBinding.btnSaveProfile.setText("Save Changes");
 
@@ -592,7 +628,7 @@ public class ProfileFragment extends Fragment {
                 currentProfile.setEmergencyContact(emergencyContact);
                 currentProfile.setAddress(address);
 
-                PreferenceManager prefManager = PreferenceManager.getInstance(requireContext());
+                PreferenceManager prefManager = PreferenceManager.getInstance(ctx);
                 prefManager.setUserName(name);
                 prefManager.setUserPhone(phone);
                 prefManager.setUserGender(gender);
@@ -605,7 +641,7 @@ public class ProfileFragment extends Fragment {
                 }
 
                 updateProfileHeader();
-                Toast.makeText(requireContext(), "Profile updated successfully!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(ctx, "Profile updated successfully!", Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
             }
 
@@ -616,6 +652,9 @@ public class ProfileFragment extends Fragment {
                         .enqueue(new Callback<Void>() {
                             @Override
                             public void onResponse(Call<Void> c, Response<Void> r) {
+                                Context ctx = getContext();
+                                if (!isAdded() || ctx == null) return;
+
                                 sheetBinding.btnSaveProfile.setEnabled(true);
                                 sheetBinding.btnSaveProfile.setText("Save Changes");
 
@@ -627,20 +666,23 @@ public class ProfileFragment extends Fragment {
                                 currentProfile.setEmergencyContact(emergencyContact);
                                 currentProfile.setAddress(address);
 
-                                PreferenceManager prefManager = PreferenceManager.getInstance(requireContext());
+                                PreferenceManager prefManager = PreferenceManager.getInstance(ctx);
                                 prefManager.setUserName(name);
                                 prefManager.setUserPhone(phone);
 
                                 updateProfileHeader();
-                                Toast.makeText(requireContext(), "Profile updated successfully!", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(ctx, "Profile updated successfully!", Toast.LENGTH_SHORT).show();
                                 dialog.dismiss();
                             }
 
                             @Override
                             public void onFailure(Call<Void> c, Throwable t1) {
+                                Context ctx = getContext();
+                                if (!isAdded() || ctx == null) return;
+
                                 sheetBinding.btnSaveProfile.setEnabled(true);
                                 sheetBinding.btnSaveProfile.setText("Save Changes");
-                                Toast.makeText(requireContext(), "Network Error: Profile updated locally.", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(ctx, "Network Error: Profile updated locally.", Toast.LENGTH_SHORT).show();
                                 dialog.dismiss();
                             }
                         });

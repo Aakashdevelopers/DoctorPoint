@@ -85,6 +85,10 @@ public class Appointment implements Serializable {
     }
 
     public Appointment(String id, String patientId, String doctorId, String doctorName, String specialization, String appointmentDate, String startTime, String clinicName, String location, String status, int amount, String patientReason, int imageRes) {
+        this(id, patientId, doctorId, doctorName, specialization, appointmentDate, startTime, clinicName, location, status, amount, patientReason, imageRes, 1);
+    }
+
+    public Appointment(String id, String patientId, String doctorId, String doctorName, String specialization, String appointmentDate, String startTime, String clinicName, String location, String status, int amount, String patientReason, int imageRes, int tokenNumber) {
         this.id = id;
         this.patientId = patientId;
         this.doctorId = doctorId;
@@ -98,6 +102,7 @@ public class Appointment implements Serializable {
         this.amount = amount;
         this.patientReason = patientReason;
         this.imageRes = imageRes;
+        this.tokenNumber = tokenNumber;
     }
 
     public String getId() { return id; }

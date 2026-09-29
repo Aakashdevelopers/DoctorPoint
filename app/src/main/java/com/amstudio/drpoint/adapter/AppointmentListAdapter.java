@@ -31,12 +31,14 @@ public class AppointmentListAdapter extends ListAdapter<Appointment, Appointment
     private static final DiffUtil.ItemCallback<Appointment> DIFF_CALLBACK = new DiffUtil.ItemCallback<Appointment>() {
         @Override
         public boolean areItemsTheSame(@NonNull Appointment oldItem, @NonNull Appointment newItem) {
-            return oldItem.getId().equals(newItem.getId());
+            if (oldItem == newItem) return true;
+            if (oldItem.getId() == null || newItem.getId() == null) return false;
+            return Objects.equals(oldItem.getId(), newItem.getId());
         }
 
         @Override
         public boolean areContentsTheSame(@NonNull Appointment oldItem, @NonNull Appointment newItem) {
-            return oldItem.getStatus().equals(newItem.getStatus()) &&
+            return Objects.equals(oldItem.getStatus(), newItem.getStatus()) &&
                    Objects.equals(oldItem.getDate(), newItem.getDate()) &&
                    Objects.equals(oldItem.getTime(), newItem.getTime());
         }
@@ -80,14 +82,28 @@ public class AppointmentListAdapter extends ListAdapter<Appointment, Appointment
 
             String dateStr = appointment.getDate();
             if (dateStr != null && dateStr.contains(" ")) {
-                String[] parts = dateStr.split(" ");
-                binding.tvApptDayNum.setText(parts[0]);
-                binding.tvApptMonth.setText(parts[1].toUpperCase());
+                String[] parts = dateStr.trim().split("\\s+");
+                if (parts.length >= 2) {
+                    binding.tvApptDayNum.setText(parts[0]);
+                    binding.tvApptMonth.setText(parts[1].toUpperCase());
+                } else if (parts.length == 1) {
+                    binding.tvApptDayNum.setText(parts[0]);
+                    binding.tvApptMonth.setText("SEP");
+                } else {
+                    binding.tvApptDayNum.setText("18");
+                    binding.tvApptMonth.setText("SEP");
+                }
             } else if (dateStr != null && dateStr.contains("-")) {
-                String[] parts = dateStr.split("-");
+                String[] parts = dateStr.trim().split("-");
                 if (parts.length >= 3) {
                     binding.tvApptDayNum.setText(parts[2]);
                     binding.tvApptMonth.setText(getMonthName(parts[1]));
+                } else if (parts.length == 2) {
+                    binding.tvApptDayNum.setText(parts[1]);
+                    binding.tvApptMonth.setText(getMonthName(parts[0]));
+                } else {
+                    binding.tvApptDayNum.setText("18");
+                    binding.tvApptMonth.setText("SEP");
                 }
             } else {
                 binding.tvApptDayNum.setText("18");

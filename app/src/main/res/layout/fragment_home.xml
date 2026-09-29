@@ -31,24 +31,94 @@
 
                 <com.google.android.material.imageview.ShapeableImageView
                     android:id="@+id/iv_avatar"
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:layout_alignParentStart="true"
                     android:layout_centerVertical="true"
+                    android:background="@drawable/bg_squircle_icon"
                     android:contentDescription="User Avatar"
-                    android:padding="2dp"
                     android:scaleType="centerCrop"
                     android:src="@drawable/ic_user"
                     app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.Circle"
-                    app:strokeColor="@color/primary"
-                    app:strokeWidth="2dp" />
+                    app:strokeColor="@color/primary_light"
+                    app:strokeWidth="1.5dp" />
 
+                <!-- Action Container on Far Right -->
                 <LinearLayout
+                    android:id="@+id/ll_right_actions"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
-                    android:layout_marginStart="14dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <!-- Location Chip -->
+                    <LinearLayout
+                        android:id="@+id/ll_location_container"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/bg_squircle_icon"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackgroundBorderless"
+                        android:gravity="center"
+                        android:paddingHorizontal="10dp">
+
+                        <TextView
+                            android:id="@+id/tv_location_chip"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:text="📍 Karnataka ▾"
+                            android:textColor="@color/primary"
+                            android:textSize="11.5sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Bell Button -->
+                    <FrameLayout
+                        android:id="@+id/fl_bell"
+                        android:layout_width="38dp"
+                        android:layout_height="38dp"
+                        android:background="@drawable/bg_squircle_icon"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackgroundBorderless">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_gravity="center"
+                            android:contentDescription="Notification bell"
+                            android:src="@drawable/ic_bell"
+                            app:tint="@color/text_primary" />
+
+                        <!-- Notification badge -->
+                        <View
+                            android:id="@+id/v_unread_badge"
+                            android:layout_width="9dp"
+                            android:layout_height="9dp"
+                            android:layout_gravity="top|end"
+                            android:layout_marginTop="5dp"
+                            android:layout_marginEnd="5dp"
+                            android:background="@drawable/bg_badge_verified" />
+                    </FrameLayout>
+
+                </LinearLayout>
+
+                <!-- User Greeting Info in Middle -->
+                <LinearLayout
+                    android:id="@+id/ll_user_info"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="8dp"
                     android:layout_toEndOf="@id/iv_avatar"
+                    android:layout_toStartOf="@id/ll_right_actions"
                     android:orientation="vertical">
 
                     <TextView
@@ -63,9 +133,11 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="1dp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
                         android:text="Aakash Mishra"
                         android:textColor="@color/text_primary"
-                        android:textSize="19sp"
+                        android:textSize="18sp"
                         android:textStyle="bold" />
 
                     <LinearLayout
@@ -84,64 +156,13 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="5dp"
+                            android:ellipsize="end"
+                            android:maxLines="1"
                             android:text="How are you feeling today?"
                             android:textColor="@color/text_secondary"
                             android:textSize="11sp" />
                     </LinearLayout>
                 </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/ll_location_container"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_centerVertical="true"
-                    android:layout_marginEnd="8dp"
-                    android:layout_toStartOf="@id/fl_bell"
-                    android:background="@drawable/bg_squircle_icon"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:foreground="?attr/selectableItemBackgroundBorderless"
-                    android:paddingHorizontal="10dp"
-                    android:paddingVertical="6dp">
-
-                    <TextView
-                        android:id="@+id/tv_location_chip"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="📍 Karnataka ▾"
-                        android:textColor="@color/primary"
-                        android:textSize="11.5sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <FrameLayout
-                    android:id="@+id/fl_bell"
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:background="@drawable/bg_squircle_icon"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:foreground="?attr/selectableItemBackgroundBorderless"
-                    android:padding="10dp">
-
-                    <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="Notification bell"
-                        android:src="@drawable/ic_bell"
-                        app:tint="@color/text_primary" />
-
-                    <!-- Red notification dot badge -->
-                    <View
-                        android:id="@+id/v_unread_badge"
-                        android:layout_width="9dp"
-                        android:layout_height="9dp"
-                        android:layout_gravity="top|end"
-                        android:background="@drawable/bg_badge_verified" />
-                </FrameLayout>
 
             </RelativeLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -150,7 +171,7 @@
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/layout_search"
             android:layout_width="match_parent"
-            android:layout_height="54dp"
+            android:layout_height="52dp"
             android:layout_marginHorizontal="16dp"
             android:layout_marginTop="16dp"
             android:clickable="true"
@@ -158,7 +179,7 @@
             android:foreground="?attr/selectableItemBackground"
             app:cardBackgroundColor="@color/surface_white"
             app:cardCornerRadius="16dp"
-            app:cardElevation="3dp"
+            app:cardElevation="2dp"
             app:strokeColor="@color/card_stroke"
             app:strokeWidth="1dp">
 
@@ -167,27 +188,21 @@
                 android:layout_height="match_parent"
                 android:paddingHorizontal="12dp">
 
-                <FrameLayout
-                    android:id="@+id/fl_search_icon_bg"
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
+                <ImageView
+                    android:id="@+id/iv_search_icon"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
                     android:layout_alignParentStart="true"
                     android:layout_centerVertical="true"
-                    android:background="@drawable/bg_squircle_icon">
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="Search icon"
-                        android:src="@drawable/ic_search"
-                        app:tint="@color/primary" />
-                </FrameLayout>
+                    android:layout_marginStart="4dp"
+                    android:contentDescription="Search icon"
+                    android:src="@drawable/ic_search"
+                    app:tint="@color/text_muted" />
 
                 <FrameLayout
                     android:id="@+id/fl_filter"
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
                     android:background="@drawable/bg_squircle_icon"
@@ -204,29 +219,81 @@
                         app:tint="@color/white" />
                 </FrameLayout>
 
-                <LinearLayout
-                    android:layout_width="wrap_content"
+                <TextView
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
                     android:layout_marginStart="12dp"
-                    android:layout_marginEnd="8dp"
-                    android:layout_toEndOf="@id/fl_search_icon_bg"
+                    android:layout_marginEnd="10dp"
+                    android:layout_toEndOf="@id/iv_search_icon"
                     android:layout_toStartOf="@id/fl_filter"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="Search doctors, symptoms, specialities..."
+                    android:textColor="@color/text_muted"
+                    android:textSize="13.5sp" />
+
+            </RelativeLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Quick Access Services Section Header -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="20dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <View
+                    android:layout_width="4dp"
+                    android:layout_height="18dp"
+                    android:background="@drawable/bg_section_indicator" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
                     android:orientation="vertical">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:ellipsize="end"
-                        android:maxLines="1"
-                        android:text="Search doctors, symptoms, specialities..."
+                        android:text="Quick Services"
+                        android:textColor="@color/text_primary"
+                        android:textSize="17sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
+                        android:text="Essential healthcare at your fingertips"
                         android:textColor="@color/text_secondary"
-                        android:textSize="13sp" />
+                        android:textSize="11sp" />
                 </LinearLayout>
 
-            </RelativeLayout>
+            </LinearLayout>
 
-        </com.google.android.material.card.MaterialCardView>
+        </RelativeLayout>
+
+        <!-- Quick Access 4-Grid RecyclerView -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_quick_access"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="12dp"
+            android:layout_marginTop="10dp"
+            android:nestedScrollingEnabled="false"
+            app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+            app:spanCount="4" />
 
         <!-- Image Slideshow Banner Card -->
         <com.google.android.material.card.MaterialCardView
@@ -305,7 +372,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:padding="4dp"
-                android:text="See All →"
+                android:text="See All"
                 android:textColor="@color/secondary"
                 android:textSize="13sp"
                 android:textStyle="bold" />
@@ -360,8 +427,8 @@
             android:layout_marginHorizontal="10dp"
             android:layout_marginTop="10dp"
             android:clipToPadding="false"
-            android:orientation="horizontal"
             android:nestedScrollingEnabled="false"
+            android:orientation="horizontal"
             android:visibility="gone"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
@@ -395,13 +462,6 @@
                         android:layout_height="wrap_content"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
-
-                        <ImageView
-                            android:layout_width="14dp"
-                            android:layout_height="14dp"
-                            android:contentDescription="VIP icon"
-                            android:src="@drawable/ic_star"
-                            app:tint="@color/warning_yellow" />
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -441,7 +501,7 @@
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     android:paddingHorizontal="14dp"
-                    android:text="Explore VIP →"
+                    android:text="Explore VIP"
                     android:textColor="@color/primary"
                     android:textSize="11.5sp"
                     android:textStyle="bold"
@@ -504,7 +564,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:padding="4dp"
-                android:text="See All →"
+                android:text="See All"
                 android:textColor="@color/secondary"
                 android:textSize="13sp"
                 android:textStyle="bold" />
@@ -549,8 +609,8 @@
             android:layout_marginHorizontal="10dp"
             android:layout_marginTop="10dp"
             android:clipToPadding="false"
-            android:orientation="horizontal"
             android:nestedScrollingEnabled="false"
+            android:orientation="horizontal"
             android:visibility="gone"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
@@ -654,8 +714,8 @@
             android:layout_marginHorizontal="10dp"
             android:layout_marginTop="10dp"
             android:clipToPadding="false"
-            android:orientation="horizontal"
             android:nestedScrollingEnabled="false"
+            android:orientation="horizontal"
             android:visibility="gone"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 

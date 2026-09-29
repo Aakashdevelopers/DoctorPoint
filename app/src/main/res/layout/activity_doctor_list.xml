@@ -51,61 +51,6 @@
                 android:textSize="20sp"
                 android:textStyle="bold" />
 
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/tv_location_chip"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
-                    android:background="@drawable/bg_squircle_icon"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:paddingHorizontal="10dp"
-                    android:paddingVertical="6dp"
-                    android:text="📍 Karnataka ▾"
-                    android:textColor="@color/primary"
-                    android:textSize="11.5sp"
-                    android:textStyle="bold" />
-
-                <FrameLayout
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_marginEnd="8dp"
-                    android:background="@drawable/bg_squircle_icon">
-
-                    <ImageView
-                        android:id="@+id/iv_search"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="Search"
-                        android:src="@drawable/ic_search"
-                        app:tint="@color/text_primary" />
-                </FrameLayout>
-
-                <FrameLayout
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:background="@drawable/bg_squircle_icon">
-
-                    <ImageView
-                        android:id="@+id/iv_filter"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="Filter"
-                        android:src="@drawable/ic_filter"
-                        app:tint="@color/text_primary" />
-                </FrameLayout>
-
-            </LinearLayout>
         </RelativeLayout>
     </com.google.android.material.card.MaterialCardView>
 
@@ -148,75 +93,16 @@
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/surface_white"
         android:clipToPadding="false"
         android:paddingHorizontal="16dp"
-        android:paddingBottom="14dp"
+        android:paddingVertical="8dp"
         android:scrollbars="none">
 
         <LinearLayout
             android:id="@+id/ll_chip_container"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/chip_all"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:background="@drawable/bg_chip_selected"
-                android:clickable="true"
-                android:focusable="true"
-                android:paddingHorizontal="16dp"
-                android:paddingVertical="8dp"
-                android:text="All"
-                android:textColor="@color/white"
-                android:textSize="13sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/chip_female"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:background="@drawable/bg_chip_unselected"
-                android:clickable="true"
-                android:focusable="true"
-                android:paddingHorizontal="16dp"
-                android:paddingVertical="8dp"
-                android:text="Female"
-                android:textColor="@color/text_primary"
-                android:textSize="13sp" />
-
-            <TextView
-                android:id="@+id/chip_available"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:background="@drawable/bg_chip_unselected"
-                android:clickable="true"
-                android:focusable="true"
-                android:paddingHorizontal="16dp"
-                android:paddingVertical="8dp"
-                android:text="Available Today"
-                android:textColor="@color/text_primary"
-                android:textSize="13sp" />
-
-            <TextView
-                android:id="@+id/chip_nearby"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_chip_unselected"
-                android:clickable="true"
-                android:focusable="true"
-                android:paddingHorizontal="16dp"
-                android:paddingVertical="8dp"
-                android:text="Nearby"
-                android:textColor="@color/text_primary"
-                android:textSize="13sp" />
-
-        </LinearLayout>
+            android:orientation="horizontal" />
     </HorizontalScrollView>
 
     <!-- Sub Header: Result Count & Sort -->
@@ -237,35 +123,6 @@
             android:textSize="13sp"
             android:textStyle="bold" />
 
-        <LinearLayout
-            android:id="@+id/ll_sort"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:clickable="true"
-            android:focusable="true"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:padding="4dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Sort"
-                android:textColor="@color/primary"
-                android:textSize="13sp"
-                android:textStyle="bold" />
-
-            <ImageView
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:layout_marginStart="4dp"
-                android:contentDescription="Sort icon"
-                android:src="@drawable/ic_sort"
-                app:tint="@color/primary" />
-        </LinearLayout>
     </RelativeLayout>
 
     <!-- Main Content Area with SwipeRefreshLayout and Empty State -->

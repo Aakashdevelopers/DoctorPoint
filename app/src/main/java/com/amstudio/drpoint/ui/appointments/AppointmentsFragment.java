@@ -1,10 +1,14 @@
 package com.amstudio.drpoint.ui.appointments;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -31,14 +35,20 @@ import com.amstudio.drpoint.util.AvailabilityHelper;
 import com.amstudio.drpoint.util.DummyDataProvider;
 import com.amstudio.drpoint.util.PreferenceManager;
 import com.bumptech.glide.Glide;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.tabs.TabLayout;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -62,17 +72,24 @@ public class AppointmentsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        binding.rvAppointments.setLayoutManager(new LinearLayoutManager(requireContext()));
+        Context context = getContext();
+        if (context == null || binding == null) return;
+
+        binding.rvAppointments.setLayoutManager(new LinearLayoutManager(context));
         adapter = new AppointmentListAdapter(new AppointmentListAdapter.OnAppointmentActionListener() {
             @Override
             public void onItemClick(Appointment appointment) {
-                openAppointmentDetailsBottomSheet(appointment);
+                if (appointment != null) openAppointmentDetailsBottomSheet(appointment);
             }
 
             @Override
             public void onRescheduleClick(Appointment appointment) {
+                if (appointment == null) return;
                 if (!appointment.isCancellable()) {
-                    Toast.makeText(requireContext(), "This appointment cannot be rescheduled.", Toast.LENGTH_SHORT).show();
+                    Context ctx = getContext();
+                    if (ctx != null) {
+                        Toast.makeText(ctx, "This appointment cannot be rescheduled.", Toast.LENGTH_SHORT).show();
+                    }
                     return;
                 }
                 openRescheduleFlow(appointment);
@@ -80,17 +97,17 @@ public class AppointmentsFragment extends Fragment {
 
             @Override
             public void onCancelClick(Appointment appointment) {
-                attemptCancelAppointment(appointment);
+                if (appointment != null) attemptCancelAppointment(appointment);
             }
 
             @Override
             public void onRateDoctorClick(Appointment appointment) {
-                openRateDoctorBottomSheet(appointment);
+                if (appointment != null) openRateDoctorBottomSheet(appointment);
             }
 
             @Override
             public void onRefundClick(Appointment appointment) {
-                openRefundDetailsBottomSheet(appointment);
+                if (appointment != null) openRefundDetailsBottomSheet(appointment);
             }
         });
         binding.rvAppointments.setAdapter(adapter);
@@ -103,12 +120,15 @@ public class AppointmentsFragment extends Fragment {
             });
         }
 
-        PreferenceManager prefManager = PreferenceManager.getInstance(requireContext());
+        PreferenceManager prefManager = PreferenceManager.getInstance(context);
         binding.swReminders.setChecked(prefManager.getRemindersEnabled());
         binding.swReminders.setOnCheckedChangeListener((buttonView, isChecked) -> {
             prefManager.setRemindersEnabled(isChecked);
-            String msg = isChecked ? "Reminders enabled" : "Reminders disabled";
-            Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show();
+            Context ctx = getContext();
+            if (ctx != null) {
+                String msg = isChecked ? "Reminders enabled" : "Reminders disabled";
+                Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show();
+            }
         });
 
         binding.tabLayoutAppointments.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
@@ -135,52 +155,58 @@ public class AppointmentsFragment extends Fragment {
     }
 
     private void loadAppointments() {
-        if (!isAdded()) return;
-        String patientId = PreferenceManager.getInstance(requireContext()).getUserId();
+        if (!isAdded() || getContext() == null) return;
+        Context context = getContext();
+        if (context == null) return;
+
+        String patientId = PreferenceManager.getInstance(context).getUserId();
 
         // 1. Fetch real appointments from Supabase appointments table
         SupabaseClient.getAppointmentService().getAllAppointments()
                 .enqueue(new Callback<List<Appointment>>() {
                     @Override
                     public void onResponse(Call<List<Appointment>> call, Response<List<Appointment>> response) {
-                        if (!isAdded()) return;
+                        if (!isAdded() || getContext() == null || binding == null) return;
                         if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                             fetchedAppointments = response.body();
                         } else {
                             fetchUserAppointmentsFallback(patientId);
                             return;
                         }
+                        ensureTokenNumbersAssigned(fetchedAppointments);
                         processAutoCancellationForPastAppointments(fetchedAppointments);
                         filterAppointments(currentTabPosition);
                     }
 
                     @Override
                     public void onFailure(Call<List<Appointment>> call, Throwable t) {
-                        if (!isAdded()) return;
+                        if (!isAdded() || getContext() == null || binding == null) return;
                         fetchUserAppointmentsFallback(patientId);
                     }
                 });
     }
 
     private void fetchUserAppointmentsFallback(String patientId) {
+        if (!isAdded() || getContext() == null || binding == null) return;
         if (patientId != null && !patientId.trim().isEmpty()) {
             SupabaseClient.getAppointmentService().getAppointmentsForPatient("eq." + patientId)
                     .enqueue(new Callback<List<Appointment>>() {
                         @Override
                         public void onResponse(Call<List<Appointment>> call, Response<List<Appointment>> response) {
-                            if (!isAdded()) return;
+                            if (!isAdded() || getContext() == null || binding == null) return;
                             if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                                 fetchedAppointments = response.body();
                             } else {
                                 fetchedAppointments = new ArrayList<>();
                             }
+                            ensureTokenNumbersAssigned(fetchedAppointments);
                             processAutoCancellationForPastAppointments(fetchedAppointments);
                             filterAppointments(currentTabPosition);
                         }
 
                         @Override
                         public void onFailure(Call<List<Appointment>> call, Throwable t) {
-                            if (!isAdded()) return;
+                            if (!isAdded() || getContext() == null || binding == null) return;
                             fetchedAppointments = new ArrayList<>();
                             filterAppointments(currentTabPosition);
                         }
@@ -191,11 +217,74 @@ public class AppointmentsFragment extends Fragment {
         }
     }
 
+    private void ensureTokenNumbersAssigned(List<Appointment> list) {
+        if (list == null || list.isEmpty()) return;
+
+        Map<String, List<Appointment>> map = new HashMap<>();
+        for (Appointment appt : list) {
+            if (appt == null) continue;
+            String docId = appt.getDoctorId() != null ? appt.getDoctorId().trim() : "doc_default";
+            String rawDate = appt.getAppointmentDate() != null ? appt.getAppointmentDate().trim() : "date_default";
+            String cleanDate = normalizeDateKey(rawDate);
+            String key = docId + "_" + cleanDate;
+
+            List<Appointment> apptList = map.get(key);
+            if (apptList == null) {
+                apptList = new ArrayList<>();
+                map.put(key, apptList);
+            }
+            apptList.add(appt);
+        }
+
+        for (Map.Entry<String, List<Appointment>> entry : map.entrySet()) {
+            List<Appointment> group = entry.getValue();
+            if (group == null || group.isEmpty()) continue;
+
+            Set<Integer> uniqueTokens = new HashSet<>();
+            boolean hasZeros = false;
+            for (Appointment a : group) {
+                if (a.getTokenNumber() <= 0) {
+                    hasZeros = true;
+                } else {
+                    uniqueTokens.add(a.getTokenNumber());
+                }
+            }
+
+            if (hasZeros || uniqueTokens.size() < group.size()) {
+                Collections.sort(group, (a1, a2) -> {
+                    String t1 = a1.getStartTime() != null ? a1.getStartTime() : "";
+                    String t2 = a2.getStartTime() != null ? a2.getStartTime() : "";
+                    return t1.compareTo(t2);
+                });
+
+                int seq = 1;
+                for (Appointment a : group) {
+                    a.setTokenNumber(seq++);
+                }
+            }
+        }
+    }
+
+    private static String normalizeDateKey(String rawDate) {
+        if (rawDate == null) return "date_unknown";
+        String clean = rawDate.trim();
+        if (clean.contains("T")) {
+            clean = clean.split("T")[0];
+        } else if (clean.contains(" ")) {
+            clean = clean.split("\\s+")[0];
+        }
+        return clean.toLowerCase(Locale.US);
+    }
+
     private void filterAppointments(int tabPosition) {
+        if (binding == null || !isAdded()) return;
+        Context context = getContext();
+        if (context == null) return;
+
         List<Appointment> allAppointments = fetchedAppointments;
         List<Appointment> displayed = new ArrayList<>();
 
-        PreferenceManager prefManager = PreferenceManager.getInstance(requireContext());
+        PreferenceManager prefManager = PreferenceManager.getInstance(context);
         String currentUserId = prefManager.getUserId();
         String currentUserName = prefManager.getUserName();
 
@@ -231,29 +320,35 @@ public class AppointmentsFragment extends Fragment {
             }
         }
 
-        if (binding != null && binding.shimmerAppointments != null) {
+        if (binding.shimmerAppointments != null) {
             binding.shimmerAppointments.stopShimmer();
             binding.shimmerAppointments.setVisibility(View.GONE);
         }
 
         if (displayed.isEmpty()) {
-            binding.llEmptyState.setVisibility(View.VISIBLE);
-            binding.rvAppointments.setVisibility(View.GONE);
+            if (binding.llEmptyState != null) binding.llEmptyState.setVisibility(View.VISIBLE);
+            if (binding.rvAppointments != null) binding.rvAppointments.setVisibility(View.GONE);
         } else {
-            binding.llEmptyState.setVisibility(View.GONE);
-            binding.rvAppointments.setVisibility(View.VISIBLE);
+            if (binding.llEmptyState != null) binding.llEmptyState.setVisibility(View.GONE);
+            if (binding.rvAppointments != null) binding.rvAppointments.setVisibility(View.VISIBLE);
         }
 
-        adapter.submitList(displayed);
+        if (adapter != null) {
+            adapter.submitList(displayed);
+        }
     }
 
     private void attemptCancelAppointment(Appointment appointment) {
+        if (appointment == null || !isAdded()) return;
+        Context context = getContext();
+        if (context == null) return;
+
         if (!appointment.isCancellable()) {
-            Toast.makeText(requireContext(), "This appointment cannot be cancelled.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "This appointment cannot be cancelled.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        new AlertDialog.Builder(requireContext())
+        new AlertDialog.Builder(context)
                 .setTitle("Cancel Appointment")
                 .setMessage("Are you sure you want to cancel your appointment with " + appointment.getDoctorName() + "?")
                 .setPositiveButton("Yes, Cancel", (dialog, which) -> cancelAppointmentInSupabase(appointment))
@@ -262,15 +357,21 @@ public class AppointmentsFragment extends Fragment {
     }
 
     private void cancelAppointmentInSupabase(Appointment appointment) {
+        if (appointment == null || !isAdded()) return;
+        Context context = getContext();
+        if (context == null) return;
+
         appointment.setStatus("Cancelled");
 
-        String patientId = PreferenceManager.getInstance(requireContext()).getUserId();
+        String patientId = PreferenceManager.getInstance(context).getUserId();
         CancelAppointmentRpcRequest cancelRequest = new CancelAppointmentRpcRequest(appointment.getId(), patientId, "Cancelled by patient");
 
         SupabaseClient.getSlotService().cancelAppointment(cancelRequest).enqueue(new Callback<Map<String, Object>>() {
             @Override
             public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
-                Toast.makeText(requireContext(), "Appointment cancelled successfully.", Toast.LENGTH_SHORT).show();
+                Context ctx = getContext();
+                if (!isAdded() || ctx == null) return;
+                Toast.makeText(ctx, "Appointment cancelled successfully.", Toast.LENGTH_SHORT).show();
                 loadAppointments();
                 openRefundDetailsBottomSheet(appointment);
             }
@@ -285,14 +386,18 @@ public class AppointmentsFragment extends Fragment {
                         .enqueue(new Callback<Void>() {
                             @Override
                             public void onResponse(Call<Void> call, Response<Void> response) {
-                                Toast.makeText(requireContext(), "Appointment cancelled successfully.", Toast.LENGTH_SHORT).show();
+                                Context ctx = getContext();
+                                if (!isAdded() || ctx == null) return;
+                                Toast.makeText(ctx, "Appointment cancelled successfully.", Toast.LENGTH_SHORT).show();
                                 loadAppointments();
                                 openRefundDetailsBottomSheet(appointment);
                             }
 
                             @Override
                             public void onFailure(Call<Void> call, Throwable t) {
-                                Toast.makeText(requireContext(), "Appointment marked cancelled.", Toast.LENGTH_SHORT).show();
+                                Context ctx = getContext();
+                                if (!isAdded() || ctx == null) return;
+                                Toast.makeText(ctx, "Appointment marked cancelled.", Toast.LENGTH_SHORT).show();
                                 loadAppointments();
                                 openRefundDetailsBottomSheet(appointment);
                             }
@@ -302,6 +407,10 @@ public class AppointmentsFragment extends Fragment {
     }
 
     private void openRescheduleFlow(Appointment appointment) {
+        if (appointment == null || !isAdded()) return;
+        Context context = getContext();
+        if (context == null) return;
+
         Doctor doc = new Doctor();
         doc.setId(appointment.getDoctorId() != null ? appointment.getDoctorId() : "doc_1");
         doc.setName(appointment.getDoctorName());
@@ -309,15 +418,17 @@ public class AppointmentsFragment extends Fragment {
         doc.setLocation(appointment.getLocation());
         doc.setQualification(appointment.getSpecialization());
 
-        Intent intent = new Intent(requireContext(), BookAppointmentActivity.class);
+        Intent intent = new Intent(context, BookAppointmentActivity.class);
         intent.putExtra("doctor", doc);
         startActivity(intent);
     }
 
     private void openAppointmentDetailsBottomSheet(Appointment appointment) {
-        if (getContext() == null) return;
+        if (!isAdded() || appointment == null) return;
+        Context context = getContext();
+        if (context == null) return;
 
-        BottomSheetDialog dialog = new BottomSheetDialog(requireContext());
+        BottomSheetDialog dialog = new BottomSheetDialog(context);
         BottomSheetAppointmentDetailsBinding sheetBinding = BottomSheetAppointmentDetailsBinding.inflate(getLayoutInflater());
         dialog.setContentView(sheetBinding.getRoot());
 
@@ -329,7 +440,7 @@ public class AppointmentsFragment extends Fragment {
         sheetBinding.tvDetailClinicAddress.setText(appointment.getLocation());
 
         if (appointment.getDoctor() != null && appointment.getDoctor().getImageUrl() != null && !appointment.getDoctor().getImageUrl().isEmpty()) {
-            Glide.with(this)
+            Glide.with(context)
                     .load(appointment.getDoctor().getImageUrl())
                     .placeholder(R.drawable.ic_user)
                     .into(sheetBinding.ivDetailDoctorImage);
@@ -438,11 +549,30 @@ public class AppointmentsFragment extends Fragment {
     }
 
     private void openRefundDetailsBottomSheet(Appointment appointment) {
-        if (getContext() == null || appointment == null) return;
+        if (!isAdded() || appointment == null) return;
+        Context context = getContext();
+        if (context == null) return;
 
-        BottomSheetDialog dialog = new BottomSheetDialog(requireContext());
+        BottomSheetDialog dialog = new BottomSheetDialog(context);
         DialogRefundDetailsBinding refundBinding = DialogRefundDetailsBinding.inflate(getLayoutInflater());
         dialog.setContentView(refundBinding.getRoot());
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        }
+
+        dialog.setOnShowListener(d -> {
+            BottomSheetDialog bsd = (BottomSheetDialog) d;
+            FrameLayout bottomSheet = bsd.findViewById(com.google.android.material.R.id.design_bottom_sheet);
+            if (bottomSheet != null) {
+                bottomSheet.setBackgroundResource(android.R.color.transparent);
+                BottomSheetBehavior<FrameLayout> behavior = BottomSheetBehavior.from(bottomSheet);
+                behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+                behavior.setSkipCollapsed(true);
+            }
+        });
+
+        dialog.show();
 
         int fee = appointment.getAmount() > 0 ? appointment.getAmount() : (appointment.getFee() > 0 ? appointment.getFee() : 500);
 
@@ -454,9 +584,22 @@ public class AppointmentsFragment extends Fragment {
 
         refundBinding.ivCloseRefundDialog.setOnClickListener(v -> dialog.dismiss());
 
-        PreferenceManager prefManager = PreferenceManager.getInstance(requireContext());
-        String patientId = prefManager.getUserId() != null ? prefManager.getUserId() : "patient_anon";
+        PreferenceManager prefManager = PreferenceManager.getInstance(context);
+        String resolvedPatientId = null;
+        if (appointment.getPatientId() != null && !appointment.getPatientId().trim().isEmpty() && !appointment.getPatientId().equals("user_default")) {
+            resolvedPatientId = appointment.getPatientId().trim();
+        } else if (prefManager.getUserId() != null && !prefManager.getUserId().trim().isEmpty()) {
+            resolvedPatientId = prefManager.getUserId().trim();
+        }
+        if ("patient_anon".equals(resolvedPatientId)) {
+            resolvedPatientId = null;
+        }
+
         String patientName = prefManager.getUserName() != null ? prefManager.getUserName() : "Verified Patient";
+        String phone = prefManager.getUserPhone() != null && !prefManager.getUserPhone().trim().isEmpty()
+                ? prefManager.getUserPhone() : "+91 9876543210";
+
+        final boolean[] hasExistingRefund = {false};
 
         // Check if a refund request already exists for this appointment
         if (appointment.getId() != null) {
@@ -464,11 +607,16 @@ public class AppointmentsFragment extends Fragment {
                     .enqueue(new Callback<List<RefundRequest>>() {
                         @Override
                         public void onResponse(Call<List<RefundRequest>> call, Response<List<RefundRequest>> response) {
-                            if (!isAdded()) return;
+                            if (!isAdded() || getContext() == null) return;
                             if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                                 RefundRequest existing = response.body().get(0);
                                 if (existing != null) {
+                                    hasExistingRefund[0] = true;
                                     refundBinding.tilRefundReason.setVisibility(View.GONE);
+                                    if (existing.getPatientUpi() != null && !existing.getPatientUpi().trim().isEmpty()) {
+                                        refundBinding.etPatientUpi.setText(existing.getPatientUpi());
+                                        refundBinding.etPatientUpi.setEnabled(false);
+                                    }
                                     String status = existing.getStatus() != null ? existing.getStatus().toLowerCase() : "pending";
 
                                     if ("approved".equals(status)) {
@@ -496,50 +644,159 @@ public class AppointmentsFragment extends Fragment {
                     });
         }
 
+        String safePatientId = resolvedPatientId != null && !resolvedPatientId.trim().isEmpty() ? resolvedPatientId.trim() : "patient_anon";
+        final String finalPatientId = safePatientId;
+
         refundBinding.btnRefundAction.setOnClickListener(v -> {
+            String upiText = refundBinding.etPatientUpi.getText() != null
+                    ? refundBinding.etPatientUpi.getText().toString().trim() : "";
             String reasonText = refundBinding.etRefundReason.getText() != null
                     ? refundBinding.etRefundReason.getText().toString().trim() : "";
 
-            RefundRequest refundReq = new RefundRequest(
-                    appointment.getId(),
-                    patientId,
-                    patientName,
-                    "+91 9876543210",
-                    appointment.getDoctorId(),
-                    appointment.getDoctorName(),
-                    appointment.getSpecialization(),
-                    appointment.getClinicName(),
-                    appointment.getDate(),
-                    fee,
-                    reasonText.isEmpty() ? "Patient requested cancellation refund" : reasonText
-            );
+            String apptDate = appointment.getAppointmentDate() != null ? appointment.getAppointmentDate() : appointment.getDate();
+            if (apptDate == null || apptDate.equalsIgnoreCase("Completed Consultation") || apptDate.equalsIgnoreCase("Scheduled") || !apptDate.matches(".*\\d+.*")) {
+                apptDate = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(new Date());
+            }
+
+            Map<String, Object> refundMap = new HashMap<>();
+            refundMap.put("appointment_id", appointment.getId());
+            refundMap.put("patient_id", finalPatientId);
+            refundMap.put("patient_name", patientName);
+            refundMap.put("patient_phone", phone);
+            refundMap.put("patient_upi", upiText);
+            refundMap.put("doctor_id", appointment.getDoctorId() != null ? appointment.getDoctorId() : "doc_1");
+            refundMap.put("doctor_name", appointment.getDoctorName());
+            refundMap.put("doctor_specialization", appointment.getSpecialization());
+            refundMap.put("clinic_name", appointment.getClinicName());
+            refundMap.put("appointment_date", apptDate);
+            refundMap.put("amount", fee);
+            refundMap.put("reason", reasonText.isEmpty() ? "Patient requested cancellation refund" : reasonText);
+            refundMap.put("status", "pending");
 
             refundBinding.btnRefundAction.setEnabled(false);
             refundBinding.btnRefundAction.setText("Submitting Request...");
 
-            SupabaseClient.getAppointmentService().postRefundRequest("return=minimal", refundReq)
+            Callback<List<Map<String, Object>>> refundCallback = new Callback<List<Map<String, Object>>>() {
+                @Override
+                public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
+                    Context ctx = getContext();
+                    if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                        if (isAdded() && ctx != null) {
+                            Toast.makeText(ctx, "Success (" + response.code() + "): Refund request saved to Supabase!", Toast.LENGTH_LONG).show();
+                            dialog.dismiss();
+                        }
+                    } else {
+                        String errStr = extractResponseError(response);
+                        Log.e("AppointmentsFragment", "Refund submission failed: " + errStr);
+
+                        if (hasExistingRefund[0]) {
+                            SupabaseClient.getAppointmentService().postRefundRequestPayload("appointment_id", "resolution=merge-duplicates,return=representation", refundMap)
+                                    .enqueue(new Callback<List<Map<String, Object>>>() {
+                                        @Override
+                                        public void onResponse(Call<List<Map<String, Object>>> c2, Response<List<Map<String, Object>>> r2) {
+                                            Context ctx2 = getContext();
+                                            if (r2.isSuccessful() && r2.body() != null && !r2.body().isEmpty()) {
+                                                if (isAdded() && ctx2 != null) {
+                                                    Toast.makeText(ctx2, "Success (" + r2.code() + "): Refund request saved to Supabase!", Toast.LENGTH_LONG).show();
+                                                    dialog.dismiss();
+                                                }
+                                            } else {
+                                                resetRefundButton(refundBinding, extractResponseError(r2));
+                                            }
+                                        }
+
+                                        @Override
+                                        public void onFailure(Call<List<Map<String, Object>>> c2, Throwable t2) {
+                                            resetRefundButton(refundBinding, "Network Error: " + t2.getMessage());
+                                        }
+                                    });
+                        } else {
+                            SupabaseClient.getAppointmentService().updateRefundRequest("eq." + appointment.getId(), "return=representation", refundMap)
+                                    .enqueue(new Callback<List<Map<String, Object>>>() {
+                                        @Override
+                                        public void onResponse(Call<List<Map<String, Object>>> c2, Response<List<Map<String, Object>>> r2) {
+                                            Context ctx2 = getContext();
+                                            if (r2.isSuccessful() && r2.body() != null && !r2.body().isEmpty()) {
+                                                if (isAdded() && ctx2 != null) {
+                                                    Toast.makeText(ctx2, "Success (" + r2.code() + "): Refund request saved to Supabase!", Toast.LENGTH_LONG).show();
+                                                    dialog.dismiss();
+                                                }
+                                            } else {
+                                                resetRefundButton(refundBinding, extractResponseError(r2));
+                                            }
+                                        }
+
+                                        @Override
+                                        public void onFailure(Call<List<Map<String, Object>>> c2, Throwable t2) {
+                                            resetRefundButton(refundBinding, "Network Error: " + t2.getMessage());
+                                        }
+                                    });
+                        }
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
+                    Log.e("AppointmentsFragment", "Refund submission error: " + t.getMessage(), t);
+                    resetRefundButton(refundBinding, "Network Error: " + t.getMessage());
+                }
+            };
+
+            // Also update payment_status in appointments table to 'Refund Requested'
+            Map<String, Object> updateApptMap = new HashMap<>();
+            updateApptMap.put("payment_status", "Refund Requested");
+            SupabaseClient.getAppointmentService().updateAppointmentStatus("eq." + appointment.getId(), updateApptMap)
                     .enqueue(new Callback<Void>() {
                         @Override
-                        public void onResponse(Call<Void> call, Response<Void> response) {
-                            Toast.makeText(requireContext(), "Refund request submitted! Admin will process it within 24-48 hours.", Toast.LENGTH_LONG).show();
-                            dialog.dismiss();
-                        }
-
+                        public void onResponse(Call<Void> call, Response<Void> response) {}
                         @Override
-                        public void onFailure(Call<Void> call, Throwable t) {
-                            Toast.makeText(requireContext(), "Refund request submitted successfully!", Toast.LENGTH_SHORT).show();
-                            dialog.dismiss();
-                        }
+                        public void onFailure(Call<Void> call, Throwable t) {}
                     });
+
+            if (hasExistingRefund[0]) {
+                SupabaseClient.getAppointmentService().updateRefundRequest("eq." + appointment.getId(), "return=representation", refundMap)
+                        .enqueue(refundCallback);
+            } else {
+                SupabaseClient.getAppointmentService().postRefundRequestPayload("appointment_id", "resolution=merge-duplicates,return=representation", refundMap)
+                        .enqueue(refundCallback);
+            }
         });
 
         dialog.show();
     }
 
-    private void openRateDoctorBottomSheet(Appointment appointment) {
-        if (getContext() == null || appointment == null) return;
+    private String extractResponseError(Response<?> response) {
+        if (response == null) return "Unknown Error";
+        int code = response.code();
+        String body = "";
+        try {
+            if (response.errorBody() != null) {
+                body = response.errorBody().string();
+            }
+        } catch (Exception ignored) {}
+        if (!body.isEmpty()) {
+            return "Error " + code + ": " + body;
+        }
+        if (code == 200 || code == 204) {
+            return "No row updated in Supabase (0 rows affected)";
+        }
+        return "Supabase Error Code " + code;
+    }
 
-        BottomSheetDialog dialog = new BottomSheetDialog(requireContext());
+    private void resetRefundButton(DialogRefundDetailsBinding refundBinding, String message) {
+        Context context = getContext();
+        if (!isAdded() || context == null || refundBinding == null) return;
+        refundBinding.btnRefundAction.setEnabled(true);
+        refundBinding.btnRefundAction.setText("Request Cancellation & Refund");
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+    }
+
+    private void openRateDoctorBottomSheet(Appointment appointment) {
+        if (!isAdded() || appointment == null) return;
+        Context context = getContext();
+        if (context == null) return;
+
+        BottomSheetDialog dialog = new BottomSheetDialog(context);
         DialogRateDoctorBinding rateBinding = DialogRateDoctorBinding.inflate(getLayoutInflater());
         dialog.setContentView(rateBinding.getRoot());
 
@@ -550,7 +807,7 @@ public class AppointmentsFragment extends Fragment {
         rateBinding.tvRateApptDate.setText("Completed • " + dateStr);
 
         if (appointment.getDoctor() != null && appointment.getDoctor().getImageUrl() != null && !appointment.getDoctor().getImageUrl().isEmpty()) {
-            Glide.with(this)
+            Glide.with(context)
                     .load(appointment.getDoctor().getImageUrl())
                     .placeholder(R.drawable.ic_user)
                     .into(rateBinding.ivRateDoctorAvatar);
@@ -564,7 +821,7 @@ public class AppointmentsFragment extends Fragment {
                     .enqueue(new Callback<List<DoctorReview>>() {
                         @Override
                         public void onResponse(Call<List<DoctorReview>> call, Response<List<DoctorReview>> response) {
-                            if (!isAdded()) return;
+                            if (!isAdded() || getContext() == null) return;
                             if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                                 DoctorReview existingReview = response.body().get(0);
                                 if (existingReview != null) {
@@ -604,15 +861,26 @@ public class AppointmentsFragment extends Fragment {
             double selectedRating = Math.max(1.0, rateBinding.ratingBar.getRating());
             String reviewComment = rateBinding.etReviewText.getText() != null ? rateBinding.etReviewText.getText().toString().trim() : "";
 
-            PreferenceManager prefManager = PreferenceManager.getInstance(requireContext());
-            String patientId = prefManager.getUserId() != null ? prefManager.getUserId() : "patient_anon";
+            Context ctx1 = getContext();
+            if (ctx1 == null) return;
+
+            PreferenceManager prefManager = PreferenceManager.getInstance(ctx1);
+
+            // Resolve valid patientId
+            String patientId = null;
+            if (appointment.getPatientId() != null && !appointment.getPatientId().trim().isEmpty() && !appointment.getPatientId().equals("user_default")) {
+                patientId = appointment.getPatientId().trim();
+            } else if (prefManager.getUserId() != null && !prefManager.getUserId().trim().isEmpty()) {
+                patientId = prefManager.getUserId().trim();
+            }
+
             String patientName = prefManager.getUserName() != null ? prefManager.getUserName() : "Verified Patient";
             String patientAvatar = prefManager.getUserAvatar() != null ? prefManager.getUserAvatar() : "";
 
             Map<String, Object> reviewMap = new HashMap<>();
             reviewMap.put("appointment_id", appointment.getId());
-            reviewMap.put("doctor_id", appointment.getDoctorId());
-            reviewMap.put("patient_id", patientId);
+            reviewMap.put("doctor_id", appointment.getDoctorId() != null ? appointment.getDoctorId() : "doc_1");
+            reviewMap.put("patient_id", patientId != null && !patientId.isEmpty() ? patientId : "patient_anon");
             reviewMap.put("patient_name", patientName);
             reviewMap.put("patient_avatar", patientAvatar);
             reviewMap.put("rating", selectedRating);
@@ -621,38 +889,99 @@ public class AppointmentsFragment extends Fragment {
             rateBinding.btnSubmitReview.setEnabled(false);
             rateBinding.btnSubmitReview.setText("Submitting...");
 
-            Callback<Void> reviewCallback = new Callback<Void>() {
+            Callback<List<Map<String, Object>>> reviewCallback = new Callback<List<Map<String, Object>>>() {
                 @Override
-                public void onResponse(Call<Void> call, Response<Void> response) {
-                    dialog.dismiss();
-                    Toast.makeText(requireContext(), "Thank you for reviewing Dr. " + appointment.getDoctorName() + "!", Toast.LENGTH_LONG).show();
+                public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
+                    Context ctx = getContext();
+                    if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                        if (isAdded() && ctx != null) {
+                            dialog.dismiss();
+                            Toast.makeText(ctx, "Success (" + response.code() + "): Review saved to Supabase!", Toast.LENGTH_LONG).show();
+                        }
+                        if (appointment.getDoctorId() != null) {
+                            DummyDataProvider.recalculateAndUpdateDoctorRating(appointment.getDoctorId());
+                        }
+                    } else {
+                        String errStr = extractResponseError(response);
+                        Log.e("AppointmentsFragment", "Review submission failed: " + errStr);
 
-                    if (appointment.getDoctorId() != null) {
-                        DummyDataProvider.recalculateAndUpdateDoctorRating(appointment.getDoctorId());
+                        if (hasExistingReview[0]) {
+                            SupabaseClient.getDoctorService().postDoctorReviewPayload("appointment_id", "resolution=merge-duplicates,return=representation", reviewMap)
+                                    .enqueue(new Callback<List<Map<String, Object>>>() {
+                                        @Override
+                                        public void onResponse(Call<List<Map<String, Object>>> c2, Response<List<Map<String, Object>>> r2) {
+                                            Context ctx2 = getContext();
+                                            if (r2.isSuccessful() && r2.body() != null && !r2.body().isEmpty()) {
+                                                if (isAdded() && ctx2 != null) {
+                                                    dialog.dismiss();
+                                                    Toast.makeText(ctx2, "Success (" + r2.code() + "): Review saved to Supabase!", Toast.LENGTH_LONG).show();
+                                                }
+                                                if (appointment.getDoctorId() != null) {
+                                                    DummyDataProvider.recalculateAndUpdateDoctorRating(appointment.getDoctorId());
+                                                }
+                                            } else {
+                                                resetSubmitButton(rateBinding, extractResponseError(r2));
+                                            }
+                                        }
+
+                                        @Override
+                                        public void onFailure(Call<List<Map<String, Object>>> c2, Throwable t2) {
+                                            resetSubmitButton(rateBinding, "Network Error: " + t2.getMessage());
+                                        }
+                                    });
+                        } else {
+                            SupabaseClient.getDoctorService().updateDoctorReview("eq." + appointment.getId(), "return=representation", reviewMap)
+                                    .enqueue(new Callback<List<Map<String, Object>>>() {
+                                        @Override
+                                        public void onResponse(Call<List<Map<String, Object>>> c2, Response<List<Map<String, Object>>> r2) {
+                                            Context ctx2 = getContext();
+                                            if (r2.isSuccessful() && r2.body() != null && !r2.body().isEmpty()) {
+                                                if (isAdded() && ctx2 != null) {
+                                                    dialog.dismiss();
+                                                    Toast.makeText(ctx2, "Success (" + r2.code() + "): Review saved to Supabase!", Toast.LENGTH_LONG).show();
+                                                }
+                                                if (appointment.getDoctorId() != null) {
+                                                    DummyDataProvider.recalculateAndUpdateDoctorRating(appointment.getDoctorId());
+                                                }
+                                            } else {
+                                                resetSubmitButton(rateBinding, extractResponseError(r2));
+                                            }
+                                        }
+
+                                        @Override
+                                        public void onFailure(Call<List<Map<String, Object>>> c2, Throwable t2) {
+                                            resetSubmitButton(rateBinding, "Network Error: " + t2.getMessage());
+                                        }
+                                    });
+                        }
                     }
                 }
 
                 @Override
-                public void onFailure(Call<Void> call, Throwable t) {
-                    dialog.dismiss();
-                    Toast.makeText(requireContext(), "Thank you for reviewing Dr. " + appointment.getDoctorName() + "!", Toast.LENGTH_SHORT).show();
-
-                    if (appointment.getDoctorId() != null) {
-                        DummyDataProvider.recalculateAndUpdateDoctorRating(appointment.getDoctorId());
-                    }
+                public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
+                    Log.e("AppointmentsFragment", "Review submission network error: " + t.getMessage(), t);
+                    resetSubmitButton(rateBinding, "Network Error: " + t.getMessage());
                 }
             };
 
             if (hasExistingReview[0]) {
-                SupabaseClient.getDoctorService().updateDoctorReview("eq." + appointment.getId(), "return=minimal", reviewMap)
+                SupabaseClient.getDoctorService().updateDoctorReview("eq." + appointment.getId(), "return=representation", reviewMap)
                         .enqueue(reviewCallback);
             } else {
-                SupabaseClient.getDoctorService().postDoctorReviewPayload("return=minimal", reviewMap)
+                SupabaseClient.getDoctorService().postDoctorReviewPayload("appointment_id", "resolution=merge-duplicates,return=representation", reviewMap)
                         .enqueue(reviewCallback);
             }
         });
 
         dialog.show();
+    }
+
+    private void resetSubmitButton(DialogRateDoctorBinding rateBinding, String message) {
+        Context context = getContext();
+        if (!isAdded() || context == null || rateBinding == null) return;
+        rateBinding.btnSubmitReview.setEnabled(true);
+        rateBinding.btnSubmitReview.setText("Submit Review");
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
     }
 
     @Override

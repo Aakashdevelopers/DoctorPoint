@@ -74,6 +74,14 @@ public class ProfileMenuAdapter extends ListAdapter<MenuItem, ProfileMenuAdapter
                 binding.tvMenuSubtitle.setVisibility(View.GONE);
             }
 
+            if (item.getBgTintRes() != 0) {
+                int bgTint = ContextCompat.getColor(context, item.getBgTintRes());
+                binding.flIconBg.setBackgroundTintList(ColorStateList.valueOf(bgTint));
+            } else {
+                int defaultBg = ContextCompat.getColor(context, R.color.primary_light);
+                binding.flIconBg.setBackgroundTintList(ColorStateList.valueOf(defaultBg));
+            }
+
             if (item.getIconTintRes() != 0) {
                 int iconTint = ContextCompat.getColor(context, item.getIconTintRes());
                 binding.ivMenuIcon.setImageTintList(ColorStateList.valueOf(iconTint));
@@ -81,7 +89,7 @@ public class ProfileMenuAdapter extends ListAdapter<MenuItem, ProfileMenuAdapter
                 int textColor = ContextCompat.getColor(context, item.getTextColorRes());
                 binding.ivMenuIcon.setImageTintList(ColorStateList.valueOf(textColor));
             } else {
-                binding.ivMenuIcon.setImageTintList(ColorStateList.valueOf(ContextCompat.getColor(context, R.color.text_primary)));
+                binding.ivMenuIcon.setImageTintList(ColorStateList.valueOf(ContextCompat.getColor(context, R.color.primary)));
             }
 
             if (item.getTextColorRes() != 0) {

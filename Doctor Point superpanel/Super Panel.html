@@ -1564,6 +1564,7 @@
                             <thead>
                                 <tr>
                                     <th>Patient Details</th>
+                                    <th>Patient UPI ID</th>
                                     <th>Doctor &amp; Specialization</th>
                                     <th>Appointment Date</th>
                                     <th>Fee Paid</th>
@@ -1573,7 +1574,7 @@
                                 </tr>
                             </thead>
                             <tbody id="refund-table-body">
-                                <tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;">Loading patient refund requests...</td></tr>
+                                <tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:2rem;">Loading patient refund requests...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -1998,7 +1999,15 @@
                         .from('refund_requests')
                         .select('*')
                         .order('created_at', { ascending: false });
-                    if (!rErr && rData) refundRequests = rData;
+                    if (rErr) {
+                        console.error('Error fetching refund_requests from Supabase:', rErr);
+                        let { data: rData2, error: rErr2 } = await supabase
+                            .from('refund_requests')
+                            .select('*');
+                        if (!rErr2 && rData2) refundRequests = rData2;
+                    } else if (rData) {
+                        refundRequests = rData;
+                    }
                 } catch (rEx) {
                     console.warn('Refunds fetch note:', rEx);
                 }
@@ -3304,30 +3313,49 @@
             });
             btn.classList.remove('btn-outline');
             btn.classList.add('btn-primary');
-            window.renderRefunds();
+            renderRefunds();
         };
 
-        window.renderRefunds = function() {
+        function renderRefunds() {
             const searchQuery = (document.getElementById('search-refunds')?.value || '').toLowerCase();
             const tbody = document.getElementById('refund-table-body');
+
+            const allRefunds = (refundRequests || []).map(r => ({
+                id: r.id || String(r.appointment_id || ''),
+                appointment_id: r.appointment_id || r.id || '',
+                patient_id: r.patient_id || '',
+                patient_name: r.patient_name || 'Patient',
+                patient_phone: r.patient_phone || 'N/A',
+                patient_upi: r.patient_upi || r.upi_id || r.upi || '',
+                doctor_id: r.doctor_id || '',
+                doctor_name: r.doctor_name || 'Doctor',
+                doctor_specialization: r.doctor_specialization || 'Consultant',
+                clinic_name: r.clinic_name || 'Clinic',
+                appointment_date: r.appointment_date || 'N/A',
+                amount: parseFloat(r.amount) || 0,
+                reason: r.reason || 'Requested refund for cancelled appointment.',
+                status: (r.status || 'pending').toLowerCase(),
+                created_at: r.created_at || null
+            }));
 
             let pendingAmount = 0;
             let approvedAmount = 0;
 
-            (refundRequests || []).forEach(r => {
+            allRefunds.forEach(r => {
                 const st = (r.status || 'pending').toLowerCase();
                 const amt = parseFloat(r.amount) || 0;
-                if (st === 'pending') pendingAmount += amt;
-                if (st === 'approved') approvedAmount += amt;
+                if (st === 'pending' || st.includes('request') || st.includes('review')) pendingAmount += amt;
+                if (st === 'approved' || st === 'refunded') approvedAmount += amt;
             });
 
             if (document.getElementById('stat-pending-refund-amount')) document.getElementById('stat-pending-refund-amount').innerText = `₹${Math.round(pendingAmount).toLocaleString('en-IN')}`;
             if (document.getElementById('stat-completed-refund-amount')) document.getElementById('stat-completed-refund-amount').innerText = `₹${Math.round(approvedAmount).toLocaleString('en-IN')}`;
-            if (document.getElementById('stat-total-refund-count')) document.getElementById('stat-total-refund-count').innerText = (refundRequests || []).length;
+            if (document.getElementById('stat-total-refund-count')) document.getElementById('stat-total-refund-count').innerText = allRefunds.length;
 
-            let filtered = refundRequests.filter(r =>
+            let filtered = allRefunds.filter(r =>
                 (r.patient_name || '').toLowerCase().includes(searchQuery) ||
                 (r.patient_phone || '').toLowerCase().includes(searchQuery) ||
+                (r.patient_upi || '').toLowerCase().includes(searchQuery) ||
                 (r.doctor_name || '').toLowerCase().includes(searchQuery) ||
                 (r.doctor_specialization || '').toLowerCase().includes(searchQuery) ||
                 (r.appointment_id || '').toLowerCase().includes(searchQuery) ||
@@ -3335,30 +3363,39 @@
             );
 
             if (currentRefundFilterTab === 'pending') {
-                filtered = filtered.filter(r => (r.status || 'pending').toLowerCase() === 'pending');
+                filtered = filtered.filter(r => {
+                    const st = (r.status || 'pending').toLowerCase();
+                    return st === 'pending' || st.includes('request') || st.includes('review');
+                });
             } else if (currentRefundFilterTab === 'approved') {
-                filtered = filtered.filter(r => (r.status || '').toLowerCase() === 'approved');
+                filtered = filtered.filter(r => {
+                    const st = (r.status || '').toLowerCase();
+                    return st === 'approved' || st === 'refunded';
+                });
             } else if (currentRefundFilterTab === 'rejected') {
-                filtered = filtered.filter(r => (r.status || '').toLowerCase() === 'rejected');
+                filtered = filtered.filter(r => {
+                    const st = (r.status || '').toLowerCase();
+                    return st === 'rejected' || st.includes('reject');
+                });
             }
 
             if (!tbody) return;
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;">No refund requests found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:2rem;">No refund requests found.</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = filtered.map(r => {
                 const st = (r.status || 'pending').toLowerCase();
                 let statusBadge = `<span class="badge badge-pending">⏳ Pending Review</span>`;
-                if (st === 'approved') statusBadge = `<span class="badge badge-verified">✅ Refund Approved</span>`;
-                if (st === 'rejected') statusBadge = `<span class="badge badge-danger" style="background:#fee2e2; color:#dc2626;">❌ Request Rejected</span>`;
+                if (st === 'approved' || st === 'refunded') statusBadge = `<span class="badge badge-verified">✅ Refund Approved</span>`;
+                if (st === 'rejected' || st.includes('reject')) statusBadge = `<span class="badge badge-danger" style="background:#fee2e2; color:#dc2626;">❌ Request Rejected</span>`;
 
                 const reqDate = r.created_at ? new Date(r.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recent';
 
                 let actionBtns = '';
-                if (st === 'pending') {
+                if (st === 'pending' || st.includes('request') || st.includes('review')) {
                     actionBtns = `
                         <button class="btn btn-success btn-sm" style="padding:4px 10px; font-size:12px;" onclick="window.approveRefundRequest('${r.id}', '${r.appointment_id}')" title="Approve 100% Refund">✅ Approve</button>
                         <button class="btn btn-danger btn-sm" style="padding:4px 10px; font-size:12px; margin-left:4px;" onclick="window.rejectRefundRequest('${r.id}', '${r.appointment_id}')" title="Reject Refund Request">❌ Reject</button>
@@ -3374,6 +3411,9 @@
                             <small style="color:var(--text-muted);">${r.patient_phone || 'N/A'}</small>
                         </td>
                         <td>
+                            ${r.patient_upi ? `<span class="badge" style="background:#e0f2fe; color:#0369a1; font-weight:bold; font-size:12px; padding:4px 8px;"><i class='bx bx-credit-card'></i> ${r.patient_upi}</span>` : `<span style="color:var(--text-muted); font-size:0.85rem;">Not Provided</span>`}
+                        </td>
+                        <td>
                             <strong>Dr. ${r.doctor_name || 'Doctor'}</strong><br>
                             <small style="color:var(--text-muted);">${r.doctor_specialization || 'Consultant'} • ${r.clinic_name || 'Clinic'}</small>
                         </td>
@@ -3385,22 +3425,26 @@
                     </tr>
                 `;
             }).join('');
-        };
+        }
+
+        window.renderRefunds = renderRefunds;
 
         window.approveRefundRequest = async function(refundId, appointmentId) {
             if (!confirm('Are you sure you want to approve this refund? This will mark the booking payment as 100% Refunded.')) return;
             try {
-                const { error: rErr } = await supabase
-                    .from('refund_requests')
-                    .update({ status: 'approved', processed_at: new Date().toISOString() })
-                    .eq('id', refundId);
+                if (refundId) {
+                    const { error: rErr } = await supabase
+                        .from('refund_requests')
+                        .update({ status: 'approved', processed_at: new Date().toISOString() })
+                        .eq('id', refundId);
 
-                if (rErr) throw rErr;
+                    if (rErr) console.warn('Refund request update notice:', rErr);
+                }
 
                 if (appointmentId) {
                     await supabase
                         .from('appointments')
-                        .update({ payment_status: 'Refunded' })
+                        .update({ payment_status: 'Refunded', status: 'cancelled' })
                         .eq('id', appointmentId);
                 }
 
@@ -3414,12 +3458,14 @@
         window.rejectRefundRequest = async function(refundId, appointmentId) {
             if (!confirm('Are you sure you want to reject this refund request?')) return;
             try {
-                const { error: rErr } = await supabase
-                    .from('refund_requests')
-                    .update({ status: 'rejected', processed_at: new Date().toISOString() })
-                    .eq('id', refundId);
+                if (refundId) {
+                    const { error: rErr } = await supabase
+                        .from('refund_requests')
+                        .update({ status: 'rejected', processed_at: new Date().toISOString() })
+                        .eq('id', refundId);
 
-                if (rErr) throw rErr;
+                    if (rErr) console.warn('Refund request update notice:', rErr);
+                }
 
                 if (appointmentId) {
                     await supabase

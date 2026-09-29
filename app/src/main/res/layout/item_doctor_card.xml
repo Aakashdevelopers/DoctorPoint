@@ -80,13 +80,13 @@
 
                     <ImageView
                         android:id="@+id/iv_favorite"
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:clickable="true"
                         android:contentDescription="Favorite icon"
                         android:focusable="true"
-                        android:padding="4dp"
+                        android:padding="5dp"
                         android:src="@drawable/ic_heart"
                         app:tint="@color/text_secondary" />
                 </LinearLayout>
@@ -102,6 +102,7 @@
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
 
+                <!-- Rating & Verification Row -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -109,38 +110,9 @@
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
-                    <!-- Experience Pill Badge -->
-                    <TextView
-                        android:id="@+id/tv_experience"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/bg_search_field_elevated"
-                        android:paddingHorizontal="8dp"
-                        android:paddingVertical="3dp"
-                        android:text="12 Yrs Exp"
-                        android:textColor="@color/primary"
-                        android:textSize="11sp"
-                        android:textStyle="bold" />
-
-                    <!-- Available Today Badge -->
-                    <TextView
-                        android:id="@+id/tv_available_today"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="6dp"
-                        android:background="@drawable/bg_available_today_chip"
-                        android:paddingHorizontal="7dp"
-                        android:paddingVertical="3dp"
-                        android:text="Available Today"
-                        android:textColor="#15803D"
-                        android:textSize="11sp"
-                        android:textStyle="bold"
-                        android:visibility="gone" />
-
                     <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
                         android:gravity="center_vertical">
 
                         <ImageView
@@ -154,10 +126,13 @@
                             android:id="@+id/tv_rating"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="3dp"
+                            android:layout_marginStart="4dp"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:singleLine="true"
                             android:text="4.8 (120 reviews)"
                             android:textColor="@color/text_primary"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textStyle="bold" />
                     </LinearLayout>
 
@@ -165,7 +140,7 @@
                         android:id="@+id/ll_verified"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
+                        android:layout_marginStart="10dp"
                         android:background="@drawable/bg_badge_verified"
                         android:gravity="center_vertical"
                         android:paddingHorizontal="6dp"
@@ -186,6 +161,49 @@
                             android:textSize="11sp"
                             android:textStyle="bold" />
                     </LinearLayout>
+                </LinearLayout>
+
+                <!-- Experience & Availability Badges Row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <!-- Experience Pill Badge -->
+                    <TextView
+                        android:id="@+id/tv_experience"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_search_field_elevated"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="3dp"
+                        android:singleLine="true"
+                        android:text="12 Yrs Exp"
+                        android:textColor="@color/primary"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+
+                    <!-- Available Today Badge -->
+                    <TextView
+                        android:id="@+id/tv_available_today"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:background="@drawable/bg_available_today_chip"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="3dp"
+                        android:singleLine="true"
+                        android:text="Available Today"
+                        android:textColor="#15803D"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:visibility="gone" />
                 </LinearLayout>
 
             </LinearLayout>

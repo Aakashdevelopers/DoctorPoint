@@ -54,4 +54,18 @@ public interface SupabaseAppointmentService {
             @Header("Prefer") String preferHeader,
             @Body RefundRequest refundRequest
     );
+
+    @POST("rest/v1/refund_requests")
+    Call<List<Map<String, Object>>> postRefundRequestPayload(
+            @Query("on_conflict") String onConflictQuery,
+            @Header("Prefer") String preferHeader,
+            @Body Map<String, Object> refundMap
+    );
+
+    @PATCH("rest/v1/refund_requests")
+    Call<List<Map<String, Object>>> updateRefundRequest(
+            @Query("appointment_id") String appointmentIdQuery,
+            @Header("Prefer") String preferHeader,
+            @Body Map<String, Object> refundMap
+    );
 }
