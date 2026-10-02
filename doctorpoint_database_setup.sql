@@ -15,12 +15,15 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- 1. DROP EXISTING TABLES & FUNCTIONS (Clean Re-run Support)
 -- ============================================================================
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-DROP FUNCTION IF EXISTS public.handle_new_user CASCADE;
-DROP FUNCTION IF EXISTS public.book_appointment CASCADE;
-DROP FUNCTION IF EXISTS public.cancel_appointment CASCADE;
-DROP FUNCTION IF EXISTS public.update_doctor_earnings CASCADE;
-DROP FUNCTION IF EXISTS public.recalculate_doctor_rating CASCADE;
-DROP FUNCTION IF EXISTS public.update_updated_at_column CASCADE;
+DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
+DROP FUNCTION IF EXISTS public.book_appointment(UUID, UUID, TEXT, TEXT, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS public.book_appointment(UUID, UUID, TEXT, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS public.book_appointment(UUID, UUID) CASCADE;
+DROP FUNCTION IF EXISTS public.cancel_appointment(UUID, UUID, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS public.cancel_appointment(UUID, UUID) CASCADE;
+DROP FUNCTION IF EXISTS public.update_doctor_earnings() CASCADE;
+DROP FUNCTION IF EXISTS public.recalculate_doctor_rating() CASCADE;
+DROP FUNCTION IF EXISTS public.update_updated_at_column() CASCADE;
 
 DROP TABLE IF EXISTS public.refund_requests CASCADE;
 DROP TABLE IF EXISTS public.withdrawals CASCADE;
@@ -344,6 +347,15 @@ CREATE INDEX idx_appointments_doctor_id ON public.appointments(doctor_id);
 CREATE INDEX idx_appointments_date ON public.appointments(appointment_date);
 CREATE INDEX idx_appointments_status ON public.appointments(status);
 
+-- Partial Unique Index to enforce One Active Appointment per Doctor + Date + Time
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_active_appointment_slot
+ON public.appointments (doctor_id, appointment_date, start_time)
+WHERE status NOT IN ('Cancelled', 'Rejected', 'Canceled');
+
+-- Unique Index on Doctor Slots to prevent duplicate slots creation
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_doctor_slot_time
+ON public.doctor_slots (doctor_id, slot_date, start_time);
+
 CREATE INDEX idx_doctor_reviews_doctor_id ON public.doctor_reviews(doctor_id);
 CREATE INDEX idx_medical_records_patient_id ON public.medical_records(patient_id);
 CREATE INDEX idx_notifications_patient_id ON public.notifications(patient_id);
@@ -473,15 +485,29 @@ DECLARE
     v_next_token INT;
     v_appointment_id UUID;
     v_amount INT;
+    v_existing_count INT;
 BEGIN
-    -- 1. Validate slot availability
+    -- 1. Validate slot availability and acquire row-level lock (FOR UPDATE)
     SELECT * INTO v_slot FROM public.doctor_slots WHERE id = p_slot_id FOR UPDATE;
     IF NOT FOUND THEN
         RETURN json_build_object('success', false, 'message', 'Requested slot does not exist');
     END IF;
 
     IF v_slot.status != 'available' THEN
-        RETURN json_build_object('success', false, 'message', 'Slot is no longer available');
+        RETURN json_build_object('success', false, 'message', 'This appointment slot is no longer available.');
+    END IF;
+
+    -- 1b. Additional Atomic Check on active appointments table
+    SELECT COUNT(*) INTO v_existing_count
+    FROM public.appointments
+    WHERE doctor_id = v_slot.doctor_id
+      AND appointment_date = v_slot.slot_date
+      AND start_time = v_slot.start_time
+      AND status NOT IN ('Cancelled', 'Rejected', 'Canceled');
+
+    IF v_existing_count > 0 THEN
+        UPDATE public.doctor_slots SET status = 'booked' WHERE id = p_slot_id;
+        RETURN json_build_object('success', false, 'message', 'This appointment slot is no longer available.');
     END IF;
 
     -- 2. Fetch Doctor details
@@ -493,10 +519,17 @@ BEGIN
     -- 3. Fetch Patient details
     SELECT * INTO v_patient FROM public.profiles WHERE id = p_patient_id;
 
-    -- 4. Calculate token number for doctor on that date
-    SELECT COALESCE(MAX(token_number), 0) + 1 INTO v_next_token
+    -- 4. Calculate token number for doctor on that date chronologically based on start_time
+    SELECT COUNT(*) + 1 INTO v_next_token
     FROM public.appointments
-    WHERE doctor_id = v_slot.doctor_id AND appointment_date = v_slot.slot_date;
+    WHERE doctor_id = v_slot.doctor_id
+      AND appointment_date = v_slot.slot_date
+      AND start_time <= v_slot.start_time
+      AND status NOT IN ('Cancelled', 'Rejected', 'Canceled');
+
+    IF v_next_token IS NULL OR v_next_token < 1 THEN
+        v_next_token := 1;
+    END IF;
 
     v_appointment_id := gen_random_uuid();
     v_amount := COALESCE(v_slot.fee, v_doctor.fee, 500);
@@ -509,7 +542,7 @@ BEGIN
         amount, token_number, patient_reason
     ) VALUES (
         v_appointment_id, p_patient_id, COALESCE(v_patient.full_name, 'Patient'),
-        v_doctor.id, v_doctor.name, COALESCE(v_doctor.specialization, 'General Physician'),
+        v_doctor.id, v_doctor.name, COALESCE(NULLIF(TRIM(v_doctor.specialization), ''), 'Consultant Specialist'),
         v_slot.clinic_id, COALESCE(v_doctor.clinic_name, 'Care Clinic'),
         COALESCE(v_doctor.location, 'Main Branch'), v_slot.id, v_slot.slot_date,
         v_slot.start_time, v_slot.end_time, COALESCE(p_appointment_type, 'clinic'),

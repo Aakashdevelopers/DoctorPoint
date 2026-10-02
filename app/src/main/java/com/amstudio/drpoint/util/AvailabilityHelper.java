@@ -33,10 +33,10 @@ public class AvailabilityHelper {
         clean = clean.replace("AM", "").replace("PM", "").trim();
 
         String[] parts = clean.split(":");
-        if (parts.length >= 2) {
+        if (parts.length >= 1) {
             try {
                 int h = Integer.parseInt(parts[0].trim());
-                int m = Integer.parseInt(parts[1].trim());
+                int m = parts.length > 1 ? Integer.parseInt(parts[1].trim()) : 0;
                 int s = parts.length > 2 ? Integer.parseInt(parts[2].trim()) : 0;
 
                 if (isPm && h < 12) {

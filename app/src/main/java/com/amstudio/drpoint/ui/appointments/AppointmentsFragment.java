@@ -39,6 +39,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.tabs.TabLayout;
 
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -49,6 +50,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -154,67 +156,145 @@ public class AppointmentsFragment extends Fragment {
         loadAppointments();
     }
 
+    private static String formatUuidOrNull(String str) {
+        if (str == null || str.trim().isEmpty()) return null;
+        String clean = str.trim();
+        if (clean.matches("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")) {
+            return clean;
+        }
+        try {
+            return UUID.nameUUIDFromBytes(clean.getBytes(StandardCharsets.UTF_8)).toString();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     private void loadAppointments() {
         if (!isAdded() || getContext() == null) return;
         Context context = getContext();
         if (context == null) return;
 
-        String patientId = PreferenceManager.getInstance(context).getUserId();
+        PreferenceManager prefManager = PreferenceManager.getInstance(context);
 
-        // 1. Fetch real appointments from Supabase appointments table
-        SupabaseClient.getAppointmentService().getAllAppointments()
+        // Check if current user is logged in
+        if (!prefManager.isLoggedIn()) {
+            fetchedAppointments = new ArrayList<>();
+            filterAppointments(currentTabPosition);
+            return;
+        }
+
+        String patientId = prefManager.getUserId();
+        if (patientId == null || patientId.trim().isEmpty()) {
+            fetchedAppointments = new ArrayList<>();
+            filterAppointments(currentTabPosition);
+            return;
+        }
+
+        String cleanPatientId = patientId.trim();
+        String uuidPatientId = formatUuidOrNull(cleanPatientId);
+
+        String queryParam;
+        if (uuidPatientId != null && !uuidPatientId.equalsIgnoreCase(cleanPatientId)) {
+            queryParam = "in.(" + cleanPatientId + "," + uuidPatientId + ")";
+        } else {
+            queryParam = "eq." + cleanPatientId;
+        }
+
+        if (binding != null && binding.shimmerAppointments != null) {
+            binding.shimmerAppointments.startShimmer();
+            binding.shimmerAppointments.setVisibility(View.VISIBLE);
+            if (binding.rvAppointments != null) binding.rvAppointments.setVisibility(View.GONE);
+            if (binding.llEmptyState != null) binding.llEmptyState.setVisibility(View.GONE);
+        }
+
+        // Fetch ONLY currently logged-in user's appointments from Supabase
+        SupabaseClient.getAppointmentService().getAppointmentsForPatient(queryParam)
                 .enqueue(new Callback<List<Appointment>>() {
                     @Override
                     public void onResponse(Call<List<Appointment>> call, Response<List<Appointment>> response) {
                         if (!isAdded() || getContext() == null || binding == null) return;
-                        if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                        if (response.isSuccessful() && response.body() != null) {
                             fetchedAppointments = response.body();
                         } else {
-                            fetchUserAppointmentsFallback(patientId);
-                            return;
+                            fetchedAppointments = new ArrayList<>();
                         }
-                        ensureTokenNumbersAssigned(fetchedAppointments);
-                        processAutoCancellationForPastAppointments(fetchedAppointments);
-                        filterAppointments(currentTabPosition);
+                        enrichAppointmentsWithDoctorData(fetchedAppointments, () -> {
+                            if (!isAdded() || getContext() == null || binding == null) return;
+                            ensureTokenNumbersAssigned(fetchedAppointments);
+                            processAutoCancellationForPastAppointments(fetchedAppointments);
+                            filterAppointments(currentTabPosition);
+                        });
                     }
 
                     @Override
                     public void onFailure(Call<List<Appointment>> call, Throwable t) {
                         if (!isAdded() || getContext() == null || binding == null) return;
-                        fetchUserAppointmentsFallback(patientId);
+                        fetchedAppointments = new ArrayList<>();
+                        filterAppointments(currentTabPosition);
                     }
                 });
     }
 
-    private void fetchUserAppointmentsFallback(String patientId) {
-        if (!isAdded() || getContext() == null || binding == null) return;
-        if (patientId != null && !patientId.trim().isEmpty()) {
-            SupabaseClient.getAppointmentService().getAppointmentsForPatient("eq." + patientId)
-                    .enqueue(new Callback<List<Appointment>>() {
-                        @Override
-                        public void onResponse(Call<List<Appointment>> call, Response<List<Appointment>> response) {
-                            if (!isAdded() || getContext() == null || binding == null) return;
-                            if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                                fetchedAppointments = response.body();
-                            } else {
-                                fetchedAppointments = new ArrayList<>();
-                            }
-                            ensureTokenNumbersAssigned(fetchedAppointments);
-                            processAutoCancellationForPastAppointments(fetchedAppointments);
-                            filterAppointments(currentTabPosition);
-                        }
+    private final Map<String, Doctor> doctorCache = new HashMap<>();
 
-                        @Override
-                        public void onFailure(Call<List<Appointment>> call, Throwable t) {
-                            if (!isAdded() || getContext() == null || binding == null) return;
-                            fetchedAppointments = new ArrayList<>();
-                            filterAppointments(currentTabPosition);
-                        }
-                    });
-        } else {
-            fetchedAppointments = new ArrayList<>();
-            filterAppointments(currentTabPosition);
+    private void enrichAppointmentsWithDoctorData(List<Appointment> list, Runnable onComplete) {
+        if (list == null || list.isEmpty()) {
+            if (onComplete != null) onComplete.run();
+            return;
         }
+
+        Set<String> missingDocIds = new HashSet<>();
+        for (Appointment appt : list) {
+            if (appt == null) continue;
+            if (appt.getDoctor() != null) {
+                if (appt.getDoctor().getId() != null) {
+                    doctorCache.put(appt.getDoctor().getId().trim(), appt.getDoctor());
+                }
+            } else {
+                String dId = appt.getDoctorId();
+                if (dId != null && !dId.trim().isEmpty()) {
+                    Doctor cached = doctorCache.get(dId.trim());
+                    if (cached != null) {
+                        appt.setDoctor(cached);
+                    } else {
+                        missingDocIds.add(dId.trim());
+                    }
+                }
+            }
+        }
+
+        if (missingDocIds.isEmpty()) {
+            if (onComplete != null) onComplete.run();
+            return;
+        }
+
+        SupabaseClient.getDoctorService().getDoctors().enqueue(new Callback<List<Doctor>>() {
+            @Override
+            public void onResponse(Call<List<Doctor>> call, Response<List<Doctor>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    for (Doctor doc : response.body()) {
+                        if (doc != null && doc.getId() != null) {
+                            doctorCache.put(doc.getId().trim(), doc);
+                        }
+                    }
+                    for (Appointment appt : list) {
+                        if (appt == null) continue;
+                        if (appt.getDoctor() == null && appt.getDoctorId() != null) {
+                            Doctor d = doctorCache.get(appt.getDoctorId().trim());
+                            if (d != null) {
+                                appt.setDoctor(d);
+                            }
+                        }
+                    }
+                }
+                if (onComplete != null) onComplete.run();
+            }
+
+            @Override
+            public void onFailure(Call<List<Doctor>> call, Throwable t) {
+                if (onComplete != null) onComplete.run();
+            }
+        });
     }
 
     private void ensureTokenNumbersAssigned(List<Appointment> list) {
@@ -240,6 +320,9 @@ public class AppointmentsFragment extends Fragment {
             List<Appointment> group = entry.getValue();
             if (group == null || group.isEmpty()) continue;
 
+            // Sort chronologically by start_time minutes
+            Collections.sort(group, (a1, a2) -> Integer.compare(a1.getStartTimeMinutes(), a2.getStartTimeMinutes()));
+
             Set<Integer> uniqueTokens = new HashSet<>();
             boolean hasZeros = false;
             for (Appointment a : group) {
@@ -251,12 +334,6 @@ public class AppointmentsFragment extends Fragment {
             }
 
             if (hasZeros || uniqueTokens.size() < group.size()) {
-                Collections.sort(group, (a1, a2) -> {
-                    String t1 = a1.getStartTime() != null ? a1.getStartTime() : "";
-                    String t2 = a2.getStartTime() != null ? a2.getStartTime() : "";
-                    return t1.compareTo(t2);
-                });
-
                 int seq = 1;
                 for (Appointment a : group) {
                     a.setTokenNumber(seq++);
@@ -281,23 +358,50 @@ public class AppointmentsFragment extends Fragment {
         Context context = getContext();
         if (context == null) return;
 
-        List<Appointment> allAppointments = fetchedAppointments;
-        List<Appointment> displayed = new ArrayList<>();
-
         PreferenceManager prefManager = PreferenceManager.getInstance(context);
-        String currentUserId = prefManager.getUserId();
-        String currentUserName = prefManager.getUserName();
+
+        // If user is not logged in, show empty state immediately
+        if (!prefManager.isLoggedIn()) {
+            if (binding.shimmerAppointments != null) {
+                binding.shimmerAppointments.stopShimmer();
+                binding.shimmerAppointments.setVisibility(View.GONE);
+            }
+            if (binding.llEmptyState != null) binding.llEmptyState.setVisibility(View.VISIBLE);
+            if (binding.rvAppointments != null) binding.rvAppointments.setVisibility(View.GONE);
+            if (adapter != null) adapter.submitList(new ArrayList<>());
+            return;
+        }
+
+        String currentUserId = prefManager.getUserId() != null ? prefManager.getUserId().trim() : "";
+        String currentUuid = formatUuidOrNull(currentUserId);
+
+        if (currentUserId.isEmpty()) {
+            if (binding.shimmerAppointments != null) {
+                binding.shimmerAppointments.stopShimmer();
+                binding.shimmerAppointments.setVisibility(View.GONE);
+            }
+            if (binding.llEmptyState != null) binding.llEmptyState.setVisibility(View.VISIBLE);
+            if (binding.rvAppointments != null) binding.rvAppointments.setVisibility(View.GONE);
+            if (adapter != null) adapter.submitList(new ArrayList<>());
+            return;
+        }
+
+        List<Appointment> allAppointments = fetchedAppointments != null ? fetchedAppointments : new ArrayList<>();
+        List<Appointment> displayed = new ArrayList<>();
 
         for (Appointment appt : allAppointments) {
             if (appt == null) continue;
 
             String pId = appt.getPatientId() != null ? appt.getPatientId().trim() : "";
-            String pName = appt.getPatientName() != null ? appt.getPatientName().trim() : "";
 
-            if (currentUserId != null && !currentUserId.trim().isEmpty() && !pId.isEmpty()) {
-                if (!pId.equalsIgnoreCase(currentUserId.trim()) && (currentUserName == null || currentUserName.trim().isEmpty() || !pName.equalsIgnoreCase(currentUserName.trim()))) {
-                    continue;
-                }
+            // Strictly filter by currently logged-in user's ID or UUID
+            boolean isUserMatch = !pId.isEmpty() && (
+                    pId.equalsIgnoreCase(currentUserId) ||
+                    (currentUuid != null && pId.equalsIgnoreCase(currentUuid))
+            );
+
+            if (!isUserMatch) {
+                continue; // Strictly hide appointments belonging to other users
             }
 
             String st = appt.getStatus() != null ? appt.getStatus().toLowerCase() : "confirmed";
@@ -329,6 +433,13 @@ public class AppointmentsFragment extends Fragment {
             if (binding.llEmptyState != null) binding.llEmptyState.setVisibility(View.VISIBLE);
             if (binding.rvAppointments != null) binding.rvAppointments.setVisibility(View.GONE);
         } else {
+            Collections.sort(displayed, (a1, a2) -> {
+                String d1 = a1.getDate() != null ? a1.getDate() : "";
+                String d2 = a2.getDate() != null ? a2.getDate() : "";
+                int dateComp = d2.compareTo(d1);
+                if (dateComp != 0) return dateComp;
+                return Integer.compare(a1.getStartTimeMinutes(), a2.getStartTimeMinutes());
+            });
             if (binding.llEmptyState != null) binding.llEmptyState.setVisibility(View.GONE);
             if (binding.rvAppointments != null) binding.rvAppointments.setVisibility(View.VISIBLE);
         }

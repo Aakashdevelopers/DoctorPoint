@@ -124,24 +124,27 @@ public class Appointment implements Serializable {
     public void setDoctor(Doctor doctor) { this.doctor = doctor; }
 
     public String getDoctorName() {
+        if (doctor != null && doctor.getName() != null && !doctor.getName().trim().isEmpty() && !doctor.getName().equalsIgnoreCase("Dr. Medical Specialist")) {
+            return doctor.getName();
+        }
         if (doctorName != null && !doctorName.trim().isEmpty() && !doctorName.equalsIgnoreCase("Dr. Medical Specialist")) {
             return doctorName;
-        }
-        if (doctor != null && doctor.getName() != null && !doctor.getName().trim().isEmpty()) {
-            return doctor.getName();
         }
         return "Dr. Medical Specialist";
     }
     public void setDoctorName(String doctorName) { this.doctorName = doctorName; }
 
     public String getSpecialization() {
+        if (doctor != null) {
+            String docSpec = doctor.getSpecializationString();
+            if (docSpec != null && !docSpec.trim().isEmpty() && !docSpec.equalsIgnoreCase("Healthcare Specialist")) {
+                return docSpec;
+            }
+        }
         if (specialization != null && !specialization.trim().isEmpty() && !specialization.equalsIgnoreCase("Healthcare Specialist")) {
             return specialization;
         }
-        if (doctor != null && doctor.getSpecialization() != null && !doctor.getSpecialization().trim().isEmpty()) {
-            return doctor.getSpecialization();
-        }
-        return "General Physician";
+        return "Consultant Specialist";
     }
     public void setSpecialization(String specialization) { this.specialization = specialization; }
 
@@ -149,22 +152,22 @@ public class Appointment implements Serializable {
     public void setClinicId(String clinicId) { this.clinicId = clinicId; }
 
     public String getClinicName() {
-        if (clinicName != null && !clinicName.trim().isEmpty() && !clinicName.equalsIgnoreCase("Doctor Point Care Centre")) {
-            return clinicName;
-        }
         if (doctor != null && doctor.getClinicName() != null && !doctor.getClinicName().trim().isEmpty()) {
             return doctor.getClinicName();
+        }
+        if (clinicName != null && !clinicName.trim().isEmpty() && !clinicName.equalsIgnoreCase("Doctor Point Care Centre")) {
+            return clinicName;
         }
         return "Care Clinic";
     }
     public void setClinicName(String clinicName) { this.clinicName = clinicName; }
 
     public String getLocation() {
-        if (location != null && !location.trim().isEmpty() && !location.equalsIgnoreCase("Main Clinic Centre")) {
-            return location;
-        }
         if (doctor != null && doctor.getLocation() != null && !doctor.getLocation().trim().isEmpty()) {
             return doctor.getLocation();
+        }
+        if (location != null && !location.trim().isEmpty() && !location.equalsIgnoreCase("Main Clinic Centre")) {
+            return location;
         }
         return "Main City Branch";
     }
@@ -186,6 +189,24 @@ public class Appointment implements Serializable {
             return String.format(Locale.US, "%02d:%02d %s", hour12, min, ampm);
         } catch (Exception e) {
             return startTime;
+        }
+    }
+
+    public int getStartTimeMinutes() {
+        if (startTime == null || startTime.trim().isEmpty()) return 0;
+        try {
+            String clean = startTime.trim().toUpperCase(Locale.US);
+            boolean isPm = clean.contains("PM");
+            boolean isAm = clean.contains("AM");
+            clean = clean.replace("AM", "").replace("PM", "").trim();
+            String[] parts = clean.split(":");
+            int hour = Integer.parseInt(parts[0].trim());
+            int min = parts.length > 1 ? Integer.parseInt(parts[1].trim()) : 0;
+            if (isPm && hour < 12) hour += 12;
+            if (isAm && hour == 12) hour = 0;
+            return hour * 60 + min;
+        } catch (Exception e) {
+            return 0;
         }
     }
 

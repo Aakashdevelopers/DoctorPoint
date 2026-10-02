@@ -24,7 +24,9 @@ import com.amstudio.drpoint.BuildConfig;
 import com.amstudio.drpoint.R;
 import com.amstudio.drpoint.adapter.ProfileMenuAdapter;
 import com.amstudio.drpoint.databinding.BottomSheetEditProfileBinding;
+import com.amstudio.drpoint.databinding.BottomSheetJoinDoctorBinding;
 import com.amstudio.drpoint.databinding.FragmentProfileBinding;
+import com.amstudio.drpoint.model.Doctor;
 import com.amstudio.drpoint.model.MenuItem;
 import com.amstudio.drpoint.model.PatientProfile;
 import com.amstudio.drpoint.network.SupabaseClient;
@@ -168,6 +170,10 @@ public class ProfileFragment extends Fragment {
         binding.flEditProfileTop.setOnClickListener(v -> openEditProfileBottomSheet());
         binding.tvEditProfile.setOnClickListener(v -> openEditProfileBottomSheet());
 
+        if (binding.cardJoinAsDoctor != null) {
+            binding.cardJoinAsDoctor.setOnClickListener(v -> openJoinAsDoctorBottomSheet());
+        }
+
         setupProfileSections();
 
         loadProfileFromSupabase();
@@ -228,10 +234,10 @@ public class ProfileFragment extends Fragment {
         } else if (title.toLowerCase().contains("notification")) {
             Intent intent = new Intent(context, NotificationsActivity.class);
             startActivity(intent);
+        } else if (title.toLowerCase().contains("doctor") || title.toLowerCase().contains("join") || title.toLowerCase().contains("apply")) {
+            openJoinAsDoctorBottomSheet();
         } else if (title.toLowerCase().contains("help") || title.toLowerCase().contains("support")) {
             ToastUtils.showInfo(context, "Help Center & Support active");
-        } else if (title.toLowerCase().contains("are you a doctor") || title.toLowerCase().contains("apply")) {
-            ToastUtils.showInfo(context, "Thank you for your interest! Doctor onboarding form will open shortly.");
         } else if (title.toLowerCase().contains("privacy")) {
             ToastUtils.showInfo(context, "Opening Privacy Policy...");
         } else if (title.toLowerCase().contains("term")) {
@@ -241,6 +247,178 @@ public class ProfileFragment extends Fragment {
         } else {
             ToastUtils.showInfo(context, title + " clicked");
         }
+    }
+
+    private void openJoinAsDoctorBottomSheet() {
+        Context context = getContext();
+        if (!isAdded() || context == null) return;
+
+        BottomSheetDialog dialog = new BottomSheetDialog(context);
+        BottomSheetJoinDoctorBinding sheetBinding = BottomSheetJoinDoctorBinding.inflate(getLayoutInflater());
+        dialog.setContentView(sheetBinding.getRoot());
+
+        PreferenceManager prefManager = PreferenceManager.getInstance(context);
+
+        String name = currentProfile.getFullName() != null && !currentProfile.getFullName().isEmpty()
+                ? currentProfile.getFullName() : prefManager.getUserName();
+        if (!name.isEmpty() && !name.toLowerCase().startsWith("dr.")) {
+            name = "Dr. " + name;
+        }
+        sheetBinding.etDoctorName.setText(name);
+
+        String phone = currentProfile.getPhone() != null && !currentProfile.getPhone().isEmpty()
+                ? currentProfile.getPhone() : prefManager.getUserPhone();
+        sheetBinding.etDoctorPhone.setText(phone);
+
+        String userAddress = currentProfile.getAddress() != null && !currentProfile.getAddress().isEmpty()
+                ? currentProfile.getAddress() : prefManager.getUserAddress();
+        sheetBinding.etClinicLocation.setText(userAddress);
+
+        String[] specializations = new String[]{
+                "General Physician", "Dermatologist (Skin Care)", "Cardiologist (Heart Care)",
+                "Gynaecologist (Women's Health)", "Pediatrician (Child Care)", "Dentist (Dental Care)",
+                "ENT Specialist (Ear, Nose, Throat)", "Ophthalmologist (Eye Care)", "Orthopedic (Bone & Joint)",
+                "Neurologist (Brain & Nerve)", "Psychiatrist (Mental Health)"
+        };
+
+        View.OnClickListener specListener = v -> {
+            Context ctx = getContext();
+            if (ctx == null) return;
+            new MaterialAlertDialogBuilder(ctx)
+                    .setTitle("Select Specialization")
+                    .setItems(specializations, (dialogInterface, which) -> {
+                        sheetBinding.etSpecialization.setText(specializations[which]);
+                        sheetBinding.tilSpecialization.setError(null);
+                    })
+                    .show();
+        };
+
+        sheetBinding.etSpecialization.setOnClickListener(specListener);
+        sheetBinding.tilSpecialization.setOnClickListener(specListener);
+        sheetBinding.tilSpecialization.setEndIconOnClickListener(specListener);
+
+        sheetBinding.btnCancelDoctor.setOnClickListener(v -> dialog.dismiss());
+
+        sheetBinding.btnSubmitDoctor.setOnClickListener(v -> {
+            String docName = sheetBinding.etDoctorName.getText() != null ? sheetBinding.etDoctorName.getText().toString().trim() : "";
+            String spec = sheetBinding.etSpecialization.getText() != null ? sheetBinding.etSpecialization.getText().toString().trim() : "";
+            String qual = sheetBinding.etQualification.getText() != null ? sheetBinding.etQualification.getText().toString().trim() : "";
+            String docPhone = sheetBinding.etDoctorPhone.getText() != null ? sheetBinding.etDoctorPhone.getText().toString().trim() : "";
+            String clinic = sheetBinding.etClinicName.getText() != null ? sheetBinding.etClinicName.getText().toString().trim() : "";
+            String location = sheetBinding.etClinicLocation.getText() != null ? sheetBinding.etClinicLocation.getText().toString().trim() : "";
+            String feeStr = sheetBinding.etConsultationFee.getText() != null ? sheetBinding.etConsultationFee.getText().toString().trim() : "";
+
+            boolean isValid = true;
+
+            if (TextUtils.isEmpty(docName)) {
+                sheetBinding.tilDoctorName.setError("Doctor name is required");
+                isValid = false;
+            } else {
+                sheetBinding.tilDoctorName.setError(null);
+            }
+
+            if (TextUtils.isEmpty(spec)) {
+                sheetBinding.tilSpecialization.setError("Specialization is required");
+                isValid = false;
+            } else {
+                sheetBinding.tilSpecialization.setError(null);
+            }
+
+            if (TextUtils.isEmpty(qual)) {
+                sheetBinding.tilQualification.setError("Qualification is required");
+                isValid = false;
+            } else {
+                sheetBinding.tilQualification.setError(null);
+            }
+
+            if (TextUtils.isEmpty(docPhone) || !docPhone.matches("\\d{10}")) {
+                sheetBinding.tilDoctorPhone.setError("Valid 10-digit phone is required");
+                isValid = false;
+            } else {
+                sheetBinding.tilDoctorPhone.setError(null);
+            }
+
+            if (TextUtils.isEmpty(clinic)) {
+                sheetBinding.tilClinicName.setError("Clinic name is required");
+                isValid = false;
+            } else {
+                sheetBinding.tilClinicName.setError(null);
+            }
+
+            if (TextUtils.isEmpty(location)) {
+                sheetBinding.tilClinicLocation.setError("Location is required");
+                isValid = false;
+            } else {
+                sheetBinding.tilClinicLocation.setError(null);
+            }
+
+            Context ctx = getContext();
+            if (!isValid) {
+                if (ctx != null) {
+                    ToastUtils.showWarning(ctx, "Please fill all mandatory details");
+                }
+                return;
+            }
+
+            int fee = 500;
+            if (!feeStr.isEmpty()) {
+                try {
+                    fee = Integer.parseInt(feeStr);
+                } catch (Exception ignored) {}
+            }
+
+            sheetBinding.btnSubmitDoctor.setEnabled(false);
+            sheetBinding.btnSubmitDoctor.setText("Submitting...");
+
+            String docId = "doc_" + System.currentTimeMillis();
+            Doctor newDoctor = new Doctor(
+                    docId,
+                    docName,
+                    qual,
+                    "New Doctor",
+                    5.0,
+                    1,
+                    clinic,
+                    location,
+                    fee,
+                    R.drawable.ic_user,
+                    true,
+                    "Male",
+                    true,
+                    true
+            );
+            newDoctor.setDoctorPhone("+91 " + docPhone);
+            newDoctor.setSpecialization(spec);
+
+            DummyDataProvider.addDoctor(newDoctor);
+
+            Map<String, Object> docMap = new HashMap<>();
+            docMap.put("id", docId);
+            docMap.put("name", docName);
+            docMap.put("qualification", qual);
+            docMap.put("specialization", spec);
+            docMap.put("clinic_name", clinic);
+            docMap.put("location", location);
+            docMap.put("consultation_fee", fee);
+            docMap.put("doctor_phone", docPhone);
+            docMap.put("is_verified", true);
+
+            SupabaseClient.getDoctorService().upsertDoctor("resolution=merge-duplicates", docMap)
+                    .enqueue(new Callback<Void>() {
+                        @Override
+                        public void onResponse(Call<Void> call, Response<Void> response) {}
+                        @Override
+                        public void onFailure(Call<Void> call, Throwable t) {}
+                    });
+
+            if (ctx != null) {
+                ToastUtils.showSuccess(ctx, "Congratulations! Your Doctor profile is created on Doctor Point.");
+            }
+
+            dialog.dismiss();
+        });
+
+        dialog.show();
     }
 
     @Override

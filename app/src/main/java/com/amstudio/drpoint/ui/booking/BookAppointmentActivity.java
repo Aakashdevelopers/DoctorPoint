@@ -48,6 +48,7 @@ import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -95,6 +96,7 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
     private String pendingUserId = null;
     private String pendingSlotId = null;
     private String lastRazorpayPaymentId = null;
+    private boolean isBookingInProgress = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -306,38 +308,38 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
     }
 
     private void markBookedSlots(List<Appointment> appointments) {
-        if (appointments != null) {
-            cachedAppointments = appointments;
-        } else {
-            appointments = cachedAppointments;
-        }
+        cachedAppointments = appointments != null ? appointments : new ArrayList<>();
         markBookedSlotsForList(availableSlotsList);
     }
 
     private void markBookedSlotsForList(List<DoctorSlot> targetSlots) {
-        if (cachedAppointments == null || cachedAppointments.isEmpty() || targetSlots == null || targetSlots.isEmpty()) return;
+        if (targetSlots == null || targetSlots.isEmpty()) return;
 
         Map<String, Set<String>> bookedMap = new HashMap<>();
-        for (Appointment appt : cachedAppointments) {
-            String st = appt.getStatus();
-            if (st != null && (st.equalsIgnoreCase("Cancelled") || st.equalsIgnoreCase("Rejected") || st.equalsIgnoreCase("Canceled"))) {
-                continue;
-            }
-            String date = appt.getAppointmentDate();
-            if (date != null && date.contains("T")) date = date.substring(0, date.indexOf("T"));
-            if (date != null && date.contains(" ")) date = date.substring(0, date.indexOf(" "));
+        if (cachedAppointments != null) {
+            for (Appointment appt : cachedAppointments) {
+                if (appt == null) continue;
+                String st = appt.getStatus();
+                if (st != null && (st.equalsIgnoreCase("Cancelled") || st.equalsIgnoreCase("Rejected") || st.equalsIgnoreCase("Canceled"))) {
+                    continue;
+                }
+                String date = appt.getAppointmentDate();
+                if (date != null && date.contains("T")) date = date.substring(0, date.indexOf("T"));
+                if (date != null && date.contains(" ")) date = date.substring(0, date.indexOf(" "));
 
-            String time = appt.getStartTime();
-            if (time != null) {
-                time = normalizeTimeFormat(time);
-            }
+                String time = appt.getStartTime();
+                if (time != null) {
+                    time = normalizeTimeFormat(time);
+                }
 
-            if (date != null && !date.trim().isEmpty() && time != null && !time.trim().isEmpty()) {
-                bookedMap.computeIfAbsent(date.trim(), k -> new HashSet<>()).add(time.trim());
+                if (date != null && !date.trim().isEmpty() && time != null && !time.trim().isEmpty()) {
+                    bookedMap.computeIfAbsent(date.trim(), k -> new HashSet<>()).add(time.trim());
+                }
             }
         }
 
         for (DoctorSlot slot : targetSlots) {
+            if (slot == null) continue;
             String slotDate = slot.getSlotDate();
             if (slotDate != null && slotDate.contains("T")) slotDate = slotDate.substring(0, slotDate.indexOf("T"));
             if (slotDate != null && slotDate.contains(" ")) slotDate = slotDate.substring(0, slotDate.indexOf(" "));
@@ -347,7 +349,11 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
                 String slotTime = normalizeTimeFormat(slot.getStartTime());
                 if (times.contains(slotTime)) {
                     slot.setStatus("booked");
+                } else {
+                    slot.setStatus("available");
                 }
+            } else {
+                slot.setStatus("available");
             }
         }
     }
@@ -610,13 +616,38 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
 
         List<DoctorSlot> morningDoctorSlots = new ArrayList<>();
         List<DoctorSlot> eveningDoctorSlots = new ArrayList<>();
+        Set<String> addedMorningTimes = new HashSet<>();
+        Set<String> addedEveningTimes = new HashSet<>();
 
         for (DoctorSlot slot : slotsForDate) {
             String normStart = normalizeTimeFormat(slot.getStartTime());
             if (normStart != null && normStart.compareTo("16:00:00") < 0) {
-                morningDoctorSlots.add(slot);
+                if (addedMorningTimes.add(normStart)) {
+                    morningDoctorSlots.add(slot);
+                } else {
+                    // Merge status if duplicate has booked status
+                    for (DoctorSlot ms : morningDoctorSlots) {
+                        if (normStart.equals(normalizeTimeFormat(ms.getStartTime()))) {
+                            if (!"available".equalsIgnoreCase(slot.getStatus())) {
+                                ms.setStatus("booked");
+                            }
+                            break;
+                        }
+                    }
+                }
             } else {
-                eveningDoctorSlots.add(slot);
+                if (addedEveningTimes.add(normStart)) {
+                    eveningDoctorSlots.add(slot);
+                } else {
+                    for (DoctorSlot es : eveningDoctorSlots) {
+                        if (normStart.equals(normalizeTimeFormat(es.getStartTime()))) {
+                            if (!"available".equalsIgnoreCase(slot.getStatus())) {
+                                es.setStatus("booked");
+                            }
+                            break;
+                        }
+                    }
+                }
             }
         }
 
@@ -718,6 +749,10 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
     }
 
     private void executeBookingFlow() {
+        if (isBookingInProgress) {
+            return;
+        }
+
         String userId = PreferenceManager.getInstance(this).getUserId();
         if (userId == null || userId.trim().isEmpty()) {
             ToastUtils.showWarning(this, "Session expired. Please log in again.");
@@ -728,6 +763,8 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
             ToastUtils.showWarning(this, "Please select an available time slot.");
             return;
         }
+
+        isBookingInProgress = true;
 
         PreferenceManager pref = PreferenceManager.getInstance(this);
         String name = pref.getUserName();
@@ -753,6 +790,7 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
 
     private void openMandatoryProfileBottomSheet(String userId) {
         BottomSheetDialog dialog = new BottomSheetDialog(this);
+        dialog.setOnDismissListener(d -> isBookingInProgress = false);
         BottomSheetEditProfileBinding sheetBinding = BottomSheetEditProfileBinding.inflate(getLayoutInflater());
         activeSheetBinding = sheetBinding;
         dialog.setContentView(sheetBinding.getRoot());
@@ -993,7 +1031,7 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
             Map<String, Object> docMap = new HashMap<>();
             docMap.put("id", doctorId.trim());
             docMap.put("name", doctor != null && doctor.getName() != null ? doctor.getName() : "Dr. Specialist");
-            docMap.put("specialization", doctor != null && doctor.getSpecialization() != null ? doctor.getSpecialization() : "General Physician");
+            docMap.put("specialization", doctor != null ? doctor.getSpecializationString() : "General Physician");
             docMap.put("fee", doctor != null ? doctor.getFee() : 500);
             if (doctor != null && doctor.getClinicName() != null) docMap.put("clinic_name", doctor.getClinicName());
 
@@ -1027,12 +1065,24 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
                 .show();
     }
 
-    private void initiateRazorpayPaymentFlow(String userId, String slotId) {
-        int activeFee = doctor != null ? doctor.getFee() : 500;
-        if (availableSlotsList != null && !availableSlotsList.isEmpty() && availableSlotsList.get(0).getFee() > 0) {
-            activeFee = isReturningPatientUser ? availableSlotsList.get(0).getFollowUpFee() : availableSlotsList.get(0).getFee();
+    private int getActiveConsultationFee() {
+        int fee;
+        if (isReturningPatientUser) {
+            fee = (doctor != null && doctor.getFollowUpFee() > 0) ? doctor.getFollowUpFee() : 300;
+            if (availableSlotsList != null && !availableSlotsList.isEmpty() && availableSlotsList.get(0).getFollowUpFee() > 0) {
+                fee = availableSlotsList.get(0).getFollowUpFee();
+            }
+        } else {
+            fee = (doctor != null && doctor.getFee() > 0) ? doctor.getFee() : 500;
+            if (availableSlotsList != null && !availableSlotsList.isEmpty() && availableSlotsList.get(0).getFee() > 0) {
+                fee = availableSlotsList.get(0).getFee();
+            }
         }
-        final int finalFee = activeFee > 0 ? activeFee : 500;
+        return fee > 0 ? fee : 500;
+    }
+
+    private void initiateRazorpayPaymentFlow(String userId, String slotId) {
+        final int finalFee = getActiveConsultationFee();
 
         pendingUserId = userId;
         pendingSlotId = slotId;
@@ -1159,6 +1209,22 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
         }
     }
 
+    private void updateLocalSlotAsBooked(String slotId) {
+        if (availableSlotsList != null) {
+            for (DoctorSlot s : availableSlotsList) {
+                if (s != null) {
+                    boolean idMatch = slotId != null && slotId.trim().equalsIgnoreCase(s.getId() != null ? s.getId().trim() : "");
+                    boolean dateTimeMatch = selectedDateRaw != null && selectedDateRaw.equals(s.getSlotDate())
+                            && selectedTimeRaw != null && Objects.equals(normalizeTimeFormat(selectedTimeRaw), normalizeTimeFormat(s.getStartTime()));
+                    if (idMatch || dateTimeMatch) {
+                        s.setStatus("booked");
+                    }
+                }
+            }
+        }
+        updateSlotsForSelectedDate(selectedDateRaw);
+    }
+
     private void sendBookingRpcRequest(String userId, String slotId) {
         String validUserId = formatUuidOrNull(userId);
         String validSlotId = formatUuidOrNull(slotId);
@@ -1183,11 +1249,26 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
         SupabaseClient.getSlotService().bookAppointment(rpcRequest).enqueue(new Callback<BookAppointmentRpcResponse>() {
             @Override
             public void onResponse(Call<BookAppointmentRpcResponse> call, Response<BookAppointmentRpcResponse> response) {
-                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                if (response.isSuccessful() && response.body() != null) {
                     BookAppointmentRpcResponse rpcResp = response.body();
-                    showToast("✅ RPC Booking Success! ID: " + rpcResp.getAppointmentId());
-                    markSlotAsBookedInSupabase(slotId);
-                    navigateToConfirmation(rpcResp);
+                    if (rpcResp.isSuccess()) {
+                        isBookingInProgress = false;
+                        showToast("✅ RPC Booking Success! ID: " + rpcResp.getAppointmentId());
+                        markSlotAsBookedInSupabase(slotId);
+                        updateLocalSlotAsBooked(slotId);
+                        navigateToConfirmation(rpcResp);
+                    } else {
+                        // Backend explicitly rejected booking (e.g. Slot already booked / unavailable)
+                        isBookingInProgress = false;
+                        binding.btnConfirmBooking.setEnabled(true);
+                        binding.btnConfirmBooking.setText("Confirm Booking");
+                        String msg = rpcResp.getMessage();
+                        if (msg == null || msg.trim().isEmpty()) {
+                            msg = "This appointment slot is no longer available.";
+                        }
+                        ToastUtils.showError(BookAppointmentActivity.this, msg);
+                        loadAvailableSlotsFromSupabase();
+                    }
                 } else {
                     String errStr = "";
                     try {
@@ -1196,15 +1277,23 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
                         }
                     } catch (Exception ignored) {}
                     Log.w("BookAppointment", "RPC book_appointment failed: " + response.code() + " " + errStr);
-                    showToast("⚠️ RPC Failed (" + response.code() + "): " + (errStr.isEmpty() ? "RPC Procedure Not Found / Failed" : errStr));
-                    executeClientSideBookingFallback(userId, slotId);
+
+                    if (response.code() == 404 || errStr.contains("function") || errStr.contains("does not exist")) {
+                        // RPC endpoint not found in DB schema, fallback to safe atomic client insert
+                        executeClientSideBookingFallback(userId, slotId);
+                    } else {
+                        isBookingInProgress = false;
+                        binding.btnConfirmBooking.setEnabled(true);
+                        binding.btnConfirmBooking.setText("Confirm Booking");
+                        ToastUtils.showError(BookAppointmentActivity.this, "This appointment slot is no longer available.");
+                        loadAvailableSlotsFromSupabase();
+                    }
                 }
             }
 
             @Override
             public void onFailure(Call<BookAppointmentRpcResponse> call, Throwable t) {
                 Log.w("BookAppointment", "RPC book_appointment network failure: " + t.getMessage());
-                showToast("⚠️ RPC Network Failure: " + t.getMessage());
                 executeClientSideBookingFallback(userId, slotId);
             }
         });
@@ -1220,8 +1309,6 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
     }
 
     private void executeClientSideBookingFallback(String userId, String slotId) {
-        String apptId = UUID.randomUUID().toString();
-
         // Extract real doctor ID from doctor object or available slot
         String targetDoctorId = (doctor != null && doctor.getId() != null && !doctor.getId().trim().isEmpty()) ? doctor.getId().trim() : "doc_1";
         if ((targetDoctorId.equals("doc_1") || targetDoctorId.startsWith("doc_")) && availableSlotsList != null) {
@@ -1233,11 +1320,7 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
             }
         }
 
-        String targetPatientId = (userId != null && !userId.trim().isEmpty()) ? userId.trim() : "patient_anon";
-
-        String validDoctorUuid = formatUuidOrNull(targetDoctorId);
-        String validPatientUuid = formatUuidOrNull(targetPatientId);
-        String validSlotUuid = formatUuidOrNull(slotId);
+        String targetDateVal = selectedDateRaw != null ? selectedDateRaw : new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 
         String startTimeVal = selectedTimeRaw;
         if (startTimeVal == null || startTimeVal.isEmpty()) {
@@ -1247,6 +1330,54 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
             startTimeVal = convertAmPmTo24Hour(startTimeVal);
         }
         if (startTimeVal.length() == 5) startTimeVal = startTimeVal + ":00";
+        String normStartTime = normalizeTimeFormat(startTimeVal);
+
+        final String finalDocId = targetDoctorId;
+        final String finalDate = targetDateVal;
+        final String finalNormTime = normStartTime;
+
+        // Perform strict atomic pre-check against appointments table
+        SupabaseClient.getAppointmentService().getAppointmentsForDoctor("eq." + targetDoctorId)
+                .enqueue(new Callback<List<Appointment>>() {
+                    @Override
+                    public void onResponse(Call<List<Appointment>> call, Response<List<Appointment>> response) {
+                        if (response.isSuccessful() && response.body() != null) {
+                            for (Appointment appt : response.body()) {
+                                if (appt == null) continue;
+                                String st = appt.getStatus();
+                                if (st != null && (st.equalsIgnoreCase("Cancelled") || st.equalsIgnoreCase("Rejected") || st.equalsIgnoreCase("Canceled"))) {
+                                    continue;
+                                }
+                                String aDate = normalizeDateString(appt.getAppointmentDate());
+                                String aTime = normalizeTimeFormat(appt.getStartTime());
+                                if (aDate.equalsIgnoreCase(normalizeDateString(finalDate)) && aTime.equalsIgnoreCase(finalNormTime)) {
+                                    // Already booked!
+                                    isBookingInProgress = false;
+                                    binding.btnConfirmBooking.setEnabled(true);
+                                    binding.btnConfirmBooking.setText("Confirm Booking");
+                                    ToastUtils.showError(BookAppointmentActivity.this, "This appointment slot is no longer available.");
+                                    loadAvailableSlotsFromSupabase();
+                                    return;
+                                }
+                            }
+                        }
+                        proceedWithClientSideInsertPayload(userId, slotId, finalDocId, finalDate, finalNormTime);
+                    }
+
+                    @Override
+                    public void onFailure(Call<List<Appointment>> call, Throwable t) {
+                        proceedWithClientSideInsertPayload(userId, slotId, finalDocId, finalDate, finalNormTime);
+                    }
+                });
+    }
+
+    private void proceedWithClientSideInsertPayload(String userId, String slotId, String targetDoctorId, String targetDateVal, String startTimeVal) {
+        String apptId = UUID.randomUUID().toString();
+        String targetPatientId = (userId != null && !userId.trim().isEmpty()) ? userId.trim() : "patient_anon";
+
+        String validDoctorUuid = formatUuidOrNull(targetDoctorId);
+        String validPatientUuid = formatUuidOrNull(targetPatientId);
+        String validSlotUuid = formatUuidOrNull(slotId);
 
         String endTimeVal = calculateEndTime(startTimeVal);
 
@@ -1269,7 +1400,8 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
         // Ensure patient & doctor exist in public.profiles, public.patients and public.doctors to satisfy Foreign Keys
         ensurePatientAndDoctorExistInSupabase(targetPatientId, targetDoctorId, patientNameVal, patientPhoneVal);
 
-        String targetDateVal = selectedDateRaw != null ? selectedDateRaw : new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+        String doctorSpecVal = (doctor != null) ? doctor.getSpecializationString() : "General Physician";
+        int activeFeeVal = getActiveConsultationFee();
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("id", apptId);
@@ -1280,8 +1412,10 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
         payload.put("end_time", endTimeVal);
         payload.put("appointment_type", "clinic");
         payload.put("status", "Confirmed");
-        payload.put("fee", doctor != null ? doctor.getFee() : 500);
-        payload.put("amount", doctor != null ? doctor.getFee() : 500);
+        payload.put("fee", activeFeeVal);
+        payload.put("amount", activeFeeVal);
+        payload.put("doctor_specialization", doctorSpecVal);
+        payload.put("specialization", doctorSpecVal);
         if (doctor != null && doctor.getName() != null) payload.put("doctor_name", doctor.getName());
         if (validSlotUuid != null) payload.put("slot_id", validSlotUuid);
         payload.put("clinic_name", clinicNameVal);
@@ -1301,37 +1435,36 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
 
         final String finalApptId = apptId;
         final String finalValidDoctorId = targetDoctorId;
+        final String finalStartTimeVal = startTimeVal;
 
-        // Fetch existing appointments for doctor & date to calculate auto-incrementing sequential token
-        SupabaseClient.getAppointmentService().getAllAppointments().enqueue(new Callback<List<Appointment>>() {
+        // Calculate chronological token number based on slot start time order
+        Appointment dummyAppt = new Appointment();
+        dummyAppt.setStartTime(finalStartTimeVal);
+        int newTimeMinutes = dummyAppt.getStartTimeMinutes();
+
+        SupabaseClient.getAppointmentService().getAppointmentsForDoctor("eq." + finalValidDoctorId).enqueue(new Callback<List<Appointment>>() {
             @Override
             public void onResponse(Call<List<Appointment>> call, Response<List<Appointment>> response) {
-                int nextToken = 1;
+                int countBefore = 0;
                 if (response.isSuccessful() && response.body() != null) {
-                    int maxToken = 0;
-                    int countForDoctorAndDate = 0;
                     String cleanTargetDate = normalizeDateString(targetDateVal);
-
                     for (Appointment a : response.body()) {
                         if (a == null) continue;
+                        String st = a.getStatus();
+                        if (st != null && (st.equalsIgnoreCase("Cancelled") || st.equalsIgnoreCase("Rejected") || st.equalsIgnoreCase("Canceled"))) {
+                            continue;
+                        }
                         String cleanApptDate = normalizeDateString(a.getAppointmentDate());
-
                         boolean isSameDate = !cleanTargetDate.isEmpty() && !cleanApptDate.isEmpty() &&
                                 (cleanTargetDate.equalsIgnoreCase(cleanApptDate)
                                 || (cleanTargetDate.length() >= 10 && cleanApptDate.length() >= 10 && cleanTargetDate.substring(0, 10).equalsIgnoreCase(cleanApptDate.substring(0, 10))));
 
-                        boolean isSameDoctor = (finalValidDoctorId == null || finalValidDoctorId.trim().isEmpty() || finalValidDoctorId.equalsIgnoreCase(a.getDoctorId()));
-
-                        if (isSameDate && isSameDoctor) {
-                            countForDoctorAndDate++;
-                            if (a.getTokenNumber() > maxToken) {
-                                maxToken = a.getTokenNumber();
-                            }
+                        if (isSameDate && a.getStartTimeMinutes() <= newTimeMinutes) {
+                            countBefore++;
                         }
                     }
-                    nextToken = Math.max(maxToken + 1, countForDoctorAndDate + 1);
                 }
-
+                int nextToken = Math.max(1, countBefore + 1);
                 payload.put("token_number", nextToken);
                 submitFinalAppointmentPayload(payload, nextToken, userId, slotId, finalApptId);
             }
@@ -1356,6 +1489,7 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
     }
 
     private void submitFinalAppointmentPayload(Map<String, Object> payload, int assignedToken, String userId, String slotId, String finalApptId) {
+        int activeFeeVal = getActiveConsultationFee();
         SupabaseClient.getAppointmentService().createAppointmentPayload("return=representation", payload)
                 .enqueue(new Callback<List<Map<String, Object>>>() {
                     @Override
@@ -1374,7 +1508,7 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
                             rpcResp.setPatientId(userId);
                             rpcResp.setSlotDate(selectedDateRaw);
                             rpcResp.setStartTime(selectedTimeFormatted != null ? selectedTimeFormatted : "10:00 AM");
-                            rpcResp.setAmount(doctor.getFee());
+                            rpcResp.setAmount(activeFeeVal);
                             rpcResp.setTokenNumber(assignedToken);
                             rpcResp.setMessage("Appointment successfully booked!");
 
@@ -1388,22 +1522,20 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
                                     Log.e("BookAppointment", "Insert payload error: " + errStr);
                                 }
                             } catch (Exception ignored) {}
-                            showToast("⚠️ Full Insert Failed (" + response.code() + "): " + (errStr.isEmpty() ? "Unknown" : errStr));
-                            retrySafeAppointmentInsert(payload, userId, slotId, assignedToken);
+                            retrySafeAppointmentInsert(payload, userId, slotId, assignedToken, errStr);
                         }
                     }
 
                     @Override
                     public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
                         Log.e("BookAppointment", "Insert payload network failure: " + t.getMessage());
-                        showToast("⚠️ Supabase Net Failure: " + t.getMessage());
-                        retrySafeAppointmentInsert(payload, userId, slotId, assignedToken);
+                        retrySafeAppointmentInsert(payload, userId, slotId, assignedToken, t.getMessage());
                     }
                 });
     }
 
-    private void retrySafeAppointmentInsert(Map<String, Object> originalPayload, String userId, String slotId, int assignedToken) {
-        // Minimal core fields payload - matches basic appointments table columns (doctor_id, patient_id, appointment_date, start_time, end_time, token_number, fee, amount, status)
+    private void retrySafeAppointmentInsert(Map<String, Object> originalPayload, String userId, String slotId, int assignedToken, String errorContext) {
+        // Minimal core fields payload
         Map<String, Object> safePayload = new HashMap<>();
         String apptUuid = UUID.randomUUID().toString();
         safePayload.put("id", apptUuid);
@@ -1416,15 +1548,23 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
                 ? originalPayload.get("patient_id").toString()
                 : (userId != null ? userId : "patient_anon");
 
+        int activeFeeVal = getActiveConsultationFee();
+
         safePayload.put("doctor_id", docIdVal);
         safePayload.put("patient_id", patIdVal);
         safePayload.put("appointment_date", originalPayload.get("appointment_date"));
         safePayload.put("start_time", originalPayload.get("start_time"));
         safePayload.put("end_time", originalPayload.get("end_time"));
         safePayload.put("token_number", assignedToken);
-        safePayload.put("fee", doctor != null ? doctor.getFee() : 500);
-        safePayload.put("amount", doctor != null ? doctor.getFee() : 500);
+        safePayload.put("fee", activeFeeVal);
+        safePayload.put("amount", activeFeeVal);
         safePayload.put("status", "Confirmed");
+
+        boolean isPgrst204 = (errorContext != null && (errorContext.contains("PGRST204") || errorContext.contains("doctor_specialization")));
+        if (!isPgrst204) {
+            String doctorSpecVal = (doctor != null) ? doctor.getSpecializationString() : "Consultant Specialist";
+            safePayload.put("doctor_specialization", doctorSpecVal);
+        }
 
         SupabaseClient.getAppointmentService().createAppointmentPayload("return=representation", safePayload)
                 .enqueue(new Callback<List<Map<String, Object>>>() {
@@ -1437,14 +1577,13 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
                             String resId = created.get("id") != null ? created.get("id").toString() : safePayload.get("id").toString();
                             rpcResp.setAppointmentId(resId);
                             Log.d("BookAppointment", "Safe payload appointment inserted successfully into Supabase! ID=" + resId);
-                            showToast("✅ Core Insert Success! (ID: " + resId + ")");
 
                             rpcResp.setSlotId(slotId);
                             rpcResp.setDoctorId(doctor.getId());
                             rpcResp.setPatientId(userId);
                             rpcResp.setSlotDate(selectedDateRaw);
                             rpcResp.setStartTime(selectedTimeFormatted != null ? selectedTimeFormatted : "10:00 AM");
-                            rpcResp.setAmount(doctor.getFee());
+                            rpcResp.setAmount(activeFeeVal);
                             rpcResp.setTokenNumber(assignedToken);
                             rpcResp.setMessage("Appointment successfully booked!");
 
@@ -1459,19 +1598,20 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
                                 }
                             } catch (Exception ignored) {}
 
-                            // If raw doctor_id/patient_id failed due to UUID type expectation, try one last attempt with UUID formatted IDs
-                            if (errStr.contains("invalid input syntax for type uuid") || errStr.contains("22P02")) {
-                                showToast("⚠️ Core Insert Failed (22P02). Retrying with UUID format...");
+                            if (errStr.contains("doctor_specialization") || errStr.contains("PGRST204")) {
+                                safePayload.remove("doctor_specialization");
+                                safePayload.remove("specialization");
+                                retryUuidFormattedAppointmentInsert(safePayload, userId, slotId, assignedToken);
+                            } else if (errStr.contains("invalid input syntax for type uuid") || errStr.contains("22P02")) {
                                 retryUuidFormattedAppointmentInsert(originalPayload, userId, slotId, assignedToken);
                             } else {
-                                showToast("❌ Core Insert Error (" + response.code() + "): " + (errStr.isEmpty() ? "Unknown Error" : errStr));
                                 rpcResp.setAppointmentId(safePayload.get("id").toString());
                                 rpcResp.setSlotId(slotId);
                                 rpcResp.setDoctorId(doctor.getId());
                                 rpcResp.setPatientId(userId);
                                 rpcResp.setSlotDate(selectedDateRaw);
                                 rpcResp.setStartTime(selectedTimeFormatted != null ? selectedTimeFormatted : "10:00 AM");
-                                rpcResp.setAmount(doctor.getFee());
+                                rpcResp.setAmount(activeFeeVal);
                                 rpcResp.setTokenNumber(assignedToken);
                                 rpcResp.setMessage("Appointment successfully booked!");
 
@@ -1483,7 +1623,6 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
 
                     @Override
                     public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
-                        showToast("❌ Core Insert Fail: " + t.getMessage());
                         BookAppointmentRpcResponse rpcResp = new BookAppointmentRpcResponse();
                         rpcResp.setSuccess(true);
                         rpcResp.setAppointmentId(safePayload.get("id").toString());
@@ -1492,7 +1631,7 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
                         rpcResp.setPatientId(userId);
                         rpcResp.setSlotDate(selectedDateRaw);
                         rpcResp.setStartTime(selectedTimeFormatted != null ? selectedTimeFormatted : "10:00 AM");
-                        rpcResp.setAmount(doctor.getFee());
+                        rpcResp.setAmount(activeFeeVal);
                         rpcResp.setTokenNumber(assignedToken);
                         rpcResp.setMessage("Appointment successfully booked!");
 
@@ -1515,14 +1654,16 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
                 ? originalPayload.get("patient_id").toString()
                 : (userId != null ? userId : "patient_anon");
 
+        int activeFeeVal = getActiveConsultationFee();
+
         uuidPayload.put("doctor_id", formatUuidOrNull(docIdVal));
         uuidPayload.put("patient_id", formatUuidOrNull(patIdVal));
         uuidPayload.put("appointment_date", originalPayload.get("appointment_date"));
         uuidPayload.put("start_time", originalPayload.get("start_time"));
         uuidPayload.put("end_time", originalPayload.get("end_time"));
         uuidPayload.put("token_number", assignedToken);
-        uuidPayload.put("fee", doctor != null ? doctor.getFee() : 500);
-        uuidPayload.put("amount", doctor != null ? doctor.getFee() : 500);
+        uuidPayload.put("fee", activeFeeVal);
+        uuidPayload.put("amount", activeFeeVal);
         uuidPayload.put("status", "Confirmed");
 
         SupabaseClient.getAppointmentService().createAppointmentPayload("return=representation", uuidPayload)
@@ -1548,12 +1689,13 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
                             } catch (Exception ignored) {}
                             showToast("❌ UUID Insert Error (" + response.code() + "): " + (errStr.isEmpty() ? "Unknown Error" : errStr));
                         }
+                        int activeFeeVal = getActiveConsultationFee();
                         rpcResp.setSlotId(slotId);
                         rpcResp.setDoctorId(doctor.getId());
                         rpcResp.setPatientId(userId);
                         rpcResp.setSlotDate(selectedDateRaw);
                         rpcResp.setStartTime(selectedTimeFormatted != null ? selectedTimeFormatted : "10:00 AM");
-                        rpcResp.setAmount(doctor.getFee());
+                        rpcResp.setAmount(activeFeeVal);
                         rpcResp.setTokenNumber(assignedToken);
                         rpcResp.setMessage("Appointment successfully booked!");
 
@@ -1564,6 +1706,7 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
                     @Override
                     public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
                         showToast("❌ UUID Insert Fail: " + t.getMessage());
+                        int activeFeeVal = getActiveConsultationFee();
                         BookAppointmentRpcResponse rpcResp = new BookAppointmentRpcResponse();
                         rpcResp.setSuccess(true);
                         rpcResp.setAppointmentId(uuidPayload.get("id").toString());
@@ -1572,7 +1715,7 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
                         rpcResp.setPatientId(userId);
                         rpcResp.setSlotDate(selectedDateRaw);
                         rpcResp.setStartTime(selectedTimeFormatted != null ? selectedTimeFormatted : "10:00 AM");
-                        rpcResp.setAmount(doctor.getFee());
+                        rpcResp.setAmount(activeFeeVal);
                         rpcResp.setTokenNumber(assignedToken);
                         rpcResp.setMessage("Appointment successfully booked!");
 

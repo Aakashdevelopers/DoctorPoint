@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.amstudio.drpoint.R;
 import com.amstudio.drpoint.databinding.ItemTimeSlotBinding;
 import com.amstudio.drpoint.model.DoctorSlot;
+import com.amstudio.drpoint.util.AvailabilityHelper;
 import com.amstudio.drpoint.util.ToastUtils;
 
 import java.util.Objects;
@@ -26,10 +27,15 @@ public class TimeSlotAdapter extends ListAdapter<DoctorSlot, TimeSlotAdapter.Vie
     private static final DiffUtil.ItemCallback<DoctorSlot> DIFF_CALLBACK = new DiffUtil.ItemCallback<DoctorSlot>() {
         @Override
         public boolean areItemsTheSame(@NonNull DoctorSlot oldItem, @NonNull DoctorSlot newItem) {
+            String t1 = AvailabilityHelper.normalizeTimeFormat(oldItem.getStartTime());
+            String t2 = AvailabilityHelper.normalizeTimeFormat(newItem.getStartTime());
+            if (Objects.equals(oldItem.getSlotDate(), newItem.getSlotDate()) && Objects.equals(t1, t2)) {
+                return true;
+            }
             if (oldItem.getId() != null && newItem.getId() != null) {
                 return oldItem.getId().equals(newItem.getId());
             }
-            return Objects.equals(oldItem.getStartTime(), newItem.getStartTime());
+            return false;
         }
 
         @Override

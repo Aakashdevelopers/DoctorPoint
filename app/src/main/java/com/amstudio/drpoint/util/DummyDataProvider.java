@@ -1011,8 +1011,8 @@ public class DummyDataProvider {
 
     public static synchronized List<MenuItem> getHelpSupportMenuItems() {
         List<MenuItem> items = new ArrayList<>();
+        items.add(new MenuItem("Join as a Doctor", "Register as a verified doctor on DoctorPoint", R.drawable.ic_stethoscope, R.color.primary, R.color.bg_teal_light, R.color.text_primary, "JOIN"));
         items.add(new MenuItem("Help & Support", "24/7 patient support center", R.drawable.ic_help, R.color.success_green, R.color.bg_green_light, R.color.text_primary));
-        items.add(new MenuItem("Are you a doctor?", "Join DoctorPoint network", R.drawable.ic_stethoscope, R.color.primary, R.color.primary_light, R.color.text_primary, "JOIN"));
         return items;
     }
 

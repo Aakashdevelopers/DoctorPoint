@@ -40,7 +40,10 @@ public class AppointmentListAdapter extends ListAdapter<Appointment, Appointment
         public boolean areContentsTheSame(@NonNull Appointment oldItem, @NonNull Appointment newItem) {
             return Objects.equals(oldItem.getStatus(), newItem.getStatus()) &&
                    Objects.equals(oldItem.getDate(), newItem.getDate()) &&
-                   Objects.equals(oldItem.getTime(), newItem.getTime());
+                   Objects.equals(oldItem.getTime(), newItem.getTime()) &&
+                   Objects.equals(oldItem.getSpecialization(), newItem.getSpecialization()) &&
+                   Objects.equals(oldItem.getDoctorName(), newItem.getDoctorName()) &&
+                   oldItem.getTokenNumber() == newItem.getTokenNumber();
         }
     };
 

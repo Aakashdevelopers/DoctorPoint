@@ -70,7 +70,7 @@ public class BookingConfirmedActivity extends AppCompatActivity {
 
     private void populateBookingInfo() {
         binding.tvDoctorName.setText(doctor.getName());
-        binding.tvSpecialization.setText(doctor.getQualification());
+        binding.tvSpecialization.setText(doctor.getSpecializationString());
         binding.tvBookingDatetime.setText(dateStr + " • " + timeStr);
         binding.tvBookingLocation.setText(doctor.getClinicName() + " • " + doctor.getLocation());
 

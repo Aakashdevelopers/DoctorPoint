@@ -16,16 +16,16 @@ import retrofit2.http.Query;
 
 public interface SupabaseAppointmentService {
 
-    @GET("rest/v1/appointments?select=*&order=appointment_date.desc,start_time.asc")
+    @GET("rest/v1/appointments?select=*,doctor:doctors(*)&order=appointment_date.desc,start_time.asc")
     Call<List<Appointment>> getAppointmentsForPatient(@Query("patient_id") String patientIdQuery);
 
-    @GET("rest/v1/appointments?select=*&order=appointment_date.desc,start_time.asc")
+    @GET("rest/v1/appointments?select=*,doctor:doctors(*)&order=appointment_date.desc,start_time.asc")
     Call<List<Appointment>> getAppointmentsForDoctor(@Query("doctor_id") String doctorIdQuery);
 
-    @GET("rest/v1/appointments?select=*&order=appointment_date.desc,start_time.asc")
+    @GET("rest/v1/appointments?select=*,doctor:doctors(*)&order=appointment_date.desc,start_time.asc")
     Call<List<Appointment>> getAppointments(@Query("user_id") String userIdQuery);
 
-    @GET("rest/v1/appointments?select=*&order=appointment_date.desc,start_time.asc")
+    @GET("rest/v1/appointments?select=*,doctor:doctors(*)&order=appointment_date.desc,start_time.asc")
     Call<List<Appointment>> getAllAppointments();
 
     @POST("rest/v1/appointments")
