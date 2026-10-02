@@ -9,7 +9,6 @@ import android.text.TextWatcher;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
@@ -23,6 +22,7 @@ import com.amstudio.drpoint.model.Speciality;
 import com.amstudio.drpoint.ui.booking.BookAppointmentActivity;
 import com.amstudio.drpoint.util.DummyDataProvider;
 import com.amstudio.drpoint.util.PreferenceManager;
+import com.amstudio.drpoint.util.ToastUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -120,7 +120,7 @@ public class DoctorListActivity extends AppCompatActivity {
                     callIntent.setData(Uri.parse("tel:" + phone));
                     startActivity(callIntent);
                 } catch (Exception e) {
-                    Toast.makeText(DoctorListActivity.this, "Calling Dr. " + doctor.getName(), Toast.LENGTH_SHORT).show();
+                    ToastUtils.showInfo(DoctorListActivity.this, "Calling Dr. " + doctor.getName());
                 }
             }
 
@@ -128,7 +128,7 @@ public class DoctorListActivity extends AppCompatActivity {
             public void onFavoriteClick(Doctor doctor) {
                 boolean isFav = PreferenceManager.getInstance(DoctorListActivity.this).isFavoriteDoctor(doctor.getId());
                 String msg = isFav ? "Added to favorites" : "Removed from favorites";
-                Toast.makeText(DoctorListActivity.this, msg, Toast.LENGTH_SHORT).show();
+                ToastUtils.showSuccess(DoctorListActivity.this, msg);
             }
         });
         binding.rvDoctorList.setAdapter(adapter);

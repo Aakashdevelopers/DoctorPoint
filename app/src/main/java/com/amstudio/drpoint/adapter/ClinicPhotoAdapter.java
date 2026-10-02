@@ -1,9 +1,14 @@
 package com.amstudio.drpoint.adapter;
 
+import android.app.Dialog;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.widget.AppCompatImageView;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
@@ -53,9 +58,38 @@ public class ClinicPhotoAdapter extends ListAdapter<Object, ClinicPhotoAdapter.V
         void bind(Object item) {
             Glide.with(itemView.getContext())
                     .load(item)
-                    .placeholder(R.drawable.ic_stethoscope)
-                    .error(R.drawable.ic_stethoscope)
+                    .placeholder(R.drawable.bg_clinic_placeholder)
+                    .error(R.drawable.bg_clinic_placeholder)
                     .into(binding.ivClinicPhoto);
+
+            itemView.setOnClickListener(v -> showFullImageDialog(item));
+        }
+
+        private void showFullImageDialog(Object photoItem) {
+            try {
+                Dialog dialog = new Dialog(itemView.getContext());
+                dialog.setContentView(R.layout.dialog_image_preview);
+                if (dialog.getWindow() != null) {
+                    dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                    dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                }
+
+                AppCompatImageView ivFull = dialog.findViewById(R.id.iv_preview_full);
+                if (ivFull != null) {
+                    Glide.with(itemView.getContext())
+                            .load(photoItem)
+                            .placeholder(R.drawable.bg_clinic_placeholder)
+                            .error(R.drawable.bg_clinic_placeholder)
+                            .into(ivFull);
+                }
+
+                View btnClose = dialog.findViewById(R.id.btn_close_preview);
+                if (btnClose != null) {
+                    btnClose.setOnClickListener(v -> dialog.dismiss());
+                }
+
+                dialog.show();
+            } catch (Exception ignored) {}
         }
     }
 }

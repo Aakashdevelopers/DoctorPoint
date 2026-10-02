@@ -5,6 +5,8 @@ import android.content.Context;
 
 import androidx.appcompat.app.AppCompatDelegate;
 
+import com.razorpay.Checkout;
+
 public class DoctorPointApp extends Application {
 
     private static DoctorPointApp instance;

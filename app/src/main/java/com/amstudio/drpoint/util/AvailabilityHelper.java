@@ -10,6 +10,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -18,6 +19,37 @@ public class AvailabilityHelper {
 
     // Configurable Availability Window (Default: 2 days in advance)
     public static final int DEFAULT_AVAILABILITY_WINDOW_DAYS = 2;
+
+    public static String normalizeTimeFormat(String timeStr) {
+        if (timeStr == null || timeStr.trim().isEmpty()) return "00:00:00";
+        String clean = timeStr.trim().toUpperCase(Locale.US);
+
+        if (clean.contains("+")) clean = clean.substring(0, clean.indexOf("+")).trim();
+        if (clean.contains(".")) clean = clean.substring(0, clean.indexOf(".")).trim();
+
+        boolean isPm = clean.contains("PM");
+        boolean isAm = clean.contains("AM");
+
+        clean = clean.replace("AM", "").replace("PM", "").trim();
+
+        String[] parts = clean.split(":");
+        if (parts.length >= 2) {
+            try {
+                int h = Integer.parseInt(parts[0].trim());
+                int m = Integer.parseInt(parts[1].trim());
+                int s = parts.length > 2 ? Integer.parseInt(parts[2].trim()) : 0;
+
+                if (isPm && h < 12) {
+                    h += 12;
+                } else if (isAm && h == 12) {
+                    h = 0;
+                }
+
+                return String.format(Locale.US, "%02d:%02d:%02d", h, m, s);
+            } catch (Exception ignored) {}
+        }
+        return timeStr.trim();
+    }
 
     public static boolean isDateInPast(String slotDateStr) {
         if (slotDateStr == null || slotDateStr.trim().isEmpty()) return true;
@@ -124,7 +156,6 @@ public class AvailabilityHelper {
 
     /**
      * Group slots by slot_date for a specific clinic and return formatted DateChip DateItems.
-     * Only dates with at least 1 bookable slot are included.
      */
     public static List<DateChipAdapter.DateItem> extractAvailableDateChips(List<DoctorSlot> slots, String selectedClinicId) {
         if (slots == null || slots.isEmpty()) return new ArrayList<>();
@@ -141,13 +172,12 @@ public class AvailabilityHelper {
             if (slot == null || slot.getSlotDate() == null) continue;
             if (isDateInPast(slot.getSlotDate())) continue;
 
-            // Only include available (unbooked) slots
-            if (slot.getStatus() != null && !"available".equalsIgnoreCase(slot.getStatus().trim())) {
-                continue;
-            }
+            String cleanDate = slot.getSlotDate().trim();
+            if (cleanDate.contains("T")) cleanDate = cleanDate.substring(0, cleanDate.indexOf("T"));
+            if (cleanDate.contains(" ")) cleanDate = cleanDate.substring(0, cleanDate.indexOf(" "));
 
-            if (!rawDates.contains(slot.getSlotDate())) {
-                rawDates.add(slot.getSlotDate());
+            if (!rawDates.contains(cleanDate)) {
+                rawDates.add(cleanDate);
             }
         }
 
@@ -177,43 +207,53 @@ public class AvailabilityHelper {
     }
 
     /**
-     * Filter available slots by date, sorted by start_time ascending.
-     * Only returns unbooked ("available") slots.
+     * Filter slots by date, sorted by start_time ascending.
+     * Deduplicates slots with identical normalized start_time.
+     * If any duplicate slot is marked 'booked', the deduplicated slot is marked 'booked'.
      */
     public static List<DoctorSlot> filterAndSortSlots(List<DoctorSlot> slots, String selectedClinicId, String selectedDateRaw) {
         if (slots == null || slots.isEmpty()) return new ArrayList<>();
 
-        List<DoctorSlot> filtered = new ArrayList<>();
+        Map<String, DoctorSlot> uniqueSlotsMap = new LinkedHashMap<>();
         String targetDate = selectedDateRaw != null ? selectedDateRaw.trim() : null;
         if (targetDate != null && targetDate.contains("T")) targetDate = targetDate.substring(0, targetDate.indexOf("T"));
         if (targetDate != null && targetDate.contains(" ")) targetDate = targetDate.substring(0, targetDate.indexOf(" "));
 
         for (DoctorSlot slot : slots) {
+            if (slot == null || slot.getSlotDate() == null) continue;
             if (isDateInPast(slot.getSlotDate())) continue;
 
             // Date filtering
             if (targetDate != null && !targetDate.isEmpty()) {
-                String slotDate = slot.getSlotDate();
-                if (slotDate != null && !targetDate.equalsIgnoreCase(slotDate)) {
+                String slotDate = slot.getSlotDate().trim();
+                if (slotDate.contains("T")) slotDate = slotDate.substring(0, slotDate.indexOf("T"));
+                if (slotDate.contains(" ")) slotDate = slotDate.substring(0, slotDate.indexOf(" "));
+                if (!targetDate.equalsIgnoreCase(slotDate)) {
                     continue;
                 }
             }
 
             if (isSlotInPast(slot)) continue;
 
-            // Only show slots that are AVAILABLE (unbooked)
-            if (slot.getStatus() != null && !"available".equalsIgnoreCase(slot.getStatus().trim())) {
-                continue;
-            }
+            String normTime = normalizeTimeFormat(slot.getStartTime());
 
-            filtered.add(slot);
+            DoctorSlot existing = uniqueSlotsMap.get(normTime);
+            if (existing == null) {
+                uniqueSlotsMap.put(normTime, slot);
+            } else {
+                if ("booked".equalsIgnoreCase(slot.getStatus()) || !"available".equalsIgnoreCase(slot.getStatus())) {
+                    existing.setStatus("booked");
+                }
+            }
         }
+
+        List<DoctorSlot> filtered = new ArrayList<>(uniqueSlotsMap.values());
 
         // Sort by start_time ascending
         Collections.sort(filtered, (s1, s2) -> {
-            if (s1.getStartTime() == null) return -1;
-            if (s2.getStartTime() == null) return 1;
-            return s1.getStartTime().compareTo(s2.getStartTime());
+            String t1 = normalizeTimeFormat(s1.getStartTime());
+            String t2 = normalizeTimeFormat(s2.getStartTime());
+            return t1.compareTo(t2);
         });
 
         return filtered;
@@ -225,11 +265,11 @@ public class AvailabilityHelper {
         List<String> dates = new ArrayList<>();
         for (DoctorSlot slot : slots) {
             if (!isSlotInPast(slot) && slot.getSlotDate() != null) {
-                if (slot.getStatus() != null && !"available".equalsIgnoreCase(slot.getStatus().trim())) {
-                    continue;
-                }
-                if (!dates.contains(slot.getSlotDate())) {
-                    dates.add(slot.getSlotDate());
+                String cleanDate = slot.getSlotDate().trim();
+                if (cleanDate.contains("T")) cleanDate = cleanDate.substring(0, cleanDate.indexOf("T"));
+                if (cleanDate.contains(" ")) cleanDate = cleanDate.substring(0, cleanDate.indexOf(" "));
+                if (!dates.contains(cleanDate)) {
+                    dates.add(cleanDate);
                 }
             }
         }

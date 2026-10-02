@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -23,6 +22,7 @@ import com.amstudio.drpoint.ui.doctor.DoctorDetailActivity;
 import com.amstudio.drpoint.ui.doctor.DoctorListActivity;
 import com.amstudio.drpoint.util.DummyDataProvider;
 import com.amstudio.drpoint.util.PreferenceManager;
+import com.amstudio.drpoint.util.ToastUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -113,7 +113,7 @@ public class ExploreFragment extends Fragment {
                         intent.setData(Uri.parse("tel:" + phone));
                         startActivity(intent);
                     } catch (Exception e) {
-                        Toast.makeText(ctx, "Calling Dr. " + doctor.getName(), Toast.LENGTH_SHORT).show();
+                        ToastUtils.showInfo(ctx, "Calling Dr. " + doctor.getName());
                     }
                 }
 

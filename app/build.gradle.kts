@@ -19,6 +19,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "SUPABASE_URL", "\"https://kewuxbvilvqxphmvyhkz.supabase.co/\"")
         buildConfigField("String", "SUPABASE_KEY", "\"sb_publishable_2vrXZkEw8rHLVwK6fCMjgw_uqQ-D5BA\"")
+        buildConfigField("String", "RAZORPAY_KEY_ID", "\"rzp_test_Thxlb835DsfBAI\"")
     }
 
     buildTypes {
@@ -55,6 +56,7 @@ dependencies {
     implementation("com.github.denzcoskun:ImageSlideshow:0.1.2")
     implementation("com.github.androdocs:Android-Circle-ImageView:0.1.0")
     implementation("com.facebook.shimmer:shimmer:0.5.0")
+    implementation("com.razorpay:checkout:1.6.38")
     testImplementation(libs.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.ext.junit)

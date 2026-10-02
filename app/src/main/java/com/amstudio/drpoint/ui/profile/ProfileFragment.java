@@ -12,7 +12,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -36,6 +35,7 @@ import com.amstudio.drpoint.ui.home.NotificationsActivity;
 import com.amstudio.drpoint.ui.main.MainActivity;
 import com.amstudio.drpoint.util.DummyDataProvider;
 import com.amstudio.drpoint.util.PreferenceManager;
+import com.amstudio.drpoint.util.ToastUtils;
 import com.bumptech.glide.Glide;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -121,7 +121,7 @@ public class ProfileFragment extends Fragment {
                             Context ctx = getContext();
                             if (activeSheetBinding != null && ctx != null) {
                                 activeSheetBinding.tvEditUploadLabel.setText("Photo Uploaded!");
-                                Toast.makeText(ctx, "Profile Photo Uploaded to Supabase!", Toast.LENGTH_SHORT).show();
+                                ToastUtils.showSuccess(ctx, "Profile photo uploaded!");
                             }
                         });
                     }
@@ -217,7 +217,7 @@ public class ProfileFragment extends Fragment {
             if (getActivity() instanceof MainActivity) {
                 ((MainActivity) getActivity()).selectTab(MainActivity.TAB_APPOINTMENTS);
             } else {
-                Toast.makeText(context, "Opening My Appointments", Toast.LENGTH_SHORT).show();
+                ToastUtils.showInfo(context, "Opening My Appointments");
             }
         } else if (title.toLowerCase().contains("saved") || title.toLowerCase().contains("favorite")) {
             Intent intent = new Intent(context, SavedDoctorsActivity.class);
@@ -229,17 +229,17 @@ public class ProfileFragment extends Fragment {
             Intent intent = new Intent(context, NotificationsActivity.class);
             startActivity(intent);
         } else if (title.toLowerCase().contains("help") || title.toLowerCase().contains("support")) {
-            Toast.makeText(context, "Help Center & Support active", Toast.LENGTH_SHORT).show();
+            ToastUtils.showInfo(context, "Help Center & Support active");
         } else if (title.toLowerCase().contains("are you a doctor") || title.toLowerCase().contains("apply")) {
-            Toast.makeText(context, "Thank you for your interest! Doctor onboarding form will open shortly.", Toast.LENGTH_LONG).show();
+            ToastUtils.showInfo(context, "Thank you for your interest! Doctor onboarding form will open shortly.");
         } else if (title.toLowerCase().contains("privacy")) {
-            Toast.makeText(context, "Opening Privacy Policy...", Toast.LENGTH_SHORT).show();
+            ToastUtils.showInfo(context, "Opening Privacy Policy...");
         } else if (title.toLowerCase().contains("term")) {
-            Toast.makeText(context, "Opening Terms & Conditions...", Toast.LENGTH_SHORT).show();
+            ToastUtils.showInfo(context, "Opening Terms & Conditions...");
         } else if (title.toLowerCase().contains("star") || title.toLowerCase().contains("rate") || title.toLowerCase().contains("like")) {
-            Toast.makeText(context, "Thank you for giving DoctorPoint 5 stars!", Toast.LENGTH_LONG).show();
+            ToastUtils.showSuccess(context, "Thank you for giving DoctorPoint 5 stars!");
         } else {
-            Toast.makeText(context, title + " clicked", Toast.LENGTH_SHORT).show();
+            ToastUtils.showInfo(context, title + " clicked");
         }
     }
 
@@ -537,7 +537,7 @@ public class ProfileFragment extends Fragment {
             Context ctx = getContext();
             if (!isValid) {
                 if (ctx != null) {
-                    Toast.makeText(ctx, "Please fill all mandatory profile details", Toast.LENGTH_SHORT).show();
+                    ToastUtils.showWarning(ctx, "Please fill all mandatory profile details");
                 }
                 return;
             }
@@ -567,7 +567,7 @@ public class ProfileFragment extends Fragment {
 
         String userId = PreferenceManager.getInstance(context).getUserId();
         if (userId == null || userId.trim().isEmpty()) {
-            Toast.makeText(context, "User session not found", Toast.LENGTH_SHORT).show();
+            ToastUtils.showError(context, "User session not found");
             dialog.dismiss();
             return;
         }
@@ -641,7 +641,7 @@ public class ProfileFragment extends Fragment {
                 }
 
                 updateProfileHeader();
-                Toast.makeText(ctx, "Profile updated successfully!", Toast.LENGTH_SHORT).show();
+                ToastUtils.showSuccess(ctx, "Profile updated successfully!");
                 dialog.dismiss();
             }
 
@@ -671,7 +671,7 @@ public class ProfileFragment extends Fragment {
                                 prefManager.setUserPhone(phone);
 
                                 updateProfileHeader();
-                                Toast.makeText(ctx, "Profile updated successfully!", Toast.LENGTH_SHORT).show();
+                                ToastUtils.showSuccess(ctx, "Profile updated successfully!");
                                 dialog.dismiss();
                             }
 
@@ -682,7 +682,7 @@ public class ProfileFragment extends Fragment {
 
                                 sheetBinding.btnSaveProfile.setEnabled(true);
                                 sheetBinding.btnSaveProfile.setText("Save Changes");
-                                Toast.makeText(ctx, "Network Error: Profile updated locally.", Toast.LENGTH_SHORT).show();
+                                ToastUtils.showWarning(ctx, "Profile updated locally.");
                                 dialog.dismiss();
                             }
                         });

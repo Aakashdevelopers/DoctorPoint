@@ -6,7 +6,6 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -19,6 +18,7 @@ import com.amstudio.drpoint.ui.doctor.DoctorDetailActivity;
 import com.amstudio.drpoint.ui.doctor.DoctorListActivity;
 import com.amstudio.drpoint.util.DummyDataProvider;
 import com.amstudio.drpoint.util.PreferenceManager;
+import com.amstudio.drpoint.util.ToastUtils;
 
 import java.util.List;
 
@@ -88,14 +88,14 @@ public class FindDoctorsActivity extends AppCompatActivity {
                     intent.setData(Uri.parse("tel:" + phone));
                     startActivity(intent);
                 } catch (Exception e) {
-                    Toast.makeText(FindDoctorsActivity.this, "Calling Dr. " + doctor.getName(), Toast.LENGTH_SHORT).show();
+                    ToastUtils.showInfo(FindDoctorsActivity.this, "Calling Dr. " + doctor.getName());
                 }
             }
 
             @Override
             public void onFavoriteClick(Doctor doctor) {
                 boolean isFav = PreferenceManager.getInstance(FindDoctorsActivity.this).toggleFavoriteDoctor(doctor.getId());
-                Toast.makeText(FindDoctorsActivity.this, isFav ? "Added to Favorites" : "Removed from Favorites", Toast.LENGTH_SHORT).show();
+                ToastUtils.showSuccess(FindDoctorsActivity.this, isFav ? "Added to Favorites" : "Removed from Favorites");
             }
         });
         binding.rvTopDoctors.setAdapter(doctorListAdapter);

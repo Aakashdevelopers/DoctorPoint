@@ -903,6 +903,382 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
+                <!-- Doctor Details & Credentials Overview Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="16dp"
+                    android:layout_marginTop="12dp"
+                    app:cardBackgroundColor="@color/surface_white"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="2dp"
+                    app:strokeColor="@color/card_stroke"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="18dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="Doctor Profile Overview"
+                            android:textColor="@color/text_primary"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <!-- Specialization -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="14dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <FrameLayout
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:background="@drawable/bg_squircle_icon">
+
+                                <ImageView
+                                    android:layout_width="18dp"
+                                    android:layout_height="18dp"
+                                    android:layout_gravity="center"
+                                    android:contentDescription="@string/app_name"
+                                    android:src="@drawable/ic_stethoscope"
+                                    app:tint="@color/primary" />
+                            </FrameLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Specialization"
+                                    android:textColor="@color/text_secondary"
+                                    android:textSize="11sp" />
+
+                                <TextView
+                                    android:id="@+id/tv_about_specialization"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:textColor="@color/text_primary"
+                                    android:textSize="13sp"
+                                    android:textStyle="bold"
+                                    tools:text="Dermatology &amp; Cosmetology" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Qualification -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <FrameLayout
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:background="@drawable/bg_squircle_icon">
+
+                                <ImageView
+                                    android:layout_width="18dp"
+                                    android:layout_height="18dp"
+                                    android:layout_gravity="center"
+                                    android:contentDescription="@string/app_name"
+                                    android:src="@drawable/ic_terms"
+                                    app:tint="@color/primary" />
+                            </FrameLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Qualifications &amp; Degrees"
+                                    android:textColor="@color/text_secondary"
+                                    android:textSize="11sp" />
+
+                                <TextView
+                                    android:id="@+id/tv_about_qualification"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:textColor="@color/text_primary"
+                                    android:textSize="13sp"
+                                    android:textStyle="bold"
+                                    tools:text="MBBS, MD - Dermatology" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Experience & Gender Row -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:baselineAligned="false"
+                            android:orientation="horizontal">
+
+                            <!-- Experience -->
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <FrameLayout
+                                    android:layout_width="36dp"
+                                    android:layout_height="36dp"
+                                    android:background="@drawable/bg_squircle_icon">
+
+                                    <ImageView
+                                        android:layout_width="18dp"
+                                        android:layout_height="18dp"
+                                        android:layout_gravity="center"
+                                        android:contentDescription="@string/app_name"
+                                        android:src="@drawable/ic_clock"
+                                        app:tint="@color/primary" />
+                                </FrameLayout>
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="12dp"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Experience"
+                                        android:textColor="@color/text_secondary"
+                                        android:textSize="11sp" />
+
+                                    <TextView
+                                        android:id="@+id/tv_about_experience"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:fontFamily="sans-serif-medium"
+                                        android:textColor="@color/text_primary"
+                                        android:textSize="13sp"
+                                        android:textStyle="bold"
+                                        tools:text="12 Years" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <!-- Gender -->
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <FrameLayout
+                                    android:layout_width="36dp"
+                                    android:layout_height="36dp"
+                                    android:background="@drawable/bg_squircle_icon">
+
+                                    <ImageView
+                                        android:layout_width="18dp"
+                                        android:layout_height="18dp"
+                                        android:layout_gravity="center"
+                                        android:contentDescription="@string/app_name"
+                                        android:src="@drawable/ic_profile"
+                                        app:tint="@color/secondary" />
+                                </FrameLayout>
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="12dp"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Gender"
+                                        android:textColor="@color/text_secondary"
+                                        android:textSize="11sp" />
+
+                                    <TextView
+                                        android:id="@+id/tv_about_gender"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:fontFamily="sans-serif-medium"
+                                        android:textColor="@color/text_primary"
+                                        android:textSize="13sp"
+                                        android:textStyle="bold"
+                                        tools:text="Female Doctor" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+
+
+                        <!-- Verified Status Row -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <FrameLayout
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:background="@drawable/bg_squircle_icon">
+
+                                <ImageView
+                                    android:layout_width="18dp"
+                                    android:layout_height="18dp"
+                                    android:layout_gravity="center"
+                                    android:contentDescription="@string/app_name"
+                                    android:src="@drawable/ic_verified" />
+                            </FrameLayout>
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Status"
+                                    android:textColor="@color/text_secondary"
+                                    android:textSize="11sp" />
+
+                                <TextView
+                                    android:id="@+id/tv_about_verified"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:textColor="@color/text_primary"
+                                    android:textSize="13sp"
+                                    android:textStyle="bold"
+                                    tools:text="Verified Practitioner" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Clinic Details Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="16dp"
+                    android:layout_marginTop="12dp"
+                    app:cardBackgroundColor="@color/surface_white"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="2dp"
+                    app:strokeColor="@color/card_stroke"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="18dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="Clinic Details"
+                                android:textColor="@color/text_primary"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <FrameLayout
+                                    android:layout_width="42dp"
+                                    android:layout_height="42dp"
+                                    android:background="@drawable/bg_squircle_icon">
+
+                                    <ImageView
+                                        android:layout_width="20dp"
+                                        android:layout_height="20dp"
+                                        android:layout_gravity="center"
+                                        android:contentDescription="@string/app_name"
+                                        android:src="@drawable/ic_location"
+                                        app:tint="@color/primary" />
+                                </FrameLayout>
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="14dp"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:id="@+id/tv_clinic_name"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:fontFamily="sans-serif-medium"
+                                        android:textColor="@color/text_primary"
+                                        android:textSize="15sp"
+                                        android:textStyle="bold"
+                                        tools:text="Skin Care &amp; Laser Clinic" />
+
+                                    <TextView
+                                        android:id="@+id/tv_clinic_address"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:textColor="@color/text_secondary"
+                                        android:textSize="12sp"
+                                        tools:text="#42, 100 Feet Road, Indiranagar, Bangalore - 560038" />
+
+                                    <TextView
+                                        android:id="@+id/tv_clinic_state"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="1dp"
+                                        android:textColor="@color/secondary"
+                                        android:textSize="11sp"
+                                        android:textStyle="bold"
+                                        tools:text="Karnataka" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
                 <!-- Clinic Photos Card -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_clinic_photos"
@@ -926,7 +1302,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="sans-serif-medium"
-                            android:text="Clinic Photos"
+                            android:text="Clinic Photos &amp; Infrastructure"
                             android:textColor="@color/text_primary"
                             android:textSize="16sp"
                             android:textStyle="bold" />
@@ -937,84 +1313,6 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="10dp"
                             android:clipToPadding="false" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Clinic Details Card -->
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="16dp"
-                    android:layout_marginTop="12dp"
-                    app:cardBackgroundColor="@color/surface_white"
-                    app:cardCornerRadius="20dp"
-                    app:cardElevation="2dp"
-                    app:strokeColor="@color/card_stroke"
-                    app:strokeWidth="1dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="18dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
-                            android:text="Clinic Details"
-                            android:textColor="@color/text_primary"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="12dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <FrameLayout
-                                android:layout_width="42dp"
-                                android:layout_height="42dp"
-                                android:background="@drawable/bg_squircle_icon">
-
-                                <ImageView
-                                    android:layout_width="20dp"
-                                    android:layout_height="20dp"
-                                    android:layout_gravity="center"
-                                    android:contentDescription="@string/app_name"
-                                    android:src="@drawable/ic_location"
-                                    app:tint="@color/primary" />
-                            </FrameLayout>
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="14dp"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:id="@+id/tv_clinic_name"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:fontFamily="sans-serif-medium"
-                                    android:textColor="@color/text_primary"
-                                    android:textSize="14sp"
-                                    android:textStyle="bold"
-                                    tools:text="Skin Care &amp; Laser Clinic" />
-
-                                <TextView
-                                    android:id="@+id/tv_clinic_address"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:textColor="@color/text_secondary"
-                                    android:textSize="12sp"
-                                    tools:text="#42, 100 Feet Road, Indiranagar, Bangalore - 560038" />
-                            </LinearLayout>
-                        </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 

@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.view.View;
-import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -24,6 +23,7 @@ import com.amstudio.drpoint.databinding.DialogViewMedicalRecordBinding;
 import com.amstudio.drpoint.model.MedicalRecord;
 import com.amstudio.drpoint.network.SupabaseClient;
 import com.amstudio.drpoint.util.PreferenceManager;
+import com.amstudio.drpoint.util.ToastUtils;
 import com.bumptech.glide.Glide;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.tabs.TabLayout;
@@ -258,7 +258,7 @@ public class MedicalRecordsActivity extends AppCompatActivity {
             String notes = currentAddBinding.etNotes.getText().toString().trim();
 
             if (TextUtils.isEmpty(title)) {
-                Toast.makeText(this, "Please enter a title for the record.", Toast.LENGTH_SHORT).show();
+                ToastUtils.showWarning(this, "Please enter a title for the record.");
                 return;
             }
 
@@ -353,7 +353,7 @@ public class MedicalRecordsActivity extends AppCompatActivity {
                 .enqueue(new Callback<List<MedicalRecord>>() {
                     @Override
                     public void onResponse(Call<List<MedicalRecord>> call, Response<List<MedicalRecord>> response) {
-                        Toast.makeText(MedicalRecordsActivity.this, "Medical Record saved successfully!", Toast.LENGTH_SHORT).show();
+                        ToastUtils.showSuccess(MedicalRecordsActivity.this, "Medical Record saved successfully!");
                         dialog.dismiss();
                         loadMedicalRecordsFromSupabase();
                     }
@@ -362,7 +362,7 @@ public class MedicalRecordsActivity extends AppCompatActivity {
                     public void onFailure(Call<List<MedicalRecord>> call, Throwable t) {
                         allFetchedRecords.add(0, newRecord);
                         filterAndDisplayRecords(currentTabPosition);
-                        Toast.makeText(MedicalRecordsActivity.this, "Medical Record saved locally.", Toast.LENGTH_SHORT).show();
+                        ToastUtils.showInfo(MedicalRecordsActivity.this, "Medical Record saved locally.");
                         dialog.dismiss();
                     }
                 });
@@ -404,7 +404,7 @@ public class MedicalRecordsActivity extends AppCompatActivity {
             viewBinding.llPdfPreviewContainer.setVisibility(View.VISIBLE);
             viewBinding.ivRecordImagePreview.setVisibility(View.GONE);
             viewBinding.tvPdfName.setText(record.getTitle() + ".pdf");
-            viewBinding.btnOpenPdf.setOnClickListener(v -> Toast.makeText(this, "Opening PDF document...", Toast.LENGTH_SHORT).show());
+            viewBinding.btnOpenPdf.setOnClickListener(v -> ToastUtils.showInfo(this, "Opening PDF document..."));
         } else {
             viewBinding.llPdfPreviewContainer.setVisibility(View.GONE);
             viewBinding.ivRecordImagePreview.setVisibility(View.VISIBLE);
@@ -495,7 +495,7 @@ public class MedicalRecordsActivity extends AppCompatActivity {
 
     private void confirmAndDeleteRecord(MedicalRecord record) {
         if (record.isDoctorGenerated()) {
-            Toast.makeText(this, "Doctor-generated prescriptions cannot be deleted.", Toast.LENGTH_SHORT).show();
+            ToastUtils.showWarning(this, "Doctor-generated prescriptions cannot be deleted.");
             return;
         }
 
@@ -545,7 +545,7 @@ public class MedicalRecordsActivity extends AppCompatActivity {
     private void finishDeletion(MedicalRecord record) {
         allFetchedRecords.remove(record);
         filterAndDisplayRecords(currentTabPosition);
-        Toast.makeText(this, "Record deleted successfully.", Toast.LENGTH_SHORT).show();
+        ToastUtils.showSuccess(this, "Record deleted successfully.");
     }
 
     private List<MedicalRecord> getSampleRecords() {

@@ -3,7 +3,6 @@ package com.amstudio.drpoint.ui.booking;
 import android.content.Intent;
 import android.os.Bundle;
 import android.provider.CalendarContract;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -12,6 +11,7 @@ import com.amstudio.drpoint.databinding.ActivityBookingConfirmedBinding;
 import com.amstudio.drpoint.model.Doctor;
 import com.amstudio.drpoint.ui.main.MainActivity;
 import com.amstudio.drpoint.util.DummyDataProvider;
+import com.amstudio.drpoint.util.ToastUtils;
 import com.bumptech.glide.Glide;
 
 public class BookingConfirmedActivity extends AppCompatActivity {
@@ -75,13 +75,18 @@ public class BookingConfirmedActivity extends AppCompatActivity {
         binding.tvBookingLocation.setText(doctor.getClinicName() + " • " + doctor.getLocation());
 
         String feeTypeLabel = getIntent().getStringExtra("booking_fee_type");
+        String paymentId = getIntent().getStringExtra("payment_id");
         int defaultDocFee = doctor != null ? doctor.getFee() : 500;
         int feeAmount = getIntent().getIntExtra("booking_fee_amount", defaultDocFee);
 
+        String paymentInfo = (paymentId != null && !paymentId.isEmpty()) 
+                ? "Paid Online via Razorpay • ID: " + paymentId 
+                : "Paid Online via Razorpay";
+
         if (feeTypeLabel != null && !feeTypeLabel.trim().isEmpty()) {
-            binding.tvBookingFee.setText("₹" + feeAmount + " (" + feeTypeLabel + " • Pay at Clinic)");
+            binding.tvBookingFee.setText("₹" + feeAmount + " (" + feeTypeLabel + " • " + paymentInfo + ")");
         } else {
-            binding.tvBookingFee.setText("₹" + feeAmount + " (Consultation Fee • Pay at Clinic)");
+            binding.tvBookingFee.setText("₹" + feeAmount + " (Consultation Fee • " + paymentInfo + ")");
         }
 
         Object imageSource = (doctor != null && doctor.getImageUrl() != null && !doctor.getImageUrl().isEmpty())
@@ -104,7 +109,7 @@ public class BookingConfirmedActivity extends AppCompatActivity {
             intent.putExtra(CalendarContract.Events.DESCRIPTION, "Healthcare appointment booked via Doctor Point app.");
             startActivity(intent);
         } catch (Exception e) {
-            Toast.makeText(this, "Added appointment to calendar", Toast.LENGTH_SHORT).show();
+            ToastUtils.showSuccess(this, "Added appointment to calendar");
         }
     }
 }

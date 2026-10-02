@@ -6,7 +6,6 @@ import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Patterns;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -18,6 +17,7 @@ import com.amstudio.drpoint.network.model.LoginRequest;
 import com.amstudio.drpoint.network.model.User;
 import com.amstudio.drpoint.ui.main.MainActivity;
 import com.amstudio.drpoint.util.PreferenceManager;
+import com.amstudio.drpoint.util.ToastUtils;
 import com.google.gson.Gson;
 
 import retrofit2.Call;
@@ -65,7 +65,7 @@ public class LoginActivity extends AppCompatActivity {
         });
 
         binding.tvForgotPassword.setOnClickListener(v ->
-                Toast.makeText(LoginActivity.this, "Password reset link sent to your email.", Toast.LENGTH_SHORT).show()
+                ToastUtils.showSuccess(LoginActivity.this, "Password reset link sent to your email.")
         );
     }
 
@@ -166,7 +166,7 @@ public class LoginActivity extends AppCompatActivity {
                         prefManager.setUserEmail(email);
                     }
 
-                    Toast.makeText(LoginActivity.this, "Login Successful!", Toast.LENGTH_SHORT).show();
+                    ToastUtils.showSuccess(LoginActivity.this, "Login Successful!");
                     Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(intent);
@@ -176,21 +176,21 @@ public class LoginActivity extends AppCompatActivity {
                     if (response.errorBody() != null) {
                         try {
                             ErrorResponse errorObj = new Gson().fromJson(response.errorBody().string(), ErrorResponse.class);
-                            if (errorObj != null) {
+                            if (errorObj != null && errorObj.getErrorMessage() != null) {
                                 errorMessage = errorObj.getErrorMessage();
                             }
                         } catch (Exception e) {
                             errorMessage = response.message();
                         }
                     }
-                    Toast.makeText(LoginActivity.this, errorMessage, Toast.LENGTH_LONG).show();
+                    ToastUtils.showError(LoginActivity.this, errorMessage);
                 }
             }
 
             @Override
             public void onFailure(Call<AuthResponse> call, Throwable t) {
                 setLoading(false);
-                Toast.makeText(LoginActivity.this, "Network Error: " + t.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+                ToastUtils.showError(LoginActivity.this, "Network error. Please check your connection.");
             }
         });
     }

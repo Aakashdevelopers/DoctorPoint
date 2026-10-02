@@ -9,7 +9,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -34,6 +33,7 @@ import com.amstudio.drpoint.ui.main.MainActivity;
 import com.amstudio.drpoint.util.AvailabilityHelper;
 import com.amstudio.drpoint.util.DummyDataProvider;
 import com.amstudio.drpoint.util.PreferenceManager;
+import com.amstudio.drpoint.util.ToastUtils;
 import com.bumptech.glide.Glide;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -88,7 +88,7 @@ public class AppointmentsFragment extends Fragment {
                 if (!appointment.isCancellable()) {
                     Context ctx = getContext();
                     if (ctx != null) {
-                        Toast.makeText(ctx, "This appointment cannot be rescheduled.", Toast.LENGTH_SHORT).show();
+                        ToastUtils.showWarning(ctx, "This appointment cannot be rescheduled.");
                     }
                     return;
                 }
@@ -127,7 +127,7 @@ public class AppointmentsFragment extends Fragment {
             Context ctx = getContext();
             if (ctx != null) {
                 String msg = isChecked ? "Reminders enabled" : "Reminders disabled";
-                Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show();
+                ToastUtils.showInfo(ctx, msg);
             }
         });
 
@@ -344,7 +344,7 @@ public class AppointmentsFragment extends Fragment {
         if (context == null) return;
 
         if (!appointment.isCancellable()) {
-            Toast.makeText(context, "This appointment cannot be cancelled.", Toast.LENGTH_SHORT).show();
+            ToastUtils.showWarning(context, "This appointment cannot be cancelled.");
             return;
         }
 
@@ -371,7 +371,7 @@ public class AppointmentsFragment extends Fragment {
             public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
                 Context ctx = getContext();
                 if (!isAdded() || ctx == null) return;
-                Toast.makeText(ctx, "Appointment cancelled successfully.", Toast.LENGTH_SHORT).show();
+                ToastUtils.showSuccess(ctx, "Appointment cancelled successfully.");
                 loadAppointments();
                 openRefundDetailsBottomSheet(appointment);
             }
@@ -388,7 +388,7 @@ public class AppointmentsFragment extends Fragment {
                             public void onResponse(Call<Void> call, Response<Void> response) {
                                 Context ctx = getContext();
                                 if (!isAdded() || ctx == null) return;
-                                Toast.makeText(ctx, "Appointment cancelled successfully.", Toast.LENGTH_SHORT).show();
+                                ToastUtils.showSuccess(ctx, "Appointment cancelled successfully.");
                                 loadAppointments();
                                 openRefundDetailsBottomSheet(appointment);
                             }
@@ -397,7 +397,7 @@ public class AppointmentsFragment extends Fragment {
                             public void onFailure(Call<Void> call, Throwable t) {
                                 Context ctx = getContext();
                                 if (!isAdded() || ctx == null) return;
-                                Toast.makeText(ctx, "Appointment marked cancelled.", Toast.LENGTH_SHORT).show();
+                                ToastUtils.showSuccess(ctx, "Appointment marked cancelled.");
                                 loadAppointments();
                                 openRefundDetailsBottomSheet(appointment);
                             }
@@ -682,7 +682,7 @@ public class AppointmentsFragment extends Fragment {
                     Context ctx = getContext();
                     if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                         if (isAdded() && ctx != null) {
-                            Toast.makeText(ctx, "Success (" + response.code() + "): Refund request saved to Supabase!", Toast.LENGTH_LONG).show();
+                            ToastUtils.showSuccess(ctx, "Refund request submitted successfully!");
                             dialog.dismiss();
                         }
                     } else {
@@ -697,7 +697,7 @@ public class AppointmentsFragment extends Fragment {
                                             Context ctx2 = getContext();
                                             if (r2.isSuccessful() && r2.body() != null && !r2.body().isEmpty()) {
                                                 if (isAdded() && ctx2 != null) {
-                                                    Toast.makeText(ctx2, "Success (" + r2.code() + "): Refund request saved to Supabase!", Toast.LENGTH_LONG).show();
+                                                    ToastUtils.showSuccess(ctx2, "Refund request submitted successfully!");
                                                     dialog.dismiss();
                                                 }
                                             } else {
@@ -718,7 +718,7 @@ public class AppointmentsFragment extends Fragment {
                                             Context ctx2 = getContext();
                                             if (r2.isSuccessful() && r2.body() != null && !r2.body().isEmpty()) {
                                                 if (isAdded() && ctx2 != null) {
-                                                    Toast.makeText(ctx2, "Success (" + r2.code() + "): Refund request saved to Supabase!", Toast.LENGTH_LONG).show();
+                                                    ToastUtils.showSuccess(ctx2, "Refund request submitted successfully!");
                                                     dialog.dismiss();
                                                 }
                                             } else {
@@ -788,7 +788,7 @@ public class AppointmentsFragment extends Fragment {
         if (!isAdded() || context == null || refundBinding == null) return;
         refundBinding.btnRefundAction.setEnabled(true);
         refundBinding.btnRefundAction.setText("Request Cancellation & Refund");
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+        ToastUtils.showInfo(context, message);
     }
 
     private void openRateDoctorBottomSheet(Appointment appointment) {
@@ -896,7 +896,7 @@ public class AppointmentsFragment extends Fragment {
                     if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                         if (isAdded() && ctx != null) {
                             dialog.dismiss();
-                            Toast.makeText(ctx, "Success (" + response.code() + "): Review saved to Supabase!", Toast.LENGTH_LONG).show();
+                            ToastUtils.showSuccess(ctx, "Thank you! Your review has been submitted.");
                         }
                         if (appointment.getDoctorId() != null) {
                             DummyDataProvider.recalculateAndUpdateDoctorRating(appointment.getDoctorId());
@@ -914,7 +914,7 @@ public class AppointmentsFragment extends Fragment {
                                             if (r2.isSuccessful() && r2.body() != null && !r2.body().isEmpty()) {
                                                 if (isAdded() && ctx2 != null) {
                                                     dialog.dismiss();
-                                                    Toast.makeText(ctx2, "Success (" + r2.code() + "): Review saved to Supabase!", Toast.LENGTH_LONG).show();
+                                                    ToastUtils.showSuccess(ctx2, "Thank you! Your review has been submitted.");
                                                 }
                                                 if (appointment.getDoctorId() != null) {
                                                     DummyDataProvider.recalculateAndUpdateDoctorRating(appointment.getDoctorId());
@@ -938,7 +938,7 @@ public class AppointmentsFragment extends Fragment {
                                             if (r2.isSuccessful() && r2.body() != null && !r2.body().isEmpty()) {
                                                 if (isAdded() && ctx2 != null) {
                                                     dialog.dismiss();
-                                                    Toast.makeText(ctx2, "Success (" + r2.code() + "): Review saved to Supabase!", Toast.LENGTH_LONG).show();
+                                                    ToastUtils.showSuccess(ctx2, "Thank you! Your review has been submitted.");
                                                 }
                                                 if (appointment.getDoctorId() != null) {
                                                     DummyDataProvider.recalculateAndUpdateDoctorRating(appointment.getDoctorId());
@@ -981,7 +981,7 @@ public class AppointmentsFragment extends Fragment {
         if (!isAdded() || context == null || rateBinding == null) return;
         rateBinding.btnSubmitReview.setEnabled(true);
         rateBinding.btnSubmitReview.setText("Submit Review");
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+        ToastUtils.showInfo(context, message);
     }
 
     @Override

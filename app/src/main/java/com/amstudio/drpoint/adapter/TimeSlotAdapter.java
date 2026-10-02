@@ -3,7 +3,6 @@ package com.amstudio.drpoint.adapter;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
@@ -14,7 +13,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.amstudio.drpoint.R;
 import com.amstudio.drpoint.databinding.ItemTimeSlotBinding;
 import com.amstudio.drpoint.model.DoctorSlot;
-import com.amstudio.drpoint.util.AvailabilityHelper;
+import com.amstudio.drpoint.util.ToastUtils;
+
+import java.util.Objects;
 
 public class TimeSlotAdapter extends ListAdapter<DoctorSlot, TimeSlotAdapter.ViewHolder> {
 
@@ -25,12 +26,16 @@ public class TimeSlotAdapter extends ListAdapter<DoctorSlot, TimeSlotAdapter.Vie
     private static final DiffUtil.ItemCallback<DoctorSlot> DIFF_CALLBACK = new DiffUtil.ItemCallback<DoctorSlot>() {
         @Override
         public boolean areItemsTheSame(@NonNull DoctorSlot oldItem, @NonNull DoctorSlot newItem) {
-            return oldItem.getId() != null && oldItem.getId().equals(newItem.getId());
+            if (oldItem.getId() != null && newItem.getId() != null) {
+                return oldItem.getId().equals(newItem.getId());
+            }
+            return Objects.equals(oldItem.getStartTime(), newItem.getStartTime());
         }
 
         @Override
         public boolean areContentsTheSame(@NonNull DoctorSlot oldItem, @NonNull DoctorSlot newItem) {
-            return oldItem.getStatus().equals(newItem.getStatus()) && oldItem.getStartTime().equals(newItem.getStartTime());
+            return Objects.equals(oldItem.getStatus(), newItem.getStatus())
+                    && Objects.equals(oldItem.getStartTime(), newItem.getStartTime());
         }
     };
 
@@ -43,10 +48,15 @@ public class TimeSlotAdapter extends ListAdapter<DoctorSlot, TimeSlotAdapter.Vie
     }
 
     public void setSelectedPosition(int position) {
+        if (selectedPosition == position) return;
         int oldPos = selectedPosition;
         selectedPosition = position;
-        notifyItemChanged(oldPos);
-        notifyItemChanged(selectedPosition);
+        if (oldPos >= 0 && oldPos < getItemCount()) {
+            notifyItemChanged(oldPos);
+        }
+        if (selectedPosition >= 0 && selectedPosition < getItemCount()) {
+            notifyItemChanged(selectedPosition);
+        }
     }
 
     public int getSelectedPosition() {
@@ -88,38 +98,35 @@ public class TimeSlotAdapter extends ListAdapter<DoctorSlot, TimeSlotAdapter.Vie
 
         void bind(DoctorSlot slot, boolean isSelected, OnInternalSlotClickListener listener) {
             Context context = itemView.getContext();
-            String timeStr = slot.getFormattedTime();
+            String timeStr = slot != null ? slot.getFormattedTime() : "";
             binding.getRoot().setText(timeStr);
 
-            boolean isAvailable = "available".equalsIgnoreCase(slot.getStatus());
+            boolean isAvailable = slot != null && "available".equalsIgnoreCase(slot.getStatus());
 
             if (!isAvailable) {
-                // Booked / Blocked -> Red
+                // Booked / Blocked -> Grayed out background with red text
                 binding.getRoot().setBackgroundResource(R.drawable.bg_calendar_day_unavailable);
                 binding.getRoot().setTextColor(ContextCompat.getColor(context, R.color.error_red));
-                binding.getRoot().setEnabled(false);
-                binding.getRoot().setAlpha(0.6f);
+                binding.getRoot().setAlpha(0.5f);
             } else if (isSelected) {
                 // Available & Selected -> Dark Green Fill
                 binding.getRoot().setBackgroundResource(R.drawable.bg_calendar_day_selected);
                 binding.getRoot().setTextColor(ContextCompat.getColor(context, R.color.white));
-                binding.getRoot().setEnabled(true);
                 binding.getRoot().setAlpha(1.0f);
             } else {
                 // Available & Not Selected -> Light Green (Available) outline
                 binding.getRoot().setBackgroundResource(R.drawable.bg_calendar_day_available);
                 binding.getRoot().setTextColor(ContextCompat.getColor(context, R.color.primary));
-                binding.getRoot().setEnabled(true);
                 binding.getRoot().setAlpha(1.0f);
             }
 
             itemView.setOnClickListener(v -> {
                 if (!isAvailable) {
-                    Toast.makeText(context, "Slot is already booked or unavailable.", Toast.LENGTH_SHORT).show();
+                    ToastUtils.showWarning(context, "Slot is already booked or unavailable.");
                     return;
                 }
                 int pos = getBindingAdapterPosition();
-                if (pos != RecyclerView.NO_POSITION && listener != null) {
+                if (pos != RecyclerView.NO_POSITION && listener != null && slot != null) {
                     listener.onSlotClick(slot, pos);
                 }
             });

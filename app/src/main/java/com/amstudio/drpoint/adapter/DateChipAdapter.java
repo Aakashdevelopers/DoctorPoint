@@ -57,12 +57,12 @@ public class DateChipAdapter extends ListAdapter<DateChipAdapter.DateItem, DateC
     private static final DiffUtil.ItemCallback<DateItem> DIFF_CALLBACK = new DiffUtil.ItemCallback<DateItem>() {
         @Override
         public boolean areItemsTheSame(@NonNull DateItem oldItem, @NonNull DateItem newItem) {
-            return oldItem.getDay().equals(newItem.getDay()) && oldItem.getDate().equals(newItem.getDate());
+            return Objects.equals(oldItem.getDay(), newItem.getDay()) && Objects.equals(oldItem.getDate(), newItem.getDate());
         }
 
         @Override
         public boolean areContentsTheSame(@NonNull DateItem oldItem, @NonNull DateItem newItem) {
-            return oldItem.equals(newItem);
+            return Objects.equals(oldItem, newItem);
         }
     };
 
@@ -75,10 +75,15 @@ public class DateChipAdapter extends ListAdapter<DateChipAdapter.DateItem, DateC
     }
 
     public void setSelectedPosition(int position) {
+        if (selectedPosition == position) return;
         int oldPos = selectedPosition;
         selectedPosition = position;
-        notifyItemChanged(oldPos);
-        notifyItemChanged(selectedPosition);
+        if (oldPos >= 0 && oldPos < getItemCount()) {
+            notifyItemChanged(oldPos);
+        }
+        if (selectedPosition >= 0 && selectedPosition < getItemCount()) {
+            notifyItemChanged(selectedPosition);
+        }
     }
 
     public int getSelectedPosition() {
@@ -113,8 +118,8 @@ public class DateChipAdapter extends ListAdapter<DateChipAdapter.DateItem, DateC
 
         void bind(DateItem dateItem, boolean isSelected, OnInternalClickListener internalClickListener) {
             Context context = itemView.getContext();
-            binding.tvDayName.setText(dateItem.getDay());
-            binding.tvDateVal.setText(dateItem.getDate());
+            binding.tvDayName.setText(dateItem != null ? dateItem.getDay() : "");
+            binding.tvDateVal.setText(dateItem != null ? dateItem.getDate() : "");
 
             if (isSelected) {
                 binding.llDateContainer.setBackgroundResource(R.drawable.bg_date_chip_selected);
@@ -127,8 +132,8 @@ public class DateChipAdapter extends ListAdapter<DateChipAdapter.DateItem, DateC
             }
 
             itemView.setOnClickListener(v -> {
-                int pos = getAdapterPosition();
-                if (pos != RecyclerView.NO_POSITION && internalClickListener != null) {
+                int pos = getBindingAdapterPosition();
+                if (pos != RecyclerView.NO_POSITION && internalClickListener != null && dateItem != null) {
                     internalClickListener.onDateClick(dateItem, pos);
                 }
             });

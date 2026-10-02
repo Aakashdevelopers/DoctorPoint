@@ -7,7 +7,6 @@ import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Patterns;
 import android.view.View;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -19,6 +18,7 @@ import com.amstudio.drpoint.network.model.SignUpRequest;
 import com.amstudio.drpoint.network.model.User;
 import com.amstudio.drpoint.ui.main.MainActivity;
 import com.amstudio.drpoint.util.PreferenceManager;
+import com.amstudio.drpoint.util.ToastUtils;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.gson.Gson;
 
@@ -57,7 +57,7 @@ public class SignupActivity extends AppCompatActivity {
         binding.btnSignup.setOnClickListener(v -> {
             if (validateInputs()) {
                 if (!binding.cbTerms.isChecked()) {
-                    Toast.makeText(SignupActivity.this, "Please agree to the Terms & Conditions", Toast.LENGTH_SHORT).show();
+                    ToastUtils.showWarning(SignupActivity.this, "Please agree to the Terms & Conditions");
                     return;
                 }
 
@@ -274,7 +274,7 @@ public class SignupActivity extends AppCompatActivity {
 
                     ensurePatientProfileInSupabase(userId, name, userEmail, phone, state);
 
-                    Toast.makeText(SignupActivity.this, "Account Created Successfully!", Toast.LENGTH_SHORT).show();
+                    ToastUtils.showSuccess(SignupActivity.this, "Account Created Successfully!");
                     Intent intent = new Intent(SignupActivity.this, MainActivity.class);
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(intent);
@@ -284,21 +284,21 @@ public class SignupActivity extends AppCompatActivity {
                     if (response.errorBody() != null) {
                         try {
                             ErrorResponse errorObj = new Gson().fromJson(response.errorBody().string(), ErrorResponse.class);
-                            if (errorObj != null) {
+                            if (errorObj != null && errorObj.getErrorMessage() != null) {
                                 errorMessage = errorObj.getErrorMessage();
                             }
                         } catch (Exception e) {
                             errorMessage = response.message();
                         }
                     }
-                    Toast.makeText(SignupActivity.this, errorMessage, Toast.LENGTH_LONG).show();
+                    ToastUtils.showError(SignupActivity.this, errorMessage);
                 }
             }
 
             @Override
             public void onFailure(Call<AuthResponse> call, Throwable t) {
                 setLoading(false);
-                Toast.makeText(SignupActivity.this, "Network Error: " + t.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+                ToastUtils.showError(SignupActivity.this, "Network error. Please check your connection.");
             }
         });
     }

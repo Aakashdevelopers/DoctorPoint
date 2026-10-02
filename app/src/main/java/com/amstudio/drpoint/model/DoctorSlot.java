@@ -1,8 +1,10 @@
 package com.amstudio.drpoint.model;
 
+import com.amstudio.drpoint.util.AvailabilityHelper;
 import com.google.gson.annotations.SerializedName;
 
 import java.io.Serializable;
+import java.util.Locale;
 import java.util.Objects;
 
 public class DoctorSlot implements Serializable {
@@ -131,15 +133,16 @@ public class DoctorSlot implements Serializable {
     public void setFollowUpFee(int followUpFee) { this.followUpFee = followUpFee; }
 
     public String getFormattedTime() {
-        if (startTime == null) return "";
+        if (startTime == null || startTime.trim().isEmpty()) return "";
         try {
-            String[] parts = startTime.split(":");
+            String norm = AvailabilityHelper.normalizeTimeFormat(startTime);
+            String[] parts = norm.split(":");
             int hour = Integer.parseInt(parts[0]);
             int min = Integer.parseInt(parts[1]);
             String ampm = hour >= 12 ? "PM" : "AM";
             int hour12 = hour % 12;
             if (hour12 == 0) hour12 = 12;
-            return String.format("%02d:%02d %s", hour12, min, ampm);
+            return String.format(Locale.US, "%02d:%02d %s", hour12, min, ampm);
         } catch (Exception e) {
             return startTime;
         }

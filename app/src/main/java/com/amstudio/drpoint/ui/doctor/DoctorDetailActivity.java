@@ -4,8 +4,9 @@ import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.View;
-import android.widget.Toast;
+import android.webkit.WebSettings;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
@@ -18,6 +19,7 @@ import com.amstudio.drpoint.adapter.ClinicPhotoAdapter;
 import com.amstudio.drpoint.adapter.DoctorReviewsAdapter;
 import com.amstudio.drpoint.adapter.TimeSlotAdapter;
 import com.amstudio.drpoint.databinding.ActivityDoctorDetailBinding;
+import com.amstudio.drpoint.util.ToastUtils;
 import com.amstudio.drpoint.model.Appointment;
 import com.amstudio.drpoint.model.Clinic;
 import com.amstudio.drpoint.model.Doctor;
@@ -194,7 +196,38 @@ public class DoctorDetailActivity extends AppCompatActivity {
 
         if (doctor.getAbout() != null && !doctor.getAbout().isEmpty()) {
             binding.tvAboutDesc.setText(doctor.getAbout());
+        } else {
+            String generatedAbout = "Dr. " + doctor.getName() + " is a highly distinguished " + doctor.getSpecializationString() +
+                    " (" + doctor.getQualification() + ") with " + doctor.getExperience() + " of clinical experience. " +
+                    "Practicing at " + doctor.getClinicName() + " in " + doctor.getLocation() + ", " + doctor.getState() +
+                    ". Recognized for exceptional patient care, accurate diagnosis, and high treatment success rate with over " +
+                    (doctor.getPatientCount() > 0 ? String.format(Locale.getDefault(), "%,d", doctor.getPatientCount()) : "500") +
+                    "+ satisfied patients.";
+            binding.tvAboutDesc.setText(generatedAbout);
         }
+
+        setupAboutReadMoreToggle();
+
+        // Populate Doctor Profile Overview Card fields
+        if (binding.tvAboutSpecialization != null) {
+            binding.tvAboutSpecialization.setText(doctor.getSpecializationString());
+        }
+        if (binding.tvAboutQualification != null) {
+            binding.tvAboutQualification.setText(doctor.getQualification());
+        }
+        if (binding.tvAboutExperience != null) {
+            binding.tvAboutExperience.setText(doctor.getExperience() + " Overall Experience");
+        }
+        if (binding.tvAboutGender != null) {
+            String gender = doctor.getGender();
+            binding.tvAboutGender.setText(gender != null && !gender.isEmpty() ? gender + " Doctor" : "Medical Practitioner");
+        }
+        if (binding.tvAboutVerified != null) {
+            binding.tvAboutVerified.setText(doctor.isVerified() ? "Verified Practitioner" : "Registered Practitioner");
+        }
+
+        // Populate Clinic details & image banner
+        updateClinicDetailsAndBanner();
 
         // Contact Information (Doctor Phone & Reception Phone)
         if (binding.cardContactInfo != null) {
@@ -244,6 +277,41 @@ public class DoctorDetailActivity extends AppCompatActivity {
                 .into(binding.ivDoctorImage);
     }
 
+    private boolean isAboutExpanded = false;
+
+    private void setupAboutReadMoreToggle() {
+        if (binding.tvAboutDesc == null || binding.tvReadMore == null) return;
+
+        binding.tvAboutDesc.setMaxLines(3);
+        binding.tvAboutDesc.setEllipsize(TextUtils.TruncateAt.END);
+
+        binding.tvReadMore.setOnClickListener(v -> {
+            if (isAboutExpanded) {
+                binding.tvAboutDesc.setMaxLines(3);
+                binding.tvReadMore.setText("Read More");
+                isAboutExpanded = false;
+            } else {
+                binding.tvAboutDesc.setMaxLines(Integer.MAX_VALUE);
+                binding.tvReadMore.setText("Show Less");
+                isAboutExpanded = true;
+            }
+        });
+    }
+
+    private void updateClinicDetailsAndBanner() {
+        if (doctor == null || binding == null) return;
+
+        if (binding.tvClinicName != null) {
+            binding.tvClinicName.setText(doctor.getClinicName());
+        }
+        if (binding.tvClinicAddress != null) {
+            binding.tvClinicAddress.setText(doctor.getLocation());
+        }
+        if (binding.tvClinicState != null) {
+            binding.tvClinicState.setText(doctor.getState());
+        }
+    }
+
     private void loadClinicsAndSlotsFromSupabase() {
         if (doctor == null || doctor.getId() == null) return;
 
@@ -257,6 +325,9 @@ public class DoctorDetailActivity extends AppCompatActivity {
                             Clinic primary = doctorClinics.get(0);
                             binding.tvClinicName.setText(primary.getClinicName());
                             binding.tvClinicAddress.setText(primary.getFullAddress());
+                            if (binding.tvClinicState != null) {
+                                binding.tvClinicState.setText(primary.getState() != null ? primary.getState() : doctor.getState());
+                            }
                         }
                     }
 
@@ -406,7 +477,7 @@ public class DoctorDetailActivity extends AppCompatActivity {
 
     private void makePhoneCall(String phoneNumber) {
         if (phoneNumber == null || phoneNumber.trim().isEmpty()) {
-            Toast.makeText(this, "Phone number not available", Toast.LENGTH_SHORT).show();
+            ToastUtils.showWarning(this, "Phone number not available");
             return;
         }
         try {
@@ -414,7 +485,7 @@ public class DoctorDetailActivity extends AppCompatActivity {
             intent.setData(Uri.parse("tel:" + phoneNumber.trim()));
             startActivity(intent);
         } catch (Exception e) {
-            Toast.makeText(this, "Unable to make call", Toast.LENGTH_SHORT).show();
+            ToastUtils.showError(this, "Unable to make call");
         }
     }
 
@@ -458,7 +529,7 @@ public class DoctorDetailActivity extends AppCompatActivity {
         boolean isFav = PreferenceManager.getInstance(this).toggleFavoriteDoctor(doctor.getId());
         updateFavoriteIcon();
         String msg = isFav ? doctor.getName() + " saved to your list!" : doctor.getName() + " removed from saved list";
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+        ToastUtils.showSuccess(this, msg);
     }
 
     private void openClinicInGoogleMaps() {
@@ -498,7 +569,7 @@ public class DoctorDetailActivity extends AppCompatActivity {
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
             startActivity(browserIntent);
         } catch (Exception e) {
-            Toast.makeText(this, "Could not open map for " + doctor.getClinicName(), Toast.LENGTH_SHORT).show();
+            ToastUtils.showError(this, "Could not open map for " + doctor.getClinicName());
         }
     }
 
@@ -708,15 +779,20 @@ public class DoctorDetailActivity extends AppCompatActivity {
     }
 
     private void setupClinicPhotos() {
+        if (binding.rvClinicPhotos == null) return;
         binding.rvClinicPhotos.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         ClinicPhotoAdapter photoAdapter = new ClinicPhotoAdapter();
         binding.rvClinicPhotos.setAdapter(photoAdapter);
 
         List<Object> photos = (doctor != null) ? doctor.getClinicPhotosList() : new ArrayList<>();
         if (photos.isEmpty()) {
-            binding.cardClinicPhotos.setVisibility(View.GONE);
+            if (binding.cardClinicPhotos != null) {
+                binding.cardClinicPhotos.setVisibility(View.GONE);
+            }
         } else {
-            binding.cardClinicPhotos.setVisibility(View.VISIBLE);
+            if (binding.cardClinicPhotos != null) {
+                binding.cardClinicPhotos.setVisibility(View.VISIBLE);
+            }
             photoAdapter.submitList(photos);
         }
     }

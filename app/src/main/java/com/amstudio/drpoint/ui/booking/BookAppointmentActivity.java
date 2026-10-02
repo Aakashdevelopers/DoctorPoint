@@ -6,7 +6,6 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
-import android.widget.Toast;
 
 import android.net.Uri;
 import android.text.TextUtils;
@@ -37,8 +36,14 @@ import com.amstudio.drpoint.util.AvailabilityHelper;
 import com.amstudio.drpoint.util.CommissionHelper;
 import com.amstudio.drpoint.util.DummyDataProvider;
 import com.amstudio.drpoint.util.PreferenceManager;
+import com.amstudio.drpoint.util.ToastUtils;
 import com.bumptech.glide.Glide;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.razorpay.Checkout;
+import com.razorpay.PaymentData;
+import com.razorpay.PaymentResultWithDataListener;
+
+import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -66,7 +71,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class BookAppointmentActivity extends AppCompatActivity {
+public class BookAppointmentActivity extends AppCompatActivity implements PaymentResultWithDataListener {
 
     private ActivityBookAppointmentBinding binding;
     private Doctor doctor;
@@ -80,12 +85,16 @@ public class BookAppointmentActivity extends AppCompatActivity {
     private boolean isReturningPatientUser = false;
 
     private List<DoctorSlot> availableSlotsList = new ArrayList<>();
+    private List<Appointment> cachedAppointments = new ArrayList<>();
     private List<DateChipAdapter.DateItem> dateChipList = new ArrayList<>();
     private DateChipAdapter dateChipAdapter;
 
     private BottomSheetEditProfileBinding activeSheetBinding;
     private String uploadedAvatarUrl = "";
     private ActivityResultLauncher<Intent> imagePickerLauncher;
+    private String pendingUserId = null;
+    private String pendingSlotId = null;
+    private String lastRazorpayPaymentId = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -126,6 +135,8 @@ public class BookAppointmentActivity extends AppCompatActivity {
         );
     }
 
+
+
     private void uploadPatientImageToSupabaseStorage(Uri imageUri) {
         if (activeSheetBinding != null) {
             activeSheetBinding.tvEditUploadLabel.setText("⌛ Uploading photo...");
@@ -159,7 +170,7 @@ public class BookAppointmentActivity extends AppCompatActivity {
                         if (activeSheetBinding != null) {
                             activeSheetBinding.tvEditUploadLabel.setText("✅ Photo Uploaded!");
                         }
-                        Toast.makeText(BookAppointmentActivity.this, "Patient Photo Uploaded!", Toast.LENGTH_SHORT).show();
+                        ToastUtils.showSuccess(BookAppointmentActivity.this, "Patient Photo Uploaded!");
                     });
                     return;
                 }
@@ -295,12 +306,21 @@ public class BookAppointmentActivity extends AppCompatActivity {
     }
 
     private void markBookedSlots(List<Appointment> appointments) {
-        if (appointments == null || appointments.isEmpty() || availableSlotsList == null || availableSlotsList.isEmpty()) return;
+        if (appointments != null) {
+            cachedAppointments = appointments;
+        } else {
+            appointments = cachedAppointments;
+        }
+        markBookedSlotsForList(availableSlotsList);
+    }
+
+    private void markBookedSlotsForList(List<DoctorSlot> targetSlots) {
+        if (cachedAppointments == null || cachedAppointments.isEmpty() || targetSlots == null || targetSlots.isEmpty()) return;
 
         Map<String, Set<String>> bookedMap = new HashMap<>();
-        for (Appointment appt : appointments) {
+        for (Appointment appt : cachedAppointments) {
             String st = appt.getStatus();
-            if (st != null && (st.equalsIgnoreCase("Cancelled") || st.equalsIgnoreCase("Rejected"))) {
+            if (st != null && (st.equalsIgnoreCase("Cancelled") || st.equalsIgnoreCase("Rejected") || st.equalsIgnoreCase("Canceled"))) {
                 continue;
             }
             String date = appt.getAppointmentDate();
@@ -317,7 +337,7 @@ public class BookAppointmentActivity extends AppCompatActivity {
             }
         }
 
-        for (DoctorSlot slot : availableSlotsList) {
+        for (DoctorSlot slot : targetSlots) {
             String slotDate = slot.getSlotDate();
             if (slotDate != null && slotDate.contains("T")) slotDate = slotDate.substring(0, slotDate.indexOf("T"));
             if (slotDate != null && slotDate.contains(" ")) slotDate = slotDate.substring(0, slotDate.indexOf(" "));
@@ -333,19 +353,7 @@ public class BookAppointmentActivity extends AppCompatActivity {
     }
 
     private String normalizeTimeFormat(String timeStr) {
-        if (timeStr == null || timeStr.trim().isEmpty()) return "00:00:00";
-        String clean = timeStr.trim();
-        if (clean.contains(" ")) clean = clean.substring(0, clean.indexOf(" "));
-        String[] parts = clean.split(":");
-        if (parts.length >= 2) {
-            try {
-                int h = Integer.parseInt(parts[0]);
-                int m = Integer.parseInt(parts[1]);
-                int s = parts.length > 2 ? Integer.parseInt(parts[2]) : 0;
-                return String.format(Locale.US, "%02d:%02d:%02d", h, m, s);
-            } catch (Exception ignored) {}
-        }
-        return clean;
+        return AvailabilityHelper.normalizeTimeFormat(timeStr);
     }
 
     private List<DoctorSlot> expandSchedulesToSlots(List<DoctorSlot> scheduleRows) {
@@ -597,13 +605,15 @@ public class BookAppointmentActivity extends AppCompatActivity {
         // If slots are empty for the selected date (e.g. past daytime hours), generate active slots for this date!
         if (slotsForDate.isEmpty()) {
             slotsForDate = generateSlotsForSpecificDate(rawDate);
+            markBookedSlotsForList(slotsForDate);
         }
 
         List<DoctorSlot> morningDoctorSlots = new ArrayList<>();
         List<DoctorSlot> eveningDoctorSlots = new ArrayList<>();
 
         for (DoctorSlot slot : slotsForDate) {
-            if (slot.getStartTime() != null && slot.getStartTime().compareTo("16:00:00") < 0) {
+            String normStart = normalizeTimeFormat(slot.getStartTime());
+            if (normStart != null && normStart.compareTo("16:00:00") < 0) {
                 morningDoctorSlots.add(slot);
             } else {
                 eveningDoctorSlots.add(slot);
@@ -710,12 +720,12 @@ public class BookAppointmentActivity extends AppCompatActivity {
     private void executeBookingFlow() {
         String userId = PreferenceManager.getInstance(this).getUserId();
         if (userId == null || userId.trim().isEmpty()) {
-            Toast.makeText(this, "Session expired. Please log in again.", Toast.LENGTH_SHORT).show();
+            ToastUtils.showWarning(this, "Session expired. Please log in again.");
             return;
         }
 
         if (selectedSlotId == null || selectedSlotId.trim().isEmpty()) {
-            Toast.makeText(this, "Please select an available time slot.", Toast.LENGTH_SHORT).show();
+            ToastUtils.showWarning(this, "Please select an available time slot.");
             return;
         }
 
@@ -737,9 +747,7 @@ public class BookAppointmentActivity extends AppCompatActivity {
         if (!isProfileComplete) {
             openMandatoryProfileBottomSheet(userId);
         } else {
-            binding.btnConfirmBooking.setEnabled(false);
-            binding.btnConfirmBooking.setText("Booking Appointment...");
-            sendBookingRpcRequest(userId, selectedSlotId);
+            initiateRazorpayPaymentFlow(userId, selectedSlotId);
         }
     }
 
@@ -881,7 +889,7 @@ public class BookAppointmentActivity extends AppCompatActivity {
             }
 
             if (!isValid) {
-                Toast.makeText(BookAppointmentActivity.this, "Please enter name & 10-digit phone number", Toast.LENGTH_SHORT).show();
+                ToastUtils.showWarning(BookAppointmentActivity.this, "Please enter name & 10-digit phone number");
                 return;
             }
 
@@ -901,9 +909,7 @@ public class BookAppointmentActivity extends AppCompatActivity {
 
             dialog.dismiss();
 
-            binding.btnConfirmBooking.setEnabled(false);
-            binding.btnConfirmBooking.setText("Booking Appointment...");
-            sendBookingRpcRequest(userId, selectedSlotId);
+            initiateRazorpayPaymentFlow(userId, selectedSlotId);
         });
 
         dialog.show();
@@ -1013,18 +1019,111 @@ public class BookAppointmentActivity extends AppCompatActivity {
                 .setTitle("Profile Photo Required")
                 .setMessage("Doctor & reception desk require a clear patient profile photo for appointment check-in. Please upload your photo to proceed.")
                 .setPositiveButton("Upload Photo", (dialog, which) -> {
-                    Toast.makeText(this, "Please update your profile photo in Profile Settings", Toast.LENGTH_LONG).show();
+                    ToastUtils.showWarning(this, "Please update your profile photo in Profile Settings");
                 })
                 .setNegativeButton("Proceed Without Photo", (dialog, which) -> {
-                    binding.btnConfirmBooking.setEnabled(false);
-                    binding.btnConfirmBooking.setText("Booking Appointment...");
-                    sendBookingRpcRequest(userId, slotId);
+                    initiateRazorpayPaymentFlow(userId, slotId);
                 })
                 .show();
     }
 
+    private void initiateRazorpayPaymentFlow(String userId, String slotId) {
+        int activeFee = doctor != null ? doctor.getFee() : 500;
+        if (availableSlotsList != null && !availableSlotsList.isEmpty() && availableSlotsList.get(0).getFee() > 0) {
+            activeFee = isReturningPatientUser ? availableSlotsList.get(0).getFollowUpFee() : availableSlotsList.get(0).getFee();
+        }
+        final int finalFee = activeFee > 0 ? activeFee : 500;
+
+        pendingUserId = userId;
+        pendingSlotId = slotId;
+
+        binding.btnConfirmBooking.setEnabled(false);
+        binding.btnConfirmBooking.setText("Opening Payment Gateway (₹" + finalFee + ")...");
+
+        String userPhone = PreferenceManager.getInstance(this).getUserPhone();
+        if (userPhone != null) {
+            userPhone = userPhone.replaceAll("[^0-9]", "").trim();
+        }
+        if (userPhone == null || userPhone.length() != 10) {
+            userPhone = "9876543210";
+        }
+
+        String userEmail = PreferenceManager.getInstance(this).getUserEmail();
+        if (TextUtils.isEmpty(userEmail) || !userEmail.contains("@")) {
+            userEmail = "patient@doctorpoint.app";
+        }
+
+        String doctorNameStr = (doctor != null && doctor.getName() != null) ? doctor.getName() : "Doctor Specialist";
+
+        Checkout checkout = new Checkout();
+        String razorpayKey = BuildConfig.RAZORPAY_KEY_ID;
+        if (razorpayKey != null && !razorpayKey.isEmpty()) {
+            checkout.setKeyID(razorpayKey);
+        }
+
+        try {
+            JSONObject options = new JSONObject();
+            if (razorpayKey != null && !razorpayKey.isEmpty()) {
+                options.put("key", razorpayKey);
+            }
+            options.put("name", "Doctor Point");
+            options.put("description", "Consultation Fee - " + doctorNameStr);
+            options.put("image", "https://s3.amazonaws.com/rzp-mobile/images/rzp.png");
+            options.put("theme.color", "#03A9F4");
+            options.put("currency", "INR");
+            options.put("amount", finalFee * 100); // Amount in paise
+            options.put("send_sms_hash", true);
+
+            JSONObject prefill = new JSONObject();
+            prefill.put("email", userEmail);
+            prefill.put("contact", userPhone);
+            options.put("prefill", prefill);
+
+            JSONObject retryObj = new JSONObject();
+            retryObj.put("enabled", true);
+            retryObj.put("max_count", 2);
+            options.put("retry", retryObj);
+
+            checkout.open(BookAppointmentActivity.this, options);
+        } catch (Exception e) {
+            Log.e("BookAppointment", "Error in starting Razorpay Checkout", e);
+            binding.btnConfirmBooking.setEnabled(true);
+            binding.btnConfirmBooking.setText("Confirm Booking");
+            ToastUtils.showError(this, "Error starting payment: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void onPaymentSuccess(String razorpayPaymentId, PaymentData paymentData) {
+        String paymentId = (paymentData != null && paymentData.getPaymentId() != null) 
+                ? paymentData.getPaymentId() : razorpayPaymentId;
+        this.lastRazorpayPaymentId = paymentId;
+        Log.d("BookAppointment", "Razorpay Payment Success. Payment ID: " + paymentId);
+        ToastUtils.showSuccess(this, "Payment Verified!");
+        binding.btnConfirmBooking.setEnabled(false);
+        binding.btnConfirmBooking.setText("Booking Appointment...");
+        if (pendingUserId != null && pendingSlotId != null) {
+            sendBookingRpcRequest(pendingUserId, pendingSlotId);
+        } else {
+            String userId = PreferenceManager.getInstance(this).getUserId();
+            sendBookingRpcRequest(userId, selectedSlotId);
+        }
+    }
+
+    @Override
+    public void onPaymentError(int code, String response, PaymentData paymentData) {
+        Log.e("BookAppointment", "Razorpay Payment Error code=" + code + ", response=" + response);
+        binding.btnConfirmBooking.setEnabled(true);
+        binding.btnConfirmBooking.setText("Confirm Booking");
+        if (code == Checkout.PAYMENT_CANCELED) {
+            ToastUtils.showInfo(this, "Payment cancelled by user");
+        } else {
+            ToastUtils.showError(this, "Payment failed. Please try again.");
+        }
+    }
+
     private void showToast(String message) {
-        // Debug toasts removed for clean UI
+        ToastUtils.showDebug(this, message);
     }
 
     private void markSlotAsBookedInSupabase(String slotId) {
@@ -1549,6 +1648,7 @@ public class BookAppointmentActivity extends AppCompatActivity {
         intent.putExtra("selected_time", selectedTimeFormatted != null ? selectedTimeFormatted : "10:00 AM");
         intent.putExtra("booking_fee_type", feeTypeLabel);
         intent.putExtra("booking_fee_amount", activeFee);
+        intent.putExtra("payment_id", lastRazorpayPaymentId);
         intent.putExtra("rpc_response", rpcResp);
         startActivity(intent);
         finish();

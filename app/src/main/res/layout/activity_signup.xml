@@ -160,7 +160,7 @@
             app:boxStrokeColor="@color/primary"
             app:passwordToggleEnabled="true"
             app:passwordToggleTint="@color/text_secondary"
-            app:startIconDrawable="@drawable/ic_settings"
+            app:startIconDrawable="@drawable/ic_password"
             app:startIconTint="@color/text_secondary">
 
             <com.google.android.material.textfield.TextInputEditText
@@ -186,7 +186,7 @@
             app:boxStrokeColor="@color/primary"
             app:passwordToggleEnabled="true"
             app:passwordToggleTint="@color/text_secondary"
-            app:startIconDrawable="@drawable/ic_settings"
+            app:startIconDrawable="@drawable/ic_password"
             app:startIconTint="@color/text_secondary">
 
             <com.google.android.material.textfield.TextInputEditText

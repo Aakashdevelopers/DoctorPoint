@@ -78,6 +78,7 @@ public class CalendarDayAdapter extends RecyclerView.Adapter<CalendarDayAdapter.
     }
 
     public void setSelectedPosition(int pos) {
+        if (selectedPosition == pos) return;
         int prev = selectedPosition;
         selectedPosition = pos;
 
@@ -85,8 +86,8 @@ public class CalendarDayAdapter extends RecyclerView.Adapter<CalendarDayAdapter.
             dayList.get(i).setSelected(i == selectedPosition);
         }
 
-        if (prev != -1) notifyItemChanged(prev);
-        if (selectedPosition != -1) notifyItemChanged(selectedPosition);
+        if (prev >= 0 && prev < dayList.size()) notifyItemChanged(prev);
+        if (selectedPosition >= 0 && selectedPosition < dayList.size()) notifyItemChanged(selectedPosition);
     }
 
     @NonNull
@@ -117,7 +118,7 @@ public class CalendarDayAdapter extends RecyclerView.Adapter<CalendarDayAdapter.
         void bind(CalendarDay day, boolean isSelected, OnCalendarDayClickListener listener, CalendarDayAdapter adapter) {
             Context context = itemView.getContext();
 
-            if (day.getDayNumber() <= 0 || !day.isCurrentMonth()) {
+            if (day == null || day.getDayNumber() <= 0 || !day.isCurrentMonth()) {
                 binding.llDayContainer.setVisibility(View.GONE);
                 return;
             }

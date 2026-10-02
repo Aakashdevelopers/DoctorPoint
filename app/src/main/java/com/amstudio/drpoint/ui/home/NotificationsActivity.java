@@ -2,7 +2,6 @@ package com.amstudio.drpoint.ui.home;
 
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -12,6 +11,7 @@ import com.amstudio.drpoint.databinding.ActivityNotificationsBinding;
 import com.amstudio.drpoint.model.NotificationItem;
 import com.amstudio.drpoint.network.SupabaseClient;
 import com.amstudio.drpoint.util.PreferenceManager;
+import com.amstudio.drpoint.util.ToastUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -125,7 +125,7 @@ public class NotificationsActivity extends AppCompatActivity {
             markNotificationReadInSupabase(item.getId());
         }
         displayNotifications();
-        Toast.makeText(this, "All notifications marked as read.", Toast.LENGTH_SHORT).show();
+        ToastUtils.showSuccess(this, "All notifications marked as read.");
     }
 
     private List<NotificationItem> getSampleNotifications() {
