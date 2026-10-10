@@ -1,6 +1,7 @@
 package com.amstudio.drpoint.util;
 
 import com.amstudio.drpoint.adapter.DateChipAdapter;
+import com.amstudio.drpoint.model.Appointment;
 import com.amstudio.drpoint.model.Doctor;
 import com.amstudio.drpoint.model.DoctorSlot;
 
@@ -14,11 +15,33 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 
 public class AvailabilityHelper {
 
     // Configurable Availability Window (Default: 2 days in advance)
     public static final int DEFAULT_AVAILABILITY_WINDOW_DAYS = 2;
+    public static final String TIME_ZONE_ID = "Asia/Kolkata";
+
+    private static long serverTimeOffsetMillis = 0L;
+
+    public static TimeZone getAppTimeZone() {
+        return TimeZone.getTimeZone(TIME_ZONE_ID);
+    }
+
+    public static Calendar getCalendarInstance() {
+        return Calendar.getInstance(getAppTimeZone(), Locale.US);
+    }
+
+    public static synchronized void updateServerTimeOffset(long serverTimestampMillis) {
+        if (serverTimestampMillis > 0) {
+            serverTimeOffsetMillis = serverTimestampMillis - System.currentTimeMillis();
+        }
+    }
+
+    public static long getCalibratedCurrentTimeMillis() {
+        return System.currentTimeMillis() + serverTimeOffsetMillis;
+    }
 
     public static String normalizeTimeFormat(String timeStr) {
         if (timeStr == null || timeStr.trim().isEmpty()) return "00:00:00";
@@ -51,17 +74,24 @@ public class AvailabilityHelper {
         return timeStr.trim();
     }
 
+    public static String cleanDateString(String rawDateStr) {
+        if (rawDateStr == null || rawDateStr.trim().isEmpty()) return "";
+        String clean = rawDateStr.trim();
+        if (clean.contains("T")) clean = clean.substring(0, clean.indexOf("T")).trim();
+        if (clean.contains(" ")) clean = clean.substring(0, clean.indexOf(" ")).trim();
+        return clean;
+    }
+
     public static boolean isDateInPast(String slotDateStr) {
         if (slotDateStr == null || slotDateStr.trim().isEmpty()) return true;
         try {
-            SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-            String clean = slotDateStr.trim();
-            if (clean.contains("T")) clean = clean.substring(0, clean.indexOf("T"));
-            if (clean.contains(" ")) clean = clean.substring(0, clean.indexOf(" "));
+            String clean = cleanDateString(slotDateStr);
+            SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+            sdfDate.setTimeZone(getAppTimeZone());
             Date slotDate = sdfDate.parse(clean);
             if (slotDate == null) return true;
 
-            Calendar today = Calendar.getInstance();
+            Calendar today = getCalendarInstance();
             today.set(Calendar.HOUR_OF_DAY, 0);
             today.set(Calendar.MINUTE, 0);
             today.set(Calendar.SECOND, 0);
@@ -74,25 +104,112 @@ public class AvailabilityHelper {
     }
 
     /**
-     * Reusable check to ensure slot is not in the past (both Date and Time).
-     * If slot date is Today, checks if slot end_time (e.g. 17:00:00 / 5:00 PM) has passed.
+     * Checks if a slot's exact start time (Date + Start Time in Asia/Kolkata timezone)
+     * has been reached or passed.
+     * Example: 18 September 09:00 AM slot.
+     * At 08:59 AM -> false (AVAILABLE)
+     * At 09:00 AM -> true (LOCKED)
      */
-    public static boolean isSlotInPast(DoctorSlot slot) {
+    public static boolean isSlotTimeReachedOrPassed(String slotDateStr, String startTimeStr) {
+        if (slotDateStr == null || slotDateStr.trim().isEmpty()) return true;
+        if (startTimeStr == null || startTimeStr.trim().isEmpty()) return isDateInPast(slotDateStr);
+
+        try {
+            String cleanDate = cleanDateString(slotDateStr);
+            String normTime = normalizeTimeFormat(startTimeStr);
+
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
+            sdf.setTimeZone(getAppTimeZone());
+
+            Date slotStartDateTime = sdf.parse(cleanDate + " " + normTime);
+            if (slotStartDateTime == null) return isDateInPast(cleanDate);
+
+            long currentTime = getCalibratedCurrentTimeMillis();
+            return currentTime >= slotStartDateTime.getTime();
+        } catch (Exception e) {
+            return isDateInPast(slotDateStr);
+        }
+    }
+
+    public static boolean isSlotTimeReachedOrPassed(DoctorSlot slot) {
         if (slot == null || slot.getSlotDate() == null || slot.getSlotDate().trim().isEmpty()) {
             return true;
         }
+        return isSlotTimeReachedOrPassed(slot.getSlotDate(), slot.getStartTime());
+    }
 
-        String slotDateStr = slot.getSlotDate().trim();
-        if (slotDateStr.contains("T")) slotDateStr = slotDateStr.substring(0, slotDateStr.indexOf("T"));
-        if (slotDateStr.contains(" ")) slotDateStr = slotDateStr.substring(0, slotDateStr.indexOf(" "));
+    /**
+     * Checks if a slot's duration has completed (Date + Start Time + Slot Duration).
+     * If duration is 20 minutes, 09:00 AM slot ends at 09:20 AM.
+     */
+    public static boolean isSlotEndPassed(String slotDateStr, String startTimeStr, String endTimeStr, int durationMinutes) {
+        if (slotDateStr == null || slotDateStr.trim().isEmpty()) return true;
+        try {
+            String cleanDate = cleanDateString(slotDateStr);
 
-        return isDateInPast(slotDateStr);
+            if (endTimeStr != null && !endTimeStr.trim().isEmpty()) {
+                String normEndTime = normalizeTimeFormat(endTimeStr);
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
+                sdf.setTimeZone(getAppTimeZone());
+                Date slotEndDateTime = sdf.parse(cleanDate + " " + normEndTime);
+                if (slotEndDateTime != null) {
+                    return getCalibratedCurrentTimeMillis() >= slotEndDateTime.getTime();
+                }
+            }
+
+            String normStartTime = normalizeTimeFormat(startTimeStr);
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
+            sdf.setTimeZone(getAppTimeZone());
+            Date slotStartDateTime = sdf.parse(cleanDate + " " + normStartTime);
+            if (slotStartDateTime == null) return isDateInPast(cleanDate);
+
+            int minutesToAdd = durationMinutes > 0 ? durationMinutes : 20;
+            long endMillis = slotStartDateTime.getTime() + (minutesToAdd * 60L * 1000L);
+
+            return getCalibratedCurrentTimeMillis() >= endMillis;
+        } catch (Exception e) {
+            return isDateInPast(slotDateStr);
+        }
+    }
+
+    public static boolean isSlotEndPassed(DoctorSlot slot) {
+        if (slot == null || slot.getSlotDate() == null) return true;
+        int duration = slot.getSlotDuration() > 0 ? slot.getSlotDuration() : (slot.getConsultDuration() > 0 ? slot.getConsultDuration() : 20);
+        return isSlotEndPassed(slot.getSlotDate(), slot.getStartTime(), slot.getEndTime(), duration);
+    }
+
+    /**
+     * Reusable check to ensure slot is not in the past (both Date and Time).
+     * Returns true if currentTime >= slotStartDateTime or date is in past.
+     */
+    public static boolean isSlotInPast(DoctorSlot slot) {
+        return isSlotTimeReachedOrPassed(slot);
     }
 
     public static boolean isSlotValidAndBookable(DoctorSlot slot) {
         if (slot == null) return false;
         if (!"available".equalsIgnoreCase(slot.getStatus())) return false;
-        return !isSlotInPast(slot);
+        return !isSlotTimeReachedOrPassed(slot);
+    }
+
+    /**
+     * Checks if a pending/unconfirmed appointment has passed its appointment schedule window.
+     * Applies ONLY to pending appointments. Confirmed or Cancelled appointments are not affected.
+     */
+    public static boolean isPendingAppointmentExpired(Appointment appointment, int defaultSlotDurationMins) {
+        if (appointment == null) return false;
+        String st = appointment.getStatus();
+        if (st == null || !st.trim().equalsIgnoreCase("Pending")) {
+            return false;
+        }
+
+        String apptDate = appointment.getAppointmentDate();
+        String startTime = appointment.getStartTime();
+        String endTime = appointment.getEndTime();
+
+        if (apptDate == null || apptDate.trim().isEmpty()) return false;
+
+        return isSlotEndPassed(apptDate, startTime, endTime, defaultSlotDurationMins > 0 ? defaultSlotDurationMins : 20);
     }
 
     /**
@@ -104,18 +221,18 @@ public class AvailabilityHelper {
         }
 
         try {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-            Date slotDate = sdf.parse(slot.getSlotDate());
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+            sdf.setTimeZone(getAppTimeZone());
+            Date slotDate = sdf.parse(cleanDateString(slot.getSlotDate()));
             if (slotDate == null) return false;
 
-            Calendar today = Calendar.getInstance();
+            Calendar today = getCalendarInstance();
             today.set(Calendar.HOUR_OF_DAY, 0);
             today.set(Calendar.MINUTE, 0);
             today.set(Calendar.SECOND, 0);
             today.set(Calendar.MILLISECOND, 0);
 
-            Calendar windowEnd = Calendar.getInstance();
-            windowEnd.setTime(today.getTime());
+            Calendar windowEnd = (Calendar) today.clone();
             windowEnd.add(Calendar.DAY_OF_YEAR, windowDays);
 
             return !slotDate.before(today.getTime()) && !slotDate.after(windowEnd.getTime());
@@ -161,20 +278,31 @@ public class AvailabilityHelper {
         if (slots == null || slots.isEmpty()) return new ArrayList<>();
 
         List<String> rawDates = new ArrayList<>();
-        SimpleDateFormat inputSdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-        SimpleDateFormat daySdf = new SimpleDateFormat("EEE", Locale.getDefault());
-        SimpleDateFormat dateSdf = new SimpleDateFormat("dd MMM", Locale.getDefault());
-        SimpleDateFormat todaySdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        SimpleDateFormat inputSdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+        inputSdf.setTimeZone(getAppTimeZone());
 
-        String todayStr = todaySdf.format(new Date());
+        SimpleDateFormat daySdf = new SimpleDateFormat("EEE", Locale.US);
+        daySdf.setTimeZone(getAppTimeZone());
+
+        SimpleDateFormat dateSdf = new SimpleDateFormat("dd MMM", Locale.US);
+        dateSdf.setTimeZone(getAppTimeZone());
+
+        SimpleDateFormat todaySdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+        todaySdf.setTimeZone(getAppTimeZone());
+
+        String todayStr = todaySdf.format(new Date(getCalibratedCurrentTimeMillis()));
 
         for (DoctorSlot slot : slots) {
             if (slot == null || slot.getSlotDate() == null) continue;
-            if (isDateInPast(slot.getSlotDate())) continue;
+            String cleanDate = cleanDateString(slot.getSlotDate());
+            if (isDateInPast(cleanDate)) continue;
 
-            String cleanDate = slot.getSlotDate().trim();
-            if (cleanDate.contains("T")) cleanDate = cleanDate.substring(0, cleanDate.indexOf("T"));
-            if (cleanDate.contains(" ")) cleanDate = cleanDate.substring(0, cleanDate.indexOf(" "));
+            if (selectedClinicId != null && !selectedClinicId.trim().isEmpty()) {
+                String slotClinicId = slot.getClinicId();
+                if (slotClinicId != null && !slotClinicId.trim().isEmpty() && !slotClinicId.equalsIgnoreCase(selectedClinicId)) {
+                    continue;
+                }
+            }
 
             if (!rawDates.contains(cleanDate)) {
                 rawDates.add(cleanDate);
@@ -209,40 +337,70 @@ public class AvailabilityHelper {
     /**
      * Filter slots by date, sorted by start_time ascending.
      * Deduplicates slots with identical normalized start_time.
-     * If any duplicate slot is marked 'booked', the deduplicated slot is marked 'booked'.
+     * Marks slots as 'locked' if currentTime >= slotStartTime.
      */
     public static List<DoctorSlot> filterAndSortSlots(List<DoctorSlot> slots, String selectedClinicId, String selectedDateRaw) {
         if (slots == null || slots.isEmpty()) return new ArrayList<>();
 
         Map<String, DoctorSlot> uniqueSlotsMap = new LinkedHashMap<>();
-        String targetDate = selectedDateRaw != null ? selectedDateRaw.trim() : null;
-        if (targetDate != null && targetDate.contains("T")) targetDate = targetDate.substring(0, targetDate.indexOf("T"));
-        if (targetDate != null && targetDate.contains(" ")) targetDate = targetDate.substring(0, targetDate.indexOf(" "));
+        String targetDate = selectedDateRaw != null ? cleanDateString(selectedDateRaw) : null;
 
         for (DoctorSlot slot : slots) {
             if (slot == null || slot.getSlotDate() == null) continue;
-            if (isDateInPast(slot.getSlotDate())) continue;
+            String slotDate = cleanDateString(slot.getSlotDate());
+
+            if (isDateInPast(slotDate)) continue;
+
+            if (selectedClinicId != null && !selectedClinicId.trim().isEmpty()) {
+                String slotClinicId = slot.getClinicId();
+                if (slotClinicId != null && !slotClinicId.trim().isEmpty() && !slotClinicId.equalsIgnoreCase(selectedClinicId)) {
+                    continue;
+                }
+            }
 
             // Date filtering
             if (targetDate != null && !targetDate.isEmpty()) {
-                String slotDate = slot.getSlotDate().trim();
-                if (slotDate.contains("T")) slotDate = slotDate.substring(0, slotDate.indexOf("T"));
-                if (slotDate.contains(" ")) slotDate = slotDate.substring(0, slotDate.indexOf(" "));
                 if (!targetDate.equalsIgnoreCase(slotDate)) {
                     continue;
                 }
             }
 
-            if (isSlotInPast(slot)) continue;
-
             String normTime = normalizeTimeFormat(slot.getStartTime());
+
+            // Check if slot start time has passed
+            boolean isTimePassed = isSlotTimeReachedOrPassed(slotDate, normTime);
+
+            DoctorSlot displaySlot = new DoctorSlot(
+                    slot.getId(),
+                    slot.getDoctorId(),
+                    slot.getClinicId(),
+                    slot.getSlotDate(),
+                    slot.getStartTime(),
+                    slot.getEndTime(),
+                    slot.getStatus()
+            );
+            displaySlot.setAppointmentId(slot.getAppointmentId());
+            displaySlot.setMorningStart(slot.getMorningStart());
+            displaySlot.setMorningEnd(slot.getMorningEnd());
+            displaySlot.setEveningStart(slot.getEveningStart());
+            displaySlot.setEveningEnd(slot.getEveningEnd());
+            displaySlot.setSlotDuration(slot.getSlotDuration());
+            displaySlot.setConsultDuration(slot.getConsultDuration());
+            displaySlot.setBufferGap(slot.getBufferGap());
+            displaySlot.setFee(slot.getFee());
+            displaySlot.setFollowUpFee(slot.getFollowUpFee());
 
             DoctorSlot existing = uniqueSlotsMap.get(normTime);
             if (existing == null) {
-                uniqueSlotsMap.put(normTime, slot);
+                if (isTimePassed && "available".equalsIgnoreCase(displaySlot.getStatus())) {
+                    displaySlot.setStatus("locked");
+                }
+                uniqueSlotsMap.put(normTime, displaySlot);
             } else {
-                if ("booked".equalsIgnoreCase(slot.getStatus()) || !"available".equalsIgnoreCase(slot.getStatus())) {
+                if ("booked".equalsIgnoreCase(displaySlot.getStatus()) || !"available".equalsIgnoreCase(displaySlot.getStatus())) {
                     existing.setStatus("booked");
+                } else if (isTimePassed) {
+                    existing.setStatus("locked");
                 }
             }
         }
@@ -264,11 +422,9 @@ public class AvailabilityHelper {
 
         List<String> dates = new ArrayList<>();
         for (DoctorSlot slot : slots) {
-            if (!isSlotInPast(slot) && slot.getSlotDate() != null) {
-                String cleanDate = slot.getSlotDate().trim();
-                if (cleanDate.contains("T")) cleanDate = cleanDate.substring(0, cleanDate.indexOf("T"));
-                if (cleanDate.contains(" ")) cleanDate = cleanDate.substring(0, cleanDate.indexOf(" "));
-                if (!dates.contains(cleanDate)) {
+            if (slot != null && slot.getSlotDate() != null) {
+                String cleanDate = cleanDateString(slot.getSlotDate());
+                if (!isDateInPast(cleanDate) && !dates.contains(cleanDate)) {
                     dates.add(cleanDate);
                 }
             }
@@ -280,8 +436,10 @@ public class AvailabilityHelper {
     public static String formatSlotTime(String timeStr) {
         if (timeStr == null || timeStr.trim().isEmpty()) return "";
         try {
-            SimpleDateFormat sdfIn = new SimpleDateFormat("HH:mm", Locale.getDefault());
-            SimpleDateFormat sdfOut = new SimpleDateFormat("hh:mm a", Locale.getDefault());
+            SimpleDateFormat sdfIn = new SimpleDateFormat("HH:mm", Locale.US);
+            sdfIn.setTimeZone(getAppTimeZone());
+            SimpleDateFormat sdfOut = new SimpleDateFormat("hh:mm a", Locale.US);
+            sdfOut.setTimeZone(getAppTimeZone());
             Date date = sdfIn.parse(timeStr);
             return date != null ? sdfOut.format(date) : timeStr;
         } catch (Exception e) {

@@ -20,7 +20,6 @@ import com.google.android.material.bottomsheet.BottomSheetDialog;
 
 import com.amstudio.drpoint.R;
 import com.amstudio.drpoint.adapter.DoctorListAdapter;
-import com.amstudio.drpoint.adapter.QuickAccessAdapter;
 import com.amstudio.drpoint.adapter.SpecialitiesAdapter;
 import com.amstudio.drpoint.databinding.FragmentHomeBinding;
 import com.amstudio.drpoint.model.Doctor;
@@ -65,7 +64,7 @@ public class HomeFragment extends Fragment {
 
         updateGreeting();
 
-        if (binding.llLocationContainer != null) {
+        if (binding != null && binding.llLocationContainer != null) {
             binding.llLocationContainer.setOnClickListener(v -> {
                 Context context = getContext();
                 if (context != null) {
@@ -75,162 +74,165 @@ public class HomeFragment extends Fragment {
         }
         updateLocationChipText();
 
-        // Clicks
-        binding.cardCarePlan.setOnClickListener(v -> openFindDoctors());
-        binding.layoutSearch.setOnClickListener(v -> openFindDoctors());
-        binding.flFilter.setOnClickListener(v -> openFindDoctors());
+        if (binding != null) {
+            binding.cardCarePlan.setOnClickListener(v -> openFindDoctors());
+            binding.layoutSearch.setOnClickListener(v -> openFindDoctors());
+            binding.flFilter.setOnClickListener(v -> openFindDoctors());
 
-        // Quick Services Grid Setup
+            binding.flBell.setOnClickListener(v -> {
+                Context context = getContext();
+                if (context != null) {
+                    Intent intent = new Intent(context, NotificationsActivity.class);
+                    startActivity(intent);
+                }
+            });
 
+            binding.tvSeeAllDoctors.setOnClickListener(v -> openDoctorList("Top Rated Doctors"));
 
-        binding.flBell.setOnClickListener(v -> {
-            Context context = getContext();
-            if (context != null) {
-                Intent intent = new Intent(context, NotificationsActivity.class);
-                startActivity(intent);
-            }
-        });
-        binding.tvSeeAllDoctors.setOnClickListener(v -> openDoctorList("Top Rated Doctors"));
-
-        if (binding.tvSeeAllSpecialities != null) {
-            binding.tvSeeAllSpecialities.setOnClickListener(v -> showSpecialitiesBottomSheet());
-        }
-
-        // Image Slideshow Setup (denzcoskun/ImageSlideshow)
-        List<SlideModel> slideList = new ArrayList<>();
-        slideList.add(new SlideModel(R.drawable.banner_1, ScaleTypes.FIT));
-        binding.imageSlider.setImageList(slideList, ScaleTypes.FIT);
-        binding.imageSlider.setItemClickListener(new ItemClickListener() {
-            @Override
-            public void onItemSelected(int position) {
-                openFindDoctors();
+            if (binding.tvSeeAllSpecialities != null) {
+                binding.tvSeeAllSpecialities.setOnClickListener(v -> showSpecialitiesBottomSheet());
             }
 
-            @Override
-            public void doubleClick(int position) {
-                openFindDoctors();
-            }
-        });
-
-        // Explore Specialities Horizontal Carousel
-        if (binding.rvSpecialities != null) {
-            Context context = getContext();
-            if (context != null) {
-                binding.rvSpecialities.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false));
-                SpecialitiesAdapter specialitiesAdapter = new SpecialitiesAdapter(speciality -> {
-                    openDoctorList(speciality.getName());
-                });
-                binding.rvSpecialities.setAdapter(specialitiesAdapter);
-                DummyDataProvider.fetchSpecialitiesFromSupabase(list -> {
-                    if (binding == null || !isAdded()) return;
-                    specialitiesAdapter.submitList(list);
-                    if (binding.shimmerSpecialities != null) {
-                        binding.shimmerSpecialities.stopShimmer();
-                        binding.shimmerSpecialities.setVisibility(View.GONE);
+            // Image Slideshow Setup
+            if (binding.imageSlider != null) {
+                List<SlideModel> slideList = new ArrayList<>();
+                slideList.add(new SlideModel(R.drawable.banner_1, ScaleTypes.FIT));
+                binding.imageSlider.setImageList(slideList, ScaleTypes.FIT);
+                binding.imageSlider.setItemClickListener(new ItemClickListener() {
+                    @Override
+                    public void onItemSelected(int position) {
+                        openFindDoctors();
                     }
-                    binding.rvSpecialities.setVisibility(View.VISIBLE);
+
+                    @Override
+                    public void doubleClick(int position) {
+                        openFindDoctors();
+                    }
                 });
             }
-        }
 
-        // Available Today Section (Horizontal Carousel)
-        if (binding.tvSeeAllAvailable != null) {
-            binding.tvSeeAllAvailable.setOnClickListener(v -> openDoctorList("Available Today"));
+            // Explore Specialities Horizontal Carousel
+            if (binding.rvSpecialities != null) {
+                Context context = getContext();
+                if (context != null) {
+                    binding.rvSpecialities.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false));
+                    SpecialitiesAdapter specialitiesAdapter = new SpecialitiesAdapter(speciality -> {
+                        if (speciality != null) openDoctorList(speciality.getName());
+                    });
+                    binding.rvSpecialities.setAdapter(specialitiesAdapter);
+                    DummyDataProvider.fetchSpecialitiesFromSupabase(list -> {
+                        if (binding == null || !isAdded() || getContext() == null) return;
+                        specialitiesAdapter.submitList(list);
+                        if (binding.shimmerSpecialities != null) {
+                            binding.shimmerSpecialities.stopShimmer();
+                            binding.shimmerSpecialities.setVisibility(View.GONE);
+                        }
+                        if (binding.rvSpecialities != null) {
+                            binding.rvSpecialities.setVisibility(View.VISIBLE);
+                        }
+                    });
+                }
+            }
+
+            if (binding.tvSeeAllAvailable != null) {
+                binding.tvSeeAllAvailable.setOnClickListener(v -> openDoctorList("Available Today"));
+            }
         }
 
         Context context = getContext();
-        if (context != null) {
-            binding.rvAvailableToday.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false));
-            availableAdapter = new DoctorListAdapter(true, new DoctorListAdapter.OnDoctorClickListener() {
-                @Override
-                public void onDoctorClick(Doctor doctor) {
-                    Context ctx = getContext();
-                    if (ctx != null) {
-                        Intent intent = new Intent(ctx, DoctorDetailActivity.class);
-                        intent.putExtra("doctor", doctor);
-                        startActivity(intent);
+        if (context != null && binding != null) {
+            if (binding.rvAvailableToday != null) {
+                binding.rvAvailableToday.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false));
+                availableAdapter = new DoctorListAdapter(true, new DoctorListAdapter.OnDoctorClickListener() {
+                    @Override
+                    public void onDoctorClick(Doctor doctor) {
+                        Context ctx = getContext();
+                        if (ctx != null && doctor != null) {
+                            Intent intent = new Intent(ctx, DoctorDetailActivity.class);
+                            intent.putExtra("doctor", doctor);
+                            startActivity(intent);
+                        }
                     }
-                }
 
-                @Override
-                public void onBookClick(Doctor doctor) {
-                    Context ctx = getContext();
-                    if (ctx != null) {
-                        Intent intent = new Intent(ctx, DoctorDetailActivity.class);
-                        intent.putExtra("doctor", doctor);
-                        startActivity(intent);
+                    @Override
+                    public void onBookClick(Doctor doctor) {
+                        Context ctx = getContext();
+                        if (ctx != null && doctor != null) {
+                            Intent intent = new Intent(ctx, DoctorDetailActivity.class);
+                            intent.putExtra("doctor", doctor);
+                            startActivity(intent);
+                        }
                     }
-                }
 
-                @Override
-                public void onCallClick(Doctor doctor) {
-                    Context ctx = getContext();
-                    if (ctx == null) return;
-                    try {
-                        String phone = doctor.getDoctorPhone() != null && !doctor.getDoctorPhone().trim().isEmpty()
-                                ? doctor.getDoctorPhone().trim()
-                                : (doctor.getReceptionPhone() != null && !doctor.getReceptionPhone().trim().isEmpty()
-                                ? doctor.getReceptionPhone().trim() : "9876543210");
-                        Intent intent = new Intent(Intent.ACTION_DIAL);
-                        intent.setData(Uri.parse("tel:" + phone));
-                        startActivity(intent);
-                    } catch (Exception e) {
-                        ToastUtils.showInfo(ctx, "Calling Dr. " + doctor.getName());
+                    @Override
+                    public void onCallClick(Doctor doctor) {
+                        Context ctx = getContext();
+                        if (ctx == null || doctor == null) return;
+                        try {
+                            String phone = doctor.getDoctorPhone() != null && !doctor.getDoctorPhone().trim().isEmpty()
+                                    ? doctor.getDoctorPhone().trim()
+                                    : (doctor.getReceptionPhone() != null && !doctor.getReceptionPhone().trim().isEmpty()
+                                    ? doctor.getReceptionPhone().trim() : "9876543210");
+                            Intent intent = new Intent(Intent.ACTION_DIAL);
+                            intent.setData(Uri.parse("tel:" + phone));
+                            startActivity(intent);
+                        } catch (Exception e) {
+                            ToastUtils.showInfo(ctx, "Calling Dr. " + doctor.getName());
+                        }
                     }
-                }
 
-                @Override
-                public void onFavoriteClick(Doctor doctor) {}
-            });
-            binding.rvAvailableToday.setAdapter(availableAdapter);
+                    @Override
+                    public void onFavoriteClick(Doctor doctor) {}
+                });
+                binding.rvAvailableToday.setAdapter(availableAdapter);
+            }
 
-            // Top Doctors Section (Horizontal Carousel)
-            binding.rvTopDoctors.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false));
-            doctorAdapter = new DoctorListAdapter(true, new DoctorListAdapter.OnDoctorClickListener() {
-                @Override
-                public void onDoctorClick(Doctor doctor) {
-                    Context ctx = getContext();
-                    if (ctx != null) {
-                        Intent intent = new Intent(ctx, DoctorDetailActivity.class);
-                        intent.putExtra("doctor", doctor);
-                        startActivity(intent);
+            if (binding.rvTopDoctors != null) {
+                binding.rvTopDoctors.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false));
+                doctorAdapter = new DoctorListAdapter(true, new DoctorListAdapter.OnDoctorClickListener() {
+                    @Override
+                    public void onDoctorClick(Doctor doctor) {
+                        Context ctx = getContext();
+                        if (ctx != null && doctor != null) {
+                            Intent intent = new Intent(ctx, DoctorDetailActivity.class);
+                            intent.putExtra("doctor", doctor);
+                            startActivity(intent);
+                        }
                     }
-                }
 
-                @Override
-                public void onBookClick(Doctor doctor) {
-                    Context ctx = getContext();
-                    if (ctx != null) {
-                        Intent intent = new Intent(ctx, DoctorDetailActivity.class);
-                        intent.putExtra("doctor", doctor);
-                        startActivity(intent);
+                    @Override
+                    public void onBookClick(Doctor doctor) {
+                        Context ctx = getContext();
+                        if (ctx != null && doctor != null) {
+                            Intent intent = new Intent(ctx, DoctorDetailActivity.class);
+                            intent.putExtra("doctor", doctor);
+                            startActivity(intent);
+                        }
                     }
-                }
 
-                @Override
-                public void onCallClick(Doctor doctor) {
-                    Context ctx = getContext();
-                    if (ctx == null) return;
-                    try {
-                        String phone = doctor.getDoctorPhone() != null && !doctor.getDoctorPhone().trim().isEmpty()
-                                ? doctor.getDoctorPhone().trim()
-                                : (doctor.getReceptionPhone() != null && !doctor.getReceptionPhone().trim().isEmpty()
-                                ? doctor.getReceptionPhone().trim() : "9876543210");
-                        Intent intent = new Intent(Intent.ACTION_DIAL);
-                        intent.setData(Uri.parse("tel:" + phone));
-                        startActivity(intent);
-                    } catch (Exception e) {
-                        ToastUtils.showInfo(ctx, "Calling Dr. " + doctor.getName());
+                    @Override
+                    public void onCallClick(Doctor doctor) {
+                        Context ctx = getContext();
+                        if (ctx == null || doctor == null) return;
+                        try {
+                            String phone = doctor.getDoctorPhone() != null && !doctor.getDoctorPhone().trim().isEmpty()
+                                    ? doctor.getDoctorPhone().trim()
+                                    : (doctor.getReceptionPhone() != null && !doctor.getReceptionPhone().trim().isEmpty()
+                                    ? doctor.getReceptionPhone().trim() : "9876543210");
+                            Intent intent = new Intent(Intent.ACTION_DIAL);
+                            intent.setData(Uri.parse("tel:" + phone));
+                            startActivity(intent);
+                        } catch (Exception e) {
+                            ToastUtils.showInfo(ctx, "Calling Dr. " + doctor.getName());
+                        }
                     }
-                }
 
-                @Override
-                public void onFavoriteClick(Doctor doctor) {}
-            });
-            binding.rvTopDoctors.setAdapter(doctorAdapter);
+                    @Override
+                    public void onFavoriteClick(Doctor doctor) {}
+                });
+                binding.rvTopDoctors.setAdapter(doctorAdapter);
+            }
         }
-
-        loadDoctors();
     }
 
     @Override
@@ -263,13 +265,13 @@ public class HomeFragment extends Fragment {
         String currentState = PreferenceManager.getInstance(context).getSelectedState();
 
         DummyDataProvider.fetchDoctorsFromSupabase(doctors -> {
-            if (binding == null || !isAdded()) return;
+            if (binding == null || !isAdded() || getContext() == null) return;
 
             List<Doctor> stateFilteredDoctors = DummyDataProvider.filterDoctorsByState(doctors, currentState);
 
             List<Doctor> availableTodayList = new ArrayList<>();
             for (Doctor d : stateFilteredDoctors) {
-                if (d.isAvailableToday()) {
+                if (d != null && d.isAvailableToday()) {
                     availableTodayList.add(d);
                 }
             }
@@ -279,7 +281,7 @@ public class HomeFragment extends Fragment {
 
             List<Doctor> topRatedList = new ArrayList<>();
             for (Doctor d : stateFilteredDoctors) {
-                if (d.getRating() > 2.0) {
+                if (d != null && d.getRating() > 2.0) {
                     topRatedList.add(d);
                 }
             }
@@ -339,11 +341,11 @@ public class HomeFragment extends Fragment {
                 .enqueue(new Callback<List<NotificationItem>>() {
                     @Override
                     public void onResponse(Call<List<NotificationItem>> call, Response<List<NotificationItem>> response) {
-                        if (binding == null || !isAdded()) return;
+                        if (binding == null || !isAdded() || getContext() == null) return;
                         boolean hasUnread = false;
                         if (response.isSuccessful() && response.body() != null) {
                             for (NotificationItem item : response.body()) {
-                                if (!item.isRead()) {
+                                if (item != null && !item.isRead()) {
                                     hasUnread = true;
                                     break;
                                 }
@@ -366,22 +368,26 @@ public class HomeFragment extends Fragment {
 
         PreferenceManager prefManager = PreferenceManager.getInstance(context);
         String userName = prefManager.getUserName();
-        if (userName != null && !userName.isEmpty()) {
+        if (userName != null && !userName.isEmpty() && binding.tvUsername != null) {
             binding.tvUsername.setText(userName);
         }
 
         String userAvatar = prefManager.getUserAvatar();
-        if (userAvatar != null && !userAvatar.trim().isEmpty()
-                && !userAvatar.toLowerCase().contains("banner")
-                && !userAvatar.toLowerCase().contains("offer")) {
-            Glide.with(context)
-                    .load(userAvatar)
-                    .circleCrop()
-                    .placeholder(R.drawable.ic_user)
-                    .error(R.drawable.ic_user)
-                    .into(binding.ivAvatar);
-        } else {
-            binding.ivAvatar.setImageResource(R.drawable.ic_user);
+        if (binding.ivAvatar != null) {
+            if (userAvatar != null && !userAvatar.trim().isEmpty()
+                    && !userAvatar.toLowerCase().contains("banner")
+                    && !userAvatar.toLowerCase().contains("offer")) {
+                try {
+                    Glide.with(context)
+                            .load(userAvatar)
+                            .circleCrop()
+                            .placeholder(R.drawable.ic_user)
+                            .error(R.drawable.ic_user)
+                            .into(binding.ivAvatar);
+                } catch (Exception ignored) {}
+            } else {
+                binding.ivAvatar.setImageResource(R.drawable.ic_user);
+            }
         }
 
         String userId = prefManager.getUserId();
@@ -395,16 +401,20 @@ public class HomeFragment extends Fragment {
                             if (ctx == null) return;
                             if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                                 PatientProfile p = response.body().get(0);
-                                if (p.getAvatarUrl() != null && !p.getAvatarUrl().trim().isEmpty()
+                                if (p != null && p.getAvatarUrl() != null && !p.getAvatarUrl().trim().isEmpty()
                                         && !p.getAvatarUrl().toLowerCase().contains("banner")
                                         && !p.getAvatarUrl().toLowerCase().contains("offer")) {
                                     prefManager.setUserAvatar(p.getAvatarUrl());
-                                    Glide.with(ctx)
-                                            .load(p.getAvatarUrl())
-                                            .circleCrop()
-                                            .placeholder(R.drawable.ic_user)
-                                            .error(R.drawable.ic_user)
-                                            .into(binding.ivAvatar);
+                                    if (binding != null && binding.ivAvatar != null) {
+                                        try {
+                                            Glide.with(ctx)
+                                                    .load(p.getAvatarUrl())
+                                                    .circleCrop()
+                                                    .placeholder(R.drawable.ic_user)
+                                                    .error(R.drawable.ic_user)
+                                                    .into(binding.ivAvatar);
+                                        } catch (Exception ignored) {}
+                                    }
                                 }
                             }
                         }
@@ -433,7 +443,7 @@ public class HomeFragment extends Fragment {
             rv.setLayoutManager(new GridLayoutManager(context, 3));
             SpecialitiesAdapter specialitiesAdapter = new SpecialitiesAdapter(speciality -> {
                 dialog.dismiss();
-                openDoctorList(speciality.getName());
+                if (speciality != null) openDoctorList(speciality.getName());
             });
             rv.setAdapter(specialitiesAdapter);
 
@@ -464,6 +474,28 @@ public class HomeFragment extends Fragment {
 
     @Override
     public void onDestroyView() {
+        if (binding != null) {
+            if (binding.imageSlider != null) {
+                try {
+                    binding.imageSlider.stopSliding();
+                } catch (Exception ignored) {}
+            }
+            if (binding.shimmerSpecialities != null) {
+                try {
+                    binding.shimmerSpecialities.stopShimmer();
+                } catch (Exception ignored) {}
+            }
+            if (binding.shimmerAvailableToday != null) {
+                try {
+                    binding.shimmerAvailableToday.stopShimmer();
+                } catch (Exception ignored) {}
+            }
+            if (binding.shimmerTopDoctors != null) {
+                try {
+                    binding.shimmerTopDoctors.stopShimmer();
+                } catch (Exception ignored) {}
+            }
+        }
         super.onDestroyView();
         binding = null;
     }

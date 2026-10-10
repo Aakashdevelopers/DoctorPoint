@@ -20,6 +20,12 @@ public interface SupabaseAppointmentService {
     Call<List<Appointment>> getAppointmentsForPatient(@Query("patient_id") String patientIdQuery);
 
     @GET("rest/v1/appointments?select=*,doctor:doctors(*)&order=appointment_date.desc,start_time.asc")
+    Call<List<Appointment>> getAppointmentsForPatientFiltered(
+            @Query("patient_id") String patientIdQuery,
+            @Query("status") String statusQuery
+    );
+
+    @GET("rest/v1/appointments?select=*,doctor:doctors(*)&order=appointment_date.desc,start_time.asc")
     Call<List<Appointment>> getAppointmentsForDoctor(@Query("doctor_id") String doctorIdQuery);
 
     @GET("rest/v1/appointments?select=*,doctor:doctors(*)&order=appointment_date.desc,start_time.asc")
@@ -27,6 +33,9 @@ public interface SupabaseAppointmentService {
 
     @GET("rest/v1/appointments?select=*,doctor:doctors(*)&order=appointment_date.desc,start_time.asc")
     Call<List<Appointment>> getAllAppointments();
+
+    @GET("rest/v1/appointments?select=*,doctor:doctors(*)")
+    Call<List<Appointment>> getAppointmentById(@Query("id") String idQuery);
 
     @POST("rest/v1/appointments")
     Call<List<Appointment>> createAppointment(
@@ -48,6 +57,9 @@ public interface SupabaseAppointmentService {
 
     @GET("rest/v1/refund_requests?select=*")
     Call<List<RefundRequest>> getRefundRequestByAppointment(@Query("appointment_id") String appointmentIdQuery);
+
+    @GET("rest/v1/refund_requests?select=*&order=created_at.desc")
+    Call<List<RefundRequest>> getRefundRequestsForPatient(@Query("patient_id") String patientIdQuery);
 
     @POST("rest/v1/refund_requests")
     Call<Void> postRefundRequest(

@@ -43,6 +43,21 @@ public class DummyDataProvider {
             "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi", "Chandigarh"
     };
 
+    public static List<String> getCleanIndianStatesList() {
+        List<String> list = new ArrayList<>();
+        for (String state : INDIAN_STATES) {
+            if (!"All States".equalsIgnoreCase(state) && !"All Cities".equalsIgnoreCase(state) && !"All".equalsIgnoreCase(state)) {
+                list.add(state);
+            }
+        }
+        return list;
+    }
+
+    public static String[] getCleanIndianStatesArray() {
+        List<String> list = getCleanIndianStatesList();
+        return list.toArray(new String[0]);
+    }
+
     private static List<Doctor> doctors;
     private static List<Appointment> appointments;
     private static List<PatientUser> patientUsers;
@@ -998,7 +1013,10 @@ public class DummyDataProvider {
 
     public static synchronized List<MenuItem> getAccountMenuItems() {
         List<MenuItem> items = new ArrayList<>();
+        items.add(new MenuItem("Join as a Doctor", "Apply & list your clinic on Doctor's Point", R.drawable.ic_stethoscope, R.color.primary, R.color.bg_blue_light, R.color.text_primary));
         items.add(new MenuItem("My Appointments", "View & manage booked appointments", R.drawable.ic_calendar, R.color.secondary, R.color.bg_blue_light, R.color.text_primary));
+        items.add(new MenuItem("Cancel Appointment", "Cancel your upcoming appointments", R.drawable.ic_calendar_cancel, R.color.error_red, R.color.error_light, R.color.text_primary));
+        items.add(new MenuItem("Refund & Payment", "View refund status and payment details", R.drawable.ic_refund, R.color.primary, R.color.primary_light, R.color.text_primary));
         items.add(new MenuItem("Saved Doctors", "Your favorite doctors & specialists", R.drawable.ic_heart_filled, R.color.error_red, R.color.bg_pink_light, R.color.text_primary));
         items.add(new MenuItem("Find Doctors & Specialists", "Explore top doctors near you", R.drawable.ic_search, R.color.accent, R.color.bg_teal_light, R.color.text_primary));
         items.add(new MenuItem("Notifications", "Reminders & health updates", R.drawable.ic_bell, R.color.warning_yellow, R.color.bg_yellow_light, R.color.text_primary));
@@ -1011,8 +1029,7 @@ public class DummyDataProvider {
 
     public static synchronized List<MenuItem> getHelpSupportMenuItems() {
         List<MenuItem> items = new ArrayList<>();
-        items.add(new MenuItem("Join as a Doctor", "Register as a verified doctor on DoctorPoint", R.drawable.ic_stethoscope, R.color.primary, R.color.bg_teal_light, R.color.text_primary, "JOIN"));
-        items.add(new MenuItem("Help & Support", "24/7 patient support center", R.drawable.ic_help, R.color.success_green, R.color.bg_green_light, R.color.text_primary));
+        items.add(new MenuItem("Customer Care", "24/7 patient support center", R.drawable.ic_help, R.color.success_green, R.color.bg_green_light, R.color.text_primary));
         return items;
     }
 

@@ -24,6 +24,7 @@ public class SupabaseClient {
     private static SupabasePatientService patientService;
     private static SupabaseMedicalRecordService medicalRecordService;
     private static SupabaseNotificationService notificationService;
+    private static SupabaseSettingsService settingsService;
 
     private static synchronized Retrofit getRetrofitInstance() {
         if (retrofit == null) {
@@ -127,5 +128,12 @@ public class SupabaseClient {
             notificationService = getRetrofitInstance().create(SupabaseNotificationService.class);
         }
         return notificationService;
+    }
+
+    public static synchronized SupabaseSettingsService getSettingsService() {
+        if (settingsService == null) {
+            settingsService = getRetrofitInstance().create(SupabaseSettingsService.class);
+        }
+        return settingsService;
     }
 }

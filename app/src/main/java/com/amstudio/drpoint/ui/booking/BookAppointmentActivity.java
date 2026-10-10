@@ -2,6 +2,8 @@ package com.amstudio.drpoint.ui.booking;
 
 import android.app.DatePickerDialog;
 import android.content.Intent;
+import android.content.res.ColorStateList;
+import android.graphics.Paint;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -83,6 +85,7 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
     private String selectedTimeFormatted = null;
     private String selectedTimeRaw = null;
     private String selectedSlotId = null;
+    private DoctorSlot selectedSlot = null;
     private boolean isReturningPatientUser = false;
 
     private List<DoctorSlot> availableSlotsList = new ArrayList<>();
@@ -97,6 +100,7 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
     private String pendingSlotId = null;
     private String lastRazorpayPaymentId = null;
     private boolean isBookingInProgress = false;
+    private boolean isBookingSubmitted = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,6 +115,12 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
         }
 
         binding.ivBack.setOnClickListener(v -> finish());
+        binding.ivConsultationInfo.setOnClickListener(v -> showFollowUpInfoDialog());
+
+        String existingUserName = PreferenceManager.getInstance(this).getUserName();
+        if (existingUserName != null && !existingUserName.trim().isEmpty() && binding.etPatientName != null) {
+            binding.etPatientName.setText(existingUserName.trim());
+        }
 
         populateDoctorSummary();
         setupDatesRecyclerView();
@@ -206,80 +216,66 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
 
     private void loadAvailableSlotsFromSupabase() {
         showShimmerLoaders();
-        String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+        SimpleDateFormat sdfToday = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+        sdfToday.setTimeZone(AvailabilityHelper.getAppTimeZone());
+        String todayDate = sdfToday.format(new Date(AvailabilityHelper.getCalibratedCurrentTimeMillis()));
         String selectedClinicId = (selectedClinic != null) ? selectedClinic.getId() : null;
 
-        if (doctor == null) {
-            generateFallbackSlotsForDoctor(todayDate, selectedClinicId);
+        if (doctor == null || doctor.getId() == null || doctor.getId().trim().isEmpty()) {
+            availableSlotsList = new ArrayList<>();
+            processAvailableDatesAndSlots(selectedClinicId);
+            hideShimmerLoaders();
             return;
         }
 
-        // 1. Fetch directly from Supabase doctor_slots table
-        SupabaseClient.getSlotService().getAllSlots().enqueue(new Callback<List<DoctorSlot>>() {
-            @Override
-            public void onResponse(Call<List<DoctorSlot>> call, Response<List<DoctorSlot>> response) {
-                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                    List<DoctorSlot> allSlotsFromDb = response.body();
-                    List<DoctorSlot> matchedSlots = new ArrayList<>();
-                    String currentDocId = doctor.getId();
+        String doctorId = doctor.getId().trim();
 
-                    for (DoctorSlot slot : allSlotsFromDb) {
-                        if (slot == null) continue;
-                        String slotDocId = slot.getDoctorId();
-
-                        if (currentDocId == null || slotDocId == null ||
-                                currentDocId.equalsIgnoreCase(slotDocId) ||
-                                isDoctorMatch(currentDocId, slotDocId)) {
-                            matchedSlots.add(slot);
+        // 1. Fetch doctor_slots strictly for this doctor
+        SupabaseClient.getSlotService().getDoctorAllSlots("eq." + doctorId, "gte." + todayDate)
+                .enqueue(new Callback<List<DoctorSlot>>() {
+                    @Override
+                    public void onResponse(Call<List<DoctorSlot>> call, Response<List<DoctorSlot>> response) {
+                        if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                            availableSlotsList = response.body();
+                            crossReferenceBookedAppointmentsAndProcess(selectedClinicId);
+                            return;
                         }
+
+                        // 2. Secondary Lookup: Check doctor_schedules table strictly for this doctor
+                        fetchSchedulesFromSupabase(doctorId, todayDate, selectedClinicId);
                     }
 
-                    if (!matchedSlots.isEmpty()) {
-                        availableSlotsList = matchedSlots;
-                    } else {
-                        availableSlotsList = allSlotsFromDb;
+                    @Override
+                    public void onFailure(Call<List<DoctorSlot>> call, Throwable t) {
+                        fetchSchedulesFromSupabase(doctorId, todayDate, selectedClinicId);
                     }
-
-                    crossReferenceBookedAppointmentsAndProcess(selectedClinicId);
-                    return;
-                }
-
-                // 2. Fallback to doctor_schedules table
-                fetchSchedulesFromSupabase(todayDate, selectedClinicId);
-            }
-
-            @Override
-            public void onFailure(Call<List<DoctorSlot>> call, Throwable t) {
-                fetchSchedulesFromSupabase(todayDate, selectedClinicId);
-            }
-        });
+                });
     }
 
     private boolean isDoctorMatch(String id1, String id2) {
-        if (id1 == null || id2 == null) return true;
-        if (id1.equalsIgnoreCase(id2)) return true;
-        return id1.contains(id2) || id2.contains(id1);
+        if (id1 == null || id2 == null) return false;
+        return id1.trim().equalsIgnoreCase(id2.trim());
     }
 
-    private void fetchSchedulesFromSupabase(String todayDate, String selectedClinicId) {
-        SupabaseClient.getSlotService().getAllDoctorSchedules().enqueue(new Callback<List<DoctorSlot>>() {
-            @Override
-            public void onResponse(Call<List<DoctorSlot>> call, Response<List<DoctorSlot>> response) {
-                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                    availableSlotsList = expandSchedulesToSlots(response.body());
-                    if (!availableSlotsList.isEmpty()) {
+    private void fetchSchedulesFromSupabase(String doctorId, String todayDate, String selectedClinicId) {
+        SupabaseClient.getSlotService().getDoctorSchedules("eq." + doctorId, "gte." + todayDate)
+                .enqueue(new Callback<List<DoctorSlot>>() {
+                    @Override
+                    public void onResponse(Call<List<DoctorSlot>> call, Response<List<DoctorSlot>> response) {
+                        if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                            availableSlotsList = expandSchedulesToSlots(response.body());
+                        } else {
+                            availableSlotsList = new ArrayList<>();
+                        }
                         crossReferenceBookedAppointmentsAndProcess(selectedClinicId);
-                        return;
                     }
-                }
-                generateFallbackSlotsForDoctor(todayDate, selectedClinicId);
-            }
 
-            @Override
-            public void onFailure(Call<List<DoctorSlot>> call, Throwable t) {
-                generateFallbackSlotsForDoctor(todayDate, selectedClinicId);
-            }
-        });
+                    @Override
+                    public void onFailure(Call<List<DoctorSlot>> call, Throwable t) {
+                        availableSlotsList = new ArrayList<>();
+                        crossReferenceBookedAppointmentsAndProcess(selectedClinicId);
+                    }
+                });
     }
 
 
@@ -608,12 +604,6 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
             slotsForDate = AvailabilityHelper.filterAndSortSlots(availableSlotsList, null, rawDate);
         }
 
-        // If slots are empty for the selected date (e.g. past daytime hours), generate active slots for this date!
-        if (slotsForDate.isEmpty()) {
-            slotsForDate = generateSlotsForSpecificDate(rawDate);
-            markBookedSlotsForList(slotsForDate);
-        }
-
         List<DoctorSlot> morningDoctorSlots = new ArrayList<>();
         List<DoctorSlot> eveningDoctorSlots = new ArrayList<>();
         Set<String> addedMorningTimes = new HashSet<>();
@@ -686,9 +676,11 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
             selectedTimeFormatted = slot.getFormattedTime();
             selectedTimeRaw = slot.getStartTime();
             selectedSlotId = slot.getId();
+            selectedSlot = slot;
             if (binding.rvEveningSlots.getAdapter() != null) {
                 ((TimeSlotAdapter) binding.rvEveningSlots.getAdapter()).setSelectedPosition(-1);
             }
+            updateConsultationFeeUI();
         });
         binding.rvMorningSlots.setAdapter(morningAdapter);
         morningAdapter.submitList(morningDoctorSlots);
@@ -698,9 +690,11 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
             selectedTimeFormatted = slot.getFormattedTime();
             selectedTimeRaw = slot.getStartTime();
             selectedSlotId = slot.getId();
+            selectedSlot = slot;
             if (binding.rvMorningSlots.getAdapter() != null) {
                 ((TimeSlotAdapter) binding.rvMorningSlots.getAdapter()).setSelectedPosition(-1);
             }
+            updateConsultationFeeUI();
         });
         binding.rvEveningSlots.setAdapter(eveningAdapter);
         eveningAdapter.submitList(eveningDoctorSlots);
@@ -708,26 +702,34 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
         selectedTimeFormatted = null;
         selectedTimeRaw = null;
         selectedSlotId = null;
+        selectedSlot = null;
 
         for (int i = 0; i < morningDoctorSlots.size(); i++) {
-            if ("available".equalsIgnoreCase(morningDoctorSlots.get(i).getStatus())) {
+            DoctorSlot slot = morningDoctorSlots.get(i);
+            if (slot != null && "available".equalsIgnoreCase(slot.getStatus()) && !AvailabilityHelper.isSlotTimeReachedOrPassed(slot)) {
                 morningAdapter.setSelectedPosition(i);
-                selectedTimeFormatted = morningDoctorSlots.get(i).getFormattedTime();
-                selectedTimeRaw = morningDoctorSlots.get(i).getStartTime();
-                selectedSlotId = morningDoctorSlots.get(i).getId();
+                selectedTimeFormatted = slot.getFormattedTime();
+                selectedTimeRaw = slot.getStartTime();
+                selectedSlotId = slot.getId();
+                selectedSlot = slot;
+                updateConsultationFeeUI();
                 return;
             }
         }
 
         for (int i = 0; i < eveningDoctorSlots.size(); i++) {
-            if ("available".equalsIgnoreCase(eveningDoctorSlots.get(i).getStatus())) {
+            DoctorSlot slot = eveningDoctorSlots.get(i);
+            if (slot != null && "available".equalsIgnoreCase(slot.getStatus()) && !AvailabilityHelper.isSlotTimeReachedOrPassed(slot)) {
                 eveningAdapter.setSelectedPosition(i);
-                selectedTimeFormatted = eveningDoctorSlots.get(i).getFormattedTime();
-                selectedTimeRaw = eveningDoctorSlots.get(i).getStartTime();
-                selectedSlotId = eveningDoctorSlots.get(i).getId();
+                selectedTimeFormatted = slot.getFormattedTime();
+                selectedTimeRaw = slot.getStartTime();
+                selectedSlotId = slot.getId();
+                selectedSlot = slot;
+                updateConsultationFeeUI();
                 return;
             }
         }
+        updateConsultationFeeUI();
     }
 
     private String formatTimeString(String timeStr) {
@@ -761,6 +763,12 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
 
         if (selectedSlotId == null || selectedSlotId.trim().isEmpty()) {
             ToastUtils.showWarning(this, "Please select an available time slot.");
+            return;
+        }
+
+        if (selectedDateRaw != null && selectedTimeRaw != null && AvailabilityHelper.isSlotTimeReachedOrPassed(selectedDateRaw, selectedTimeRaw)) {
+            ToastUtils.showError(this, "This appointment slot is no longer available.");
+            loadAvailableSlotsFromSupabase();
             return;
         }
 
@@ -822,7 +830,30 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
         sheetBinding.etGender.setText(pref.getUserGender());
         sheetBinding.etBloodGroup.setText(pref.getUserBloodGroup());
         sheetBinding.etEmergencyContact.setText(pref.getUserEmergencyContact());
-        sheetBinding.etAddress.setText(pref.getUserAddress());
+
+        String[] indianStates = DummyDataProvider.getCleanIndianStatesArray();
+        ArrayAdapter<String> stateAdapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, indianStates);
+        sheetBinding.actvState.setAdapter(stateAdapter);
+
+        String savedState = pref.getSelectedState();
+        if (savedState != null && !savedState.trim().isEmpty()) {
+            sheetBinding.actvState.setText(savedState.trim(), false);
+        }
+
+        View.OnClickListener stateListener = v -> {
+            sheetBinding.actvState.showDropDown();
+            new MaterialAlertDialogBuilder(BookAppointmentActivity.this)
+                    .setTitle("Select State")
+                    .setItems(indianStates, (dialogInterface, which) -> {
+                        String selected = indianStates[which];
+                        sheetBinding.actvState.setText(selected, false);
+                        sheetBinding.tilState.setError(null);
+                    })
+                    .show();
+        };
+        sheetBinding.actvState.setOnClickListener(stateListener);
+        sheetBinding.tilState.setOnClickListener(stateListener);
+        sheetBinding.tilState.setEndIconOnClickListener(stateListener);
 
         // Attach Interactive DatePicker for DOB
         View.OnClickListener dobListener = v -> {
@@ -893,7 +924,7 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
             String gender = sheetBinding.etGender.getText() != null ? sheetBinding.etGender.getText().toString().trim() : "";
             String bloodGroup = sheetBinding.etBloodGroup.getText() != null ? sheetBinding.etBloodGroup.getText().toString().trim() : "";
             String emergencyContact = sheetBinding.etEmergencyContact.getText() != null ? sheetBinding.etEmergencyContact.getText().toString().trim() : "";
-            String address = sheetBinding.etAddress.getText() != null ? sheetBinding.etAddress.getText().toString().trim() : "";
+            String address = sheetBinding.actvState.getText() != null ? sheetBinding.actvState.getText().toString().trim() : "";
 
             boolean isValid = true;
 
@@ -1066,24 +1097,121 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
     }
 
     private int getActiveConsultationFee() {
-        int fee;
-        if (isReturningPatientUser) {
-            fee = (doctor != null && doctor.getFollowUpFee() > 0) ? doctor.getFollowUpFee() : 300;
-            if (availableSlotsList != null && !availableSlotsList.isEmpty() && availableSlotsList.get(0).getFollowUpFee() > 0) {
-                fee = availableSlotsList.get(0).getFollowUpFee();
-            }
-        } else {
-            fee = (doctor != null && doctor.getFee() > 0) ? doctor.getFee() : 500;
-            if (availableSlotsList != null && !availableSlotsList.isEmpty() && availableSlotsList.get(0).getFee() > 0) {
-                fee = availableSlotsList.get(0).getFee();
+        DoctorSlot targetSlot = selectedSlot;
+        if (targetSlot == null && selectedSlotId != null && availableSlotsList != null) {
+            for (DoctorSlot s : availableSlotsList) {
+                if (s != null && selectedSlotId.equalsIgnoreCase(s.getId())) {
+                    targetSlot = s;
+                    break;
+                }
             }
         }
-        return fee > 0 ? fee : 500;
+
+        int regularFee = (doctor != null && doctor.getFee() > 0) ? doctor.getFee() : 500;
+        int followUpFee = (doctor != null && doctor.getFollowUpFee() > 0) ? doctor.getFollowUpFee() : 300;
+
+        if (targetSlot != null) {
+            if (targetSlot.getFee() > 0) {
+                regularFee = targetSlot.getFee();
+            }
+            if (targetSlot.getFollowUpFee() > 0) {
+                followUpFee = targetSlot.getFollowUpFee();
+            }
+        } else if (availableSlotsList != null && !availableSlotsList.isEmpty()) {
+            if (availableSlotsList.get(0).getFee() > 0) {
+                regularFee = availableSlotsList.get(0).getFee();
+            }
+            if (availableSlotsList.get(0).getFollowUpFee() > 0) {
+                followUpFee = availableSlotsList.get(0).getFollowUpFee();
+            }
+        }
+
+        int activeFee = isReturningPatientUser ? followUpFee : regularFee;
+        return activeFee > 0 ? activeFee : 500;
     }
 
     private void initiateRazorpayPaymentFlow(String userId, String slotId) {
-        final int finalFee = getActiveConsultationFee();
+        if (slotId == null || slotId.trim().isEmpty()) {
+            isBookingInProgress = false;
+            ToastUtils.showWarning(this, "Please select an available time slot.");
+            return;
+        }
 
+        binding.btnConfirmBooking.setEnabled(false);
+        binding.btnConfirmBooking.setText("Verifying slot & fee...");
+
+        String validUserId = formatUuidOrNull(userId);
+        String validSlotId = formatUuidOrNull(slotId);
+
+        Map<String, Object> req = new HashMap<>();
+        req.put("p_patient_id", validUserId);
+        req.put("p_slot_id", validSlotId);
+
+        SupabaseClient.getSlotService().getSlotBookingDetails(req).enqueue(new Callback<Map<String, Object>>() {
+            @Override
+            public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    Map<String, Object> body = response.body();
+                    Boolean success = Boolean.TRUE.equals(body.get("success"));
+                    if (!success) {
+                        isBookingInProgress = false;
+                        binding.btnConfirmBooking.setEnabled(true);
+                        binding.btnConfirmBooking.setText("Confirm Booking");
+                        String msg = (String) body.get("message");
+                        if (msg == null || msg.trim().isEmpty()) msg = "This appointment slot is no longer available.";
+                        ToastUtils.showError(BookAppointmentActivity.this, msg);
+                        loadAvailableSlotsFromSupabase();
+                        return;
+                    }
+
+                    Number amountNum = (Number) body.get("payable_amount");
+                    int verifiedAmount = (amountNum != null && amountNum.intValue() > 0) 
+                            ? amountNum.intValue() : getActiveConsultationFee();
+
+                    Boolean isFollowUp = (Boolean) body.get("is_followup");
+                    if (isFollowUp != null) {
+                        isReturningPatientUser = isFollowUp;
+                        updateConsultationFeeUI();
+                    }
+
+                    if (verifiedAmount <= 0) {
+                        isBookingInProgress = false;
+                        binding.btnConfirmBooking.setEnabled(true);
+                        binding.btnConfirmBooking.setText("Confirm Booking");
+                        ToastUtils.showError(BookAppointmentActivity.this, "Invalid consultation fee for this slot.");
+                        return;
+                    }
+
+                    launchRazorpayCheckout(userId, slotId, verifiedAmount);
+                } else {
+                    int activeFee = getActiveConsultationFee();
+                    if (activeFee <= 0) {
+                        isBookingInProgress = false;
+                        binding.btnConfirmBooking.setEnabled(true);
+                        binding.btnConfirmBooking.setText("Confirm Booking");
+                        ToastUtils.showError(BookAppointmentActivity.this, "Invalid consultation fee for this slot.");
+                        return;
+                    }
+                    launchRazorpayCheckout(userId, slotId, activeFee);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Map<String, Object>> call, Throwable t) {
+                int activeFee = getActiveConsultationFee();
+                if (activeFee <= 0) {
+                    isBookingInProgress = false;
+                    binding.btnConfirmBooking.setEnabled(true);
+                    binding.btnConfirmBooking.setText("Confirm Booking");
+                    ToastUtils.showError(BookAppointmentActivity.this, "Invalid consultation fee for this slot.");
+                    return;
+                }
+                launchRazorpayCheckout(userId, slotId, activeFee);
+            }
+        });
+    }
+
+    private void launchRazorpayCheckout(String userId, String slotId, int finalFee) {
         pendingUserId = userId;
         pendingSlotId = slotId;
 
@@ -1116,7 +1244,7 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
             if (razorpayKey != null && !razorpayKey.isEmpty()) {
                 options.put("key", razorpayKey);
             }
-            options.put("name", "Doctor Point");
+            options.put("name", "Doctor's Point");
             options.put("description", "Consultation Fee - " + doctorNameStr);
             options.put("image", "https://s3.amazonaws.com/rzp-mobile/images/rzp.png");
             options.put("theme.color", "#03A9F4");
@@ -1137,6 +1265,7 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
             checkout.open(BookAppointmentActivity.this, options);
         } catch (Exception e) {
             Log.e("BookAppointment", "Error in starting Razorpay Checkout", e);
+            isBookingInProgress = false;
             binding.btnConfirmBooking.setEnabled(true);
             binding.btnConfirmBooking.setText("Confirm Booking");
             ToastUtils.showError(this, "Error starting payment: " + e.getMessage());
@@ -1149,6 +1278,11 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
                 ? paymentData.getPaymentId() : razorpayPaymentId;
         this.lastRazorpayPaymentId = paymentId;
         Log.d("BookAppointment", "Razorpay Payment Success. Payment ID: " + paymentId);
+        if (isBookingSubmitted) {
+            Log.w("BookAppointment", "Booking already submitted for payment ID: " + paymentId + ". Preventing duplicate execution.");
+            return;
+        }
+        isBookingSubmitted = true;
         ToastUtils.showSuccess(this, "Payment Verified!");
         binding.btnConfirmBooking.setEnabled(false);
         binding.btnConfirmBooking.setText("Booking Appointment...");
@@ -1162,6 +1296,7 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
 
     @Override
     public void onPaymentError(int code, String response, PaymentData paymentData) {
+        isBookingSubmitted = false;
         Log.e("BookAppointment", "Razorpay Payment Error code=" + code + ", response=" + response);
         binding.btnConfirmBooking.setEnabled(true);
         binding.btnConfirmBooking.setText("Confirm Booking");
@@ -1225,12 +1360,59 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
         updateSlotsForSelectedDate(selectedDateRaw);
     }
 
+    private static int calculateAgeFromDob(String dob) {
+        if (dob == null || dob.trim().isEmpty()) return 0;
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+            Date birthDate = sdf.parse(dob.trim());
+            if (birthDate != null) {
+                Calendar dobCal = Calendar.getInstance();
+                dobCal.setTime(birthDate);
+                Calendar today = Calendar.getInstance();
+                int age = today.get(Calendar.YEAR) - dobCal.get(Calendar.YEAR);
+                if (today.get(Calendar.DAY_OF_YEAR) < dobCal.get(Calendar.DAY_OF_YEAR)) {
+                    age--;
+                }
+                return Math.max(0, age);
+            }
+        } catch (Exception ignored) {}
+        return 0;
+    }
+
     private void sendBookingRpcRequest(String userId, String slotId) {
+        if (selectedDateRaw != null && selectedTimeRaw != null && AvailabilityHelper.isSlotTimeReachedOrPassed(selectedDateRaw, selectedTimeRaw)) {
+            isBookingInProgress = false;
+            binding.btnConfirmBooking.setEnabled(true);
+            binding.btnConfirmBooking.setText("Confirm Booking");
+            ToastUtils.showError(BookAppointmentActivity.this, "This appointment slot is no longer available.");
+            loadAvailableSlotsFromSupabase();
+            return;
+        }
+
         String validUserId = formatUuidOrNull(userId);
         String validSlotId = formatUuidOrNull(slotId);
 
-        String patientNameVal = PreferenceManager.getInstance(this).getUserName();
+        String patientNameVal = (binding.etPatientName != null && binding.etPatientName.getText() != null)
+                ? binding.etPatientName.getText().toString().trim() : "";
+        if (patientNameVal.isEmpty()) {
+            patientNameVal = PreferenceManager.getInstance(this).getUserName();
+        }
+        if (patientNameVal == null || patientNameVal.trim().isEmpty()) {
+            patientNameVal = "Patient User";
+        }
         String patientPhoneVal = PreferenceManager.getInstance(this).getUserPhone();
+        String patientGenderVal = PreferenceManager.getInstance(this).getUserGender();
+        if (patientGenderVal == null || patientGenderVal.trim().isEmpty()) {
+            patientGenderVal = "Male";
+        }
+        int patientAgeVal = PreferenceManager.getInstance(this).getUserAge();
+        if (patientAgeVal <= 0) {
+            patientAgeVal = calculateAgeFromDob(PreferenceManager.getInstance(this).getUserDob());
+        }
+        if (patientAgeVal <= 0) {
+            patientAgeVal = 25;
+        }
+
         String targetDoctorId = (doctor != null && doctor.getId() != null) ? doctor.getId() : "doc_1";
 
         ensurePatientAndDoctorExistInSupabase(userId, targetDoctorId, patientNameVal, patientPhoneVal);
@@ -1243,7 +1425,11 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
                 validSlotId,
                 "clinic",
                 patientReasonInput,
-                "patient"
+                "patient",
+                patientNameVal,
+                patientPhoneVal,
+                patientAgeVal,
+                patientGenderVal
         );
 
         SupabaseClient.getSlotService().bookAppointment(rpcRequest).enqueue(new Callback<BookAppointmentRpcResponse>() {
@@ -1309,17 +1495,6 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
     }
 
     private void executeClientSideBookingFallback(String userId, String slotId) {
-        // Extract real doctor ID from doctor object or available slot
-        String targetDoctorId = (doctor != null && doctor.getId() != null && !doctor.getId().trim().isEmpty()) ? doctor.getId().trim() : "doc_1";
-        if ((targetDoctorId.equals("doc_1") || targetDoctorId.startsWith("doc_")) && availableSlotsList != null) {
-            for (DoctorSlot slot : availableSlotsList) {
-                if (slot != null && slot.getDoctorId() != null && !slot.getDoctorId().trim().isEmpty()) {
-                    targetDoctorId = slot.getDoctorId().trim();
-                    break;
-                }
-            }
-        }
-
         String targetDateVal = selectedDateRaw != null ? selectedDateRaw : new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 
         String startTimeVal = selectedTimeRaw;
@@ -1331,6 +1506,26 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
         }
         if (startTimeVal.length() == 5) startTimeVal = startTimeVal + ":00";
         String normStartTime = normalizeTimeFormat(startTimeVal);
+
+        if (AvailabilityHelper.isSlotTimeReachedOrPassed(targetDateVal, normStartTime)) {
+            isBookingInProgress = false;
+            binding.btnConfirmBooking.setEnabled(true);
+            binding.btnConfirmBooking.setText("Confirm Booking");
+            ToastUtils.showError(BookAppointmentActivity.this, "This appointment slot is no longer available.");
+            loadAvailableSlotsFromSupabase();
+            return;
+        }
+
+        // Extract real doctor ID from doctor object or available slot
+        String targetDoctorId = (doctor != null && doctor.getId() != null && !doctor.getId().trim().isEmpty()) ? doctor.getId().trim() : "doc_1";
+        if ((targetDoctorId.equals("doc_1") || targetDoctorId.startsWith("doc_")) && availableSlotsList != null) {
+            for (DoctorSlot slot : availableSlotsList) {
+                if (slot != null && slot.getDoctorId() != null && !slot.getDoctorId().trim().isEmpty()) {
+                    targetDoctorId = slot.getDoctorId().trim();
+                    break;
+                }
+            }
+        }
 
         final String finalDocId = targetDoctorId;
         final String finalDate = targetDateVal;
@@ -1391,11 +1586,26 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
         String patientReasonInput = (binding.etPatientReason != null && binding.etPatientReason.getText() != null)
                 ? binding.etPatientReason.getText().toString().trim() : "";
 
-        String patientNameVal = PreferenceManager.getInstance(this).getUserName();
+        String patientNameVal = (binding.etPatientName != null && binding.etPatientName.getText() != null)
+                ? binding.etPatientName.getText().toString().trim() : "";
+        if (patientNameVal.isEmpty()) {
+            patientNameVal = PreferenceManager.getInstance(this).getUserName();
+        }
         if (patientNameVal == null || patientNameVal.trim().isEmpty()) {
             patientNameVal = "Patient User";
         }
         String patientPhoneVal = PreferenceManager.getInstance(this).getUserPhone();
+        String patientGenderVal = PreferenceManager.getInstance(this).getUserGender();
+        if (patientGenderVal == null || patientGenderVal.trim().isEmpty()) {
+            patientGenderVal = "Male";
+        }
+        int patientAgeVal = PreferenceManager.getInstance(this).getUserAge();
+        if (patientAgeVal <= 0) {
+            patientAgeVal = calculateAgeFromDob(PreferenceManager.getInstance(this).getUserDob());
+        }
+        if (patientAgeVal <= 0) {
+            patientAgeVal = 25;
+        }
 
         // Ensure patient & doctor exist in public.profiles, public.patients and public.doctors to satisfy Foreign Keys
         ensurePatientAndDoctorExistInSupabase(targetPatientId, targetDoctorId, patientNameVal, patientPhoneVal);
@@ -1421,6 +1631,8 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
         payload.put("clinic_name", clinicNameVal);
         payload.put("patient_name", patientNameVal);
         payload.put("patient_full_name", patientNameVal);
+        payload.put("patient_age", patientAgeVal);
+        payload.put("patient_gender", patientGenderVal);
         if (patientPhoneVal != null && !patientPhoneVal.trim().isEmpty()) {
             payload.put("patient_phone", patientPhoneVal.trim());
         }
@@ -1432,15 +1644,50 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
         if (userAvatarUrl != null && !userAvatarUrl.isEmpty()) {
             payload.put("patient_image", userAvatarUrl);
         }
+        if (lastRazorpayPaymentId != null && !lastRazorpayPaymentId.isEmpty()) {
+            payload.put("payment_id", lastRazorpayPaymentId);
+            payload.put("payment_status", "Paid");
+        } else {
+            payload.put("payment_status", "Paid Online");
+        }
 
         final String finalApptId = apptId;
         final String finalValidDoctorId = targetDoctorId;
         final String finalStartTimeVal = startTimeVal;
 
-        // Calculate chronological token number based on slot start time order
+        // Calculate chronological slot position based on slot start time order
         Appointment dummyAppt = new Appointment();
         dummyAppt.setStartTime(finalStartTimeVal);
         int newTimeMinutes = dummyAppt.getStartTimeMinutes();
+
+        int calculatedSlotPos = 1;
+        if (availableSlotsList != null && !availableSlotsList.isEmpty()) {
+            int pos = 0;
+            for (DoctorSlot s : availableSlotsList) {
+                if (s != null && s.getStartTime() != null) {
+                    pos++;
+                    if (Objects.equals(normalizeTimeFormat(s.getStartTime()), normalizeTimeFormat(finalStartTimeVal))) {
+                        calculatedSlotPos = pos;
+                        break;
+                    }
+                }
+            }
+            if (calculatedSlotPos == 1 && pos > 0) {
+                int countBeforeSlot = 0;
+                for (DoctorSlot s : availableSlotsList) {
+                    if (s != null && s.getStartTime() != null) {
+                        Appointment slotAppt = new Appointment();
+                        slotAppt.setStartTime(s.getStartTime());
+                        if (slotAppt.getStartTimeMinutes() <= newTimeMinutes) {
+                            countBeforeSlot++;
+                        }
+                    }
+                }
+                if (countBeforeSlot > 0) calculatedSlotPos = countBeforeSlot;
+            }
+        }
+
+        final int finalSlotNum = calculatedSlotPos;
 
         SupabaseClient.getAppointmentService().getAppointmentsForDoctor("eq." + finalValidDoctorId).enqueue(new Callback<List<Appointment>>() {
             @Override
@@ -1464,15 +1711,17 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
                         }
                     }
                 }
-                int nextToken = Math.max(1, countBefore + 1);
-                payload.put("token_number", nextToken);
-                submitFinalAppointmentPayload(payload, nextToken, userId, slotId, finalApptId);
+                int assignedNum = Math.max(finalSlotNum, countBefore + 1);
+                payload.put("token_number", assignedNum);
+                payload.put("slot_number", assignedNum);
+                submitFinalAppointmentPayload(payload, assignedNum, userId, slotId, finalApptId);
             }
 
             @Override
             public void onFailure(Call<List<Appointment>> call, Throwable t) {
-                payload.put("token_number", 1);
-                submitFinalAppointmentPayload(payload, 1, userId, slotId, finalApptId);
+                payload.put("token_number", finalSlotNum);
+                payload.put("slot_number", finalSlotNum);
+                submitFinalAppointmentPayload(payload, finalSlotNum, userId, slotId, finalApptId);
             }
         });
     }
@@ -1556,9 +1805,20 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
         safePayload.put("start_time", originalPayload.get("start_time"));
         safePayload.put("end_time", originalPayload.get("end_time"));
         safePayload.put("token_number", assignedToken);
+        safePayload.put("slot_number", assignedToken);
         safePayload.put("fee", activeFeeVal);
         safePayload.put("amount", activeFeeVal);
         safePayload.put("status", "Confirmed");
+        if (originalPayload.get("patient_name") != null) {
+            safePayload.put("patient_name", originalPayload.get("patient_name"));
+            safePayload.put("patient_full_name", originalPayload.get("patient_name"));
+        }
+        if (originalPayload.get("patient_age") != null) {
+            safePayload.put("patient_age", originalPayload.get("patient_age"));
+        }
+        if (originalPayload.get("patient_gender") != null) {
+            safePayload.put("patient_gender", originalPayload.get("patient_gender"));
+        }
 
         boolean isPgrst204 = (errorContext != null && (errorContext.contains("PGRST204") || errorContext.contains("doctor_specialization")));
         if (!isPgrst204) {
@@ -1662,9 +1922,20 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
         uuidPayload.put("start_time", originalPayload.get("start_time"));
         uuidPayload.put("end_time", originalPayload.get("end_time"));
         uuidPayload.put("token_number", assignedToken);
+        uuidPayload.put("slot_number", assignedToken);
         uuidPayload.put("fee", activeFeeVal);
         uuidPayload.put("amount", activeFeeVal);
         uuidPayload.put("status", "Confirmed");
+        if (originalPayload.get("patient_name") != null) {
+            uuidPayload.put("patient_name", originalPayload.get("patient_name"));
+            uuidPayload.put("patient_full_name", originalPayload.get("patient_name"));
+        }
+        if (originalPayload.get("patient_age") != null) {
+            uuidPayload.put("patient_age", originalPayload.get("patient_age"));
+        }
+        if (originalPayload.get("patient_gender") != null) {
+            uuidPayload.put("patient_gender", originalPayload.get("patient_gender"));
+        }
 
         SupabaseClient.getAppointmentService().createAppointmentPayload("return=representation", uuidPayload)
                 .enqueue(new Callback<List<Map<String, Object>>>() {
@@ -1765,15 +2036,157 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
         return "10:00:00";
     }
 
+    private boolean isValidPreviousAppointment(Appointment appt, String targetDoctorId) {
+        if (appt == null || targetDoctorId == null || targetDoctorId.trim().isEmpty()) {
+            return false;
+        }
+
+        // 1. Must match exact same doctor ID
+        String apptDocId = appt.getDoctorId();
+        if (apptDocId == null || !targetDoctorId.trim().equalsIgnoreCase(apptDocId.trim())) {
+            return false;
+        }
+
+        // 2. Check appointment status (Exclude Cancelled, Rejected, Failed, No-Show)
+        String status = appt.getStatus();
+        if (status == null || status.trim().isEmpty()) return false;
+        String st = status.trim().toLowerCase(Locale.US);
+
+        if (st.contains("cancel") || st.contains("reject") || st.contains("failed") || st.contains("no_show") || st.contains("noshow")) {
+            return false;
+        }
+
+        // 3. Check payment status
+        String payStatus = appt.getPaymentStatus();
+        if (payStatus != null) {
+            String ps = payStatus.trim().toLowerCase(Locale.US);
+            if (ps.contains("fail") || ps.contains("cancel") || ps.contains("refund")) {
+                return false;
+            }
+        }
+
+        return "completed".equals(st) || "confirmed".equals(st) || "checked_in".equals(st)
+                || "waiting".equals(st) || "in_consultation".equals(st) || "pending".equals(st);
+    }
+
+    private void updateConsultationFeeUI() {
+        if (binding == null) return;
+
+        DoctorSlot targetSlot = selectedSlot;
+        if (targetSlot == null && selectedSlotId != null && availableSlotsList != null) {
+            for (DoctorSlot s : availableSlotsList) {
+                if (s != null && selectedSlotId.equalsIgnoreCase(s.getId())) {
+                    targetSlot = s;
+                    break;
+                }
+            }
+        }
+
+        int regularFee = (doctor != null && doctor.getFee() > 0) ? doctor.getFee() : 500;
+        int followUpFee = (doctor != null && doctor.getFollowUpFee() > 0) ? doctor.getFollowUpFee() : 300;
+
+        if (targetSlot != null) {
+            if (targetSlot.getFee() > 0) {
+                regularFee = targetSlot.getFee();
+            }
+            if (targetSlot.getFollowUpFee() > 0) {
+                followUpFee = targetSlot.getFollowUpFee();
+            }
+        } else if (availableSlotsList != null && !availableSlotsList.isEmpty()) {
+            if (availableSlotsList.get(0).getFee() > 0) {
+                regularFee = availableSlotsList.get(0).getFee();
+            }
+            if (availableSlotsList.get(0).getFollowUpFee() > 0) {
+                followUpFee = availableSlotsList.get(0).getFollowUpFee();
+            }
+        }
+
+        int activeFee = isReturningPatientUser ? followUpFee : regularFee;
+        String docName = (doctor != null && doctor.getName() != null && !doctor.getName().trim().isEmpty())
+                ? doctor.getName() : "Dr. Medical Specialist";
+
+        if (isReturningPatientUser) {
+            // --- FOLLOW-UP CONSULTATION ---
+            binding.tvFee.setText("Follow-up Fee: ₹" + followUpFee);
+
+            binding.tvConsultationBadge.setText("🔄 Follow-up Consultation");
+            binding.tvConsultationBadge.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.primary)));
+            binding.tvConsultationBadge.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_check_circle, 0, 0, 0);
+
+            binding.cardConsultationTypeBreakdown.setCardBackgroundColor(getResources().getColor(R.color.bg_indigo_light));
+            binding.cardConsultationTypeBreakdown.setStrokeColor(getResources().getColor(R.color.secondary_light));
+
+            binding.ivConsultationInfo.setVisibility(View.VISIBLE);
+
+            binding.tvConsultationExplanation.setText("You are booking a follow-up appointment with " + docName + ". You've previously consulted this doctor, so the follow-up consultation fee applies.");
+
+            // Breakdown Rows
+            binding.tvRegularFeeLabel.setText("Regular Consultation Fee");
+            binding.tvRegularFeeValue.setText("₹" + regularFee);
+            binding.tvRegularFeeValue.setPaintFlags(binding.tvRegularFeeValue.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+
+            binding.rlFollowupFeeRow.setVisibility(View.VISIBLE);
+            binding.tvFollowupFeeLabel.setText("Follow-up Fee");
+            binding.tvFollowupFeeValue.setText("₹" + followUpFee);
+
+            binding.tvTotalPayableLabel.setText("You Pay");
+            binding.tvTotalPayableValue.setText("₹" + activeFee);
+        } else {
+            // --- FIRST CONSULTATION ---
+            binding.tvFee.setText("First Consultation Fee: ₹" + regularFee);
+
+            binding.tvConsultationBadge.setText("First Consultation");
+            binding.tvConsultationBadge.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.secondary)));
+            binding.tvConsultationBadge.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
+
+            binding.cardConsultationTypeBreakdown.setCardBackgroundColor(getResources().getColor(R.color.surface_white));
+            binding.cardConsultationTypeBreakdown.setStrokeColor(getResources().getColor(R.color.card_stroke));
+
+            binding.ivConsultationInfo.setVisibility(View.GONE);
+
+            binding.tvConsultationExplanation.setText("You are booking your first consultation with " + docName + ".");
+
+            // Breakdown Rows
+            binding.tvRegularFeeLabel.setText("Consultation Fee");
+            binding.tvRegularFeeValue.setText("₹" + regularFee);
+            binding.tvRegularFeeValue.setPaintFlags(binding.tvRegularFeeValue.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
+
+            binding.rlFollowupFeeRow.setVisibility(View.GONE);
+
+            binding.tvTotalPayableLabel.setText("You Pay");
+            binding.tvTotalPayableValue.setText("₹" + activeFee);
+        }
+
+        if (!isBookingInProgress) {
+            binding.btnConfirmBooking.setText("Confirm & Pay ₹" + activeFee);
+        }
+    }
+
+    private void showFollowUpInfoDialog() {
+        int regularFee = (doctor != null && doctor.getFee() > 0) ? doctor.getFee() : 500;
+        int followUpFee = (doctor != null && doctor.getFollowUpFee() > 0) ? doctor.getFollowUpFee() : 300;
+        if (availableSlotsList != null && !availableSlotsList.isEmpty()) {
+            if (availableSlotsList.get(0).getFee() > 0) regularFee = availableSlotsList.get(0).getFee();
+            if (availableSlotsList.get(0).getFollowUpFee() > 0) followUpFee = availableSlotsList.get(0).getFollowUpFee();
+        }
+        String docName = (doctor != null && doctor.getName() != null) ? doctor.getName() : "this doctor";
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("🔄 Follow-up Consultation")
+                .setMessage("Because you have previously consulted " + docName + ", the follow-up consultation fee applies to this appointment.\n\n"
+                        + "• Regular Fee: ₹" + regularFee + "\n"
+                        + "• Follow-up Fee: ₹" + followUpFee + "\n"
+                        + "• Total Payable: ₹" + followUpFee)
+                .setPositiveButton("Got It", (dialog, which) -> dialog.dismiss())
+                .show();
+    }
+
     private void navigateToConfirmation(BookAppointmentRpcResponse rpcResp) {
         if (doctor != null && doctor.getId() != null) {
             PreferenceManager.getInstance(this).recordDoctorBooking(doctor.getId());
         }
 
-        int activeFee = isReturningPatientUser ? doctor.getFollowUpFee() : doctor.getFee();
-        if (availableSlotsList != null && !availableSlotsList.isEmpty()) {
-            activeFee = isReturningPatientUser ? availableSlotsList.get(0).getFollowUpFee() : availableSlotsList.get(0).getFee();
-        }
+        int activeFee = getActiveConsultationFee();
 
         // Process Doctor Earnings and Commission Deduction in Supabase
         if (doctor != null && doctor.getId() != null) {
@@ -1784,14 +2197,34 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
 
         String feeTypeLabel = isReturningPatientUser ? "Follow-up Fee (Repeat Visit)" : "New Patient Fee (First Visit)";
 
+        String apptId = null;
+        if (rpcResp != null && rpcResp.getAppointmentId() != null) {
+            apptId = rpcResp.getAppointmentId();
+        }
+
+        String patientNameVal = (binding.etPatientName != null && binding.etPatientName.getText() != null)
+                ? binding.etPatientName.getText().toString().trim() : "";
+        if (patientNameVal.isEmpty()) {
+            patientNameVal = PreferenceManager.getInstance(this).getUserName();
+        }
+        if (patientNameVal == null || patientNameVal.trim().isEmpty()) {
+            patientNameVal = "Patient User";
+        }
+
         Intent intent = new Intent(BookAppointmentActivity.this, BookingConfirmedActivity.class);
+        intent.putExtra("appointment_id", apptId);
         intent.putExtra("doctor", doctor);
         intent.putExtra("clinic", selectedClinic);
         intent.putExtra("selected_date", selectedDateFormatted);
         intent.putExtra("selected_time", selectedTimeFormatted != null ? selectedTimeFormatted : "10:00 AM");
         intent.putExtra("booking_fee_type", feeTypeLabel);
         intent.putExtra("booking_fee_amount", activeFee);
+        intent.putExtra("is_followup", isReturningPatientUser);
         intent.putExtra("payment_id", lastRazorpayPaymentId);
+        intent.putExtra("patient_name", patientNameVal);
+        if (rpcResp != null && rpcResp.getTokenNumber() > 0) {
+            intent.putExtra("token_number", rpcResp.getTokenNumber());
+        }
         intent.putExtra("rpc_response", rpcResp);
         startActivity(intent);
         finish();
@@ -1820,24 +2253,11 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
 
     private void checkPatientAppointmentHistoryAndUpdateFee() {
         String userId = PreferenceManager.getInstance(this).getUserId();
-        int defaultFee = doctor.getFee();
-        int defaultFollowFee = doctor.getFollowUpFee();
-        if (availableSlotsList != null && !availableSlotsList.isEmpty()) {
-            defaultFee = availableSlotsList.get(0).getFee();
-            defaultFollowFee = availableSlotsList.get(0).getFollowUpFee();
-        }
 
-        final int finalFee = defaultFee;
-        final int finalFollowFee = defaultFollowFee;
-
-        // 1. First check local PreferenceManager history
+        // 1. Initial check using local PreferenceManager history
         boolean hasLocalHistory = doctor != null && doctor.getId() != null && PreferenceManager.getInstance(this).hasBookedWithDoctor(doctor.getId());
-        if (hasLocalHistory) {
-            isReturningPatientUser = true;
-            binding.tvFee.setText("Follow-up Fee (Repeat Visit): ₹" + finalFollowFee);
-        } else {
-            binding.tvFee.setText("New Patient Fee (First Visit): ₹" + finalFee);
-        }
+        isReturningPatientUser = hasLocalHistory;
+        updateConsultationFeeUI();
 
         if (userId == null || userId.trim().isEmpty() || doctor.getId() == null) return;
 
@@ -1846,70 +2266,65 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
                 .enqueue(new Callback<List<Appointment>>() {
                     @Override
                     public void onResponse(Call<List<Appointment>> call, Response<List<Appointment>> response) {
-                        boolean isReturning = hasLocalHistory;
+                        boolean isReturning = false;
                         if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                             for (Appointment appt : response.body()) {
-                                if (doctor.getId().equals(appt.getDoctorId()) && appt.getStatus() != null && !appt.getStatus().equalsIgnoreCase("Cancelled")) {
+                                if (isValidPreviousAppointment(appt, doctor.getId())) {
                                     isReturning = true;
                                     break;
                                 }
                             }
-                        }
-
-                        if (!isReturning) {
-                            fetchGlobalAppointmentsForReturningCheck(finalFee, finalFollowFee);
-                            return;
-                        }
-
-                        isReturningPatientUser = isReturning;
-                        if (isReturning) {
-                            PreferenceManager.getInstance(BookAppointmentActivity.this).recordDoctorBooking(doctor.getId());
-                            binding.tvFee.setText("Follow-up Fee (Repeat Visit): ₹" + finalFollowFee);
                         } else {
-                            binding.tvFee.setText("New Patient Fee (First Visit): ₹" + finalFee);
+                            isReturning = hasLocalHistory;
                         }
-                    }
 
-                    @Override
-                    public void onFailure(Call<List<Appointment>> call, Throwable t) {
-                        fetchGlobalAppointmentsForReturningCheck(finalFee, finalFollowFee);
-                    }
-                });
-    }
-
-    private void fetchGlobalAppointmentsForReturningCheck(int finalFee, int finalFollowFee) {
-        SupabaseClient.getAppointmentService().getAllAppointments()
-                .enqueue(new Callback<List<Appointment>>() {
-                    @Override
-                    public void onResponse(Call<List<Appointment>> call, Response<List<Appointment>> response) {
-                        boolean isReturning = doctor != null && doctor.getId() != null && PreferenceManager.getInstance(BookAppointmentActivity.this).hasBookedWithDoctor(doctor.getId());
-                        if (response.isSuccessful() && response.body() != null) {
-                            for (Appointment appt : response.body()) {
-                                if (doctor != null && doctor.getId() != null && doctor.getId().equals(appt.getDoctorId()) && appt.getStatus() != null && !appt.getStatus().equalsIgnoreCase("Cancelled")) {
-                                    isReturning = true;
-                                    break;
-                                }
-                            }
+                        if (!isReturning && (response.body() == null || response.body().isEmpty())) {
+                            fetchGlobalAppointmentsForReturningCheck(hasLocalHistory);
+                            return;
                         }
 
                         isReturningPatientUser = isReturning;
                         if (isReturning && doctor != null && doctor.getId() != null) {
                             PreferenceManager.getInstance(BookAppointmentActivity.this).recordDoctorBooking(doctor.getId());
-                            binding.tvFee.setText("Follow-up Fee (Repeat Visit): ₹" + finalFollowFee);
-                        } else {
-                            binding.tvFee.setText("New Patient Fee (First Visit): ₹" + finalFee);
                         }
+                        updateConsultationFeeUI();
                     }
 
                     @Override
                     public void onFailure(Call<List<Appointment>> call, Throwable t) {
-                        boolean isReturning = doctor != null && doctor.getId() != null && PreferenceManager.getInstance(BookAppointmentActivity.this).hasBookedWithDoctor(doctor.getId());
-                        isReturningPatientUser = isReturning;
-                        if (isReturning) {
-                            binding.tvFee.setText("Follow-up Fee (Repeat Visit): ₹" + finalFollowFee);
+                        fetchGlobalAppointmentsForReturningCheck(hasLocalHistory);
+                    }
+                });
+    }
+
+    private void fetchGlobalAppointmentsForReturningCheck(boolean hasLocalHistory) {
+        SupabaseClient.getAppointmentService().getAllAppointments()
+                .enqueue(new Callback<List<Appointment>>() {
+                    @Override
+                    public void onResponse(Call<List<Appointment>> call, Response<List<Appointment>> response) {
+                        boolean isReturning = false;
+                        if (response.isSuccessful() && response.body() != null) {
+                            for (Appointment appt : response.body()) {
+                                if (isValidPreviousAppointment(appt, doctor != null ? doctor.getId() : null)) {
+                                    isReturning = true;
+                                    break;
+                                }
+                            }
                         } else {
-                            binding.tvFee.setText("New Patient Fee (First Visit): ₹" + finalFee);
+                            isReturning = hasLocalHistory;
                         }
+
+                        isReturningPatientUser = isReturning;
+                        if (isReturning && doctor != null && doctor.getId() != null) {
+                            PreferenceManager.getInstance(BookAppointmentActivity.this).recordDoctorBooking(doctor.getId());
+                        }
+                        updateConsultationFeeUI();
+                    }
+
+                    @Override
+                    public void onFailure(Call<List<Appointment>> call, Throwable t) {
+                        isReturningPatientUser = hasLocalHistory;
+                        updateConsultationFeeUI();
                     }
                 });
     }

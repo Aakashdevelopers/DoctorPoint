@@ -114,14 +114,15 @@ public class AppointmentListAdapter extends ListAdapter<Appointment, Appointment
             }
 
             String st = appointment.getStatus() != null ? appointment.getStatus().toLowerCase() : "";
-            int token = appointment.getTokenNumber();
-            String tokenPrefix = token > 0 ? "Token #" + String.format(Locale.US, "%02d", token) + " • " : "";
+            int numVal = appointment.getSlotNumber();
+            String tokenPrefix = numVal > 0 ? "Your Number: #" + String.format(Locale.US, "%02d", numVal) + " • " : "";
 
             if (st.contains("consultation") || st.contains("in_consultation")) {
                 binding.tvStatusText.setText(tokenPrefix + "IN CONSULTATION (LIVE)");
                 binding.tvStatusText.setTextColor(ContextCompat.getColor(context, R.color.success_green));
                 binding.llStatusBadge.setBackgroundResource(R.drawable.bg_badge_verified);
                 binding.llActionButtons.setVisibility(View.GONE);
+                if (binding.tvCancellationReason != null) binding.tvCancellationReason.setVisibility(View.GONE);
             } else if ("completed".equals(st)) {
                 binding.tvStatusText.setText(tokenPrefix + "Completed");
                 binding.tvStatusText.setTextColor(ContextCompat.getColor(context, R.color.primary));
@@ -132,6 +133,7 @@ public class AppointmentListAdapter extends ListAdapter<Appointment, Appointment
                 binding.btnCancel.setVisibility(View.GONE);
                 binding.btnRateDoctor.setVisibility(View.VISIBLE);
                 binding.btnRequestRefund.setVisibility(View.GONE);
+                if (binding.tvCancellationReason != null) binding.tvCancellationReason.setVisibility(View.GONE);
             } else if ("cancelled".equals(st) || "rejected".equals(st) || "no_show".equals(st)) {
                 binding.tvStatusText.setText(tokenPrefix + appointment.getUserFriendlyStatus());
                 binding.tvStatusText.setTextColor(ContextCompat.getColor(context, R.color.error_red));
@@ -142,6 +144,16 @@ public class AppointmentListAdapter extends ListAdapter<Appointment, Appointment
                 binding.btnCancel.setVisibility(View.GONE);
                 binding.btnRateDoctor.setVisibility(View.GONE);
                 binding.btnRequestRefund.setVisibility(View.VISIBLE);
+
+                String reason = appointment.getPatientReason() != null ? appointment.getPatientReason() : appointment.getNotes();
+                if (reason != null && (reason.toLowerCase().contains("doctor confirmation") || reason.toLowerCase().contains("schedule ended") || reason.toLowerCase().contains("automatically"))) {
+                    if (binding.tvCancellationReason != null) {
+                        binding.tvCancellationReason.setVisibility(View.VISIBLE);
+                        binding.tvCancellationReason.setText("Appointment cancelled because doctor confirmation was not received before the appointment schedule ended.");
+                    }
+                } else if (binding.tvCancellationReason != null) {
+                    binding.tvCancellationReason.setVisibility(View.GONE);
+                }
             } else {
                 binding.llActionButtons.setVisibility(View.VISIBLE);
                 binding.btnReschedule.setVisibility(View.VISIBLE);
@@ -152,6 +164,7 @@ public class AppointmentListAdapter extends ListAdapter<Appointment, Appointment
                 binding.tvStatusText.setText(tokenPrefix + appointment.getUserFriendlyStatus());
                 binding.tvStatusText.setTextColor(ContextCompat.getColor(context, R.color.success_green));
                 binding.llStatusBadge.setBackgroundResource(R.drawable.bg_badge_verified);
+                if (binding.tvCancellationReason != null) binding.tvCancellationReason.setVisibility(View.GONE);
             }
 
             itemView.setOnClickListener(v -> {

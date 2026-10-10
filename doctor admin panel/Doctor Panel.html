@@ -6,6 +6,7 @@
     <title>Doctor Panel - Manage Patient Appointments &amp; Data</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         function switchToSignup(e) {
             if (e && e.preventDefault) e.preventDefault();
@@ -120,6 +121,32 @@
 
         .hidden {
             display: none !important;
+        }
+
+        /* Analytics Dashboard Styles */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.25rem;
+        }
+        .chart-span-full {
+            grid-column: span 3;
+        }
+        @media (max-width: 1024px) {
+            .analytics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .chart-span-full {
+                grid-column: span 2 !important;
+            }
+        }
+        @media (max-width: 768px) {
+            .analytics-grid {
+                grid-template-columns: 1fr;
+            }
+            .chart-span-full {
+                grid-column: span 1 !important;
+            }
         }
 
         /* Auth Container */
@@ -1647,6 +1674,102 @@
             </div>
         </div>
 
+        <!-- ANALYTICS & GRAPH INSIGHTS SECTION -->
+        <div id="dashboard-analytics-card" class="card" style="margin-bottom: 1.25rem; border-top: 4px solid var(--primary, #152C69);">
+            <div class="card-header" style="flex-wrap: wrap; gap: 0.75rem; border-bottom: 1px solid var(--border, #e2e8f0); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--primary, #152C69); display: flex; align-items: center; gap: 0.5rem;">
+                        <i class='bx bx-line-chart' style="font-size: 1.4rem; color: #2563eb;"></i> Performance &amp; Analytics Insights
+                    </h3>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary, #64748b); margin-top: 2px;">
+                        Visual analysis of patient appointments, revenue trends, and consultation rush hours
+                    </p>
+                </div>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <select id="analytics-time-filter" class="form-control" style="font-size: 0.825rem; padding: 6px 12px; width: auto; font-weight: 600; border-radius: 8px;" onchange="window.reloadDashboardAnalytics(this.value)">
+                        <option value="7">Last 7 Days</option>
+                        <option value="14">Last 14 Days</option>
+                        <option value="30" selected>Last 30 Days</option>
+                        <option value="90">Last 3 Months</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Analytics Key Metrics Summary Badges -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 1.25rem;">
+                <div style="background: #f8fafc; border-radius: 10px; padding: 0.75rem 1rem; border: 1px solid #e2e8f0;">
+                    <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Total Appointments</div>
+                    <div id="graph-stat-total" style="font-size: 1.3rem; font-weight: 800; color: #1e293b; margin-top: 2px;">0</div>
+                </div>
+                <div style="background: #f8fafc; border-radius: 10px; padding: 0.75rem 1rem; border: 1px solid #e2e8f0;">
+                    <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Completion Rate</div>
+                    <div id="graph-stat-rate" style="font-size: 1.3rem; font-weight: 800; color: #16a34a; margin-top: 2px;">0%</div>
+                </div>
+                <div style="background: #f8fafc; border-radius: 10px; padding: 0.75rem 1rem; border: 1px solid #e2e8f0;">
+                    <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Net Earnings</div>
+                    <div id="graph-stat-revenue" style="font-size: 1.3rem; font-weight: 800; color: #2563eb; margin-top: 2px;">₹0</div>
+                </div>
+                <div style="background: #f8fafc; border-radius: 10px; padding: 0.75rem 1rem; border: 1px solid #e2e8f0;">
+                    <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Avg Daily Patients</div>
+                    <div id="graph-stat-avg" style="font-size: 1.3rem; font-weight: 800; color: #7c3aed; margin-top: 2px;">0</div>
+                </div>
+            </div>
+
+            <!-- Charts Grid -->
+            <div class="analytics-grid">
+
+                <!-- Chart 1: Appointments & Revenue Trend (Line Chart) -->
+                <div class="chart-span-full" style="background: #ffffff; border-radius: 12px; padding: 1rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <h4 style="font-size: 0.95rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 0.4rem;">
+                            <i class='bx bx-trending-up' style="color: #2563eb;"></i> Daily Appointments &amp; Revenue Growth
+                        </h4>
+                        <span style="font-size: 0.725rem; color: #1e40af; font-weight: 600; background: #eff6ff; padding: 2px 8px; border-radius: 4px;">Interactive Trend</span>
+                    </div>
+                    <div style="position: relative; height: 260px; width: 100%;">
+                        <canvas id="chart-appointment-trend"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 2: Patient Types (Doughnut Chart) -->
+                <div style="background: #ffffff; border-radius: 12px; padding: 1rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <h4 style="font-size: 0.95rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 0.4rem;">
+                            <i class='bx bx-pie-chart-alt-2' style="color: #7c3aed;"></i> Patient Mix (New vs Follow-up)
+                        </h4>
+                    </div>
+                    <div style="position: relative; height: 220px; width: 100%; display: flex; justify-content: center;">
+                        <canvas id="chart-patient-types"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 3: Appointment Status Distribution (Bar Chart) -->
+                <div style="background: #ffffff; border-radius: 12px; padding: 1rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <h4 style="font-size: 0.95rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 0.4rem;">
+                            <i class='bx bx-bar-chart-alt-2' style="color: #059669;"></i> Queue &amp; Status Distribution
+                        </h4>
+                    </div>
+                    <div style="position: relative; height: 220px; width: 100%;">
+                        <canvas id="chart-status-dist"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 4: Consultation Rush Hours (Horizontal Bar Chart) -->
+                <div style="background: #ffffff; border-radius: 12px; padding: 1rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <h4 style="font-size: 0.95rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 0.4rem;">
+                            <i class='bx bx-time' style="color: #ea580c;"></i> Peak Rush Hours Distribution
+                        </h4>
+                    </div>
+                    <div style="position: relative; height: 220px; width: 100%;">
+                        <canvas id="chart-time-slots"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
         <div class="card">
             <div class="card-header" style="flex-wrap: wrap; gap: 0.75rem;">
                 <div>
@@ -1665,7 +1788,7 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Token #</th>
+                            <th>Your Number</th>
                             <th>Time</th>
                             <th>Patient Name</th>
                             <th>Type</th>
@@ -1750,7 +1873,7 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>Token #</th>
+                                <th>Your Number</th>
                                 <th>Time &amp; Date</th>
                                 <th>Patient Name</th>
                                 <th>Clinic / Branch</th>
@@ -3214,7 +3337,32 @@
 
         window.currentConsultationIndex = 0;
 
-        window.openConsultationMode = (apptId) => {
+        window.toggleLastVisitCard = () => {
+            const el = document.getElementById('previous-visit-card');
+            if (el) {
+                el.style.display = (el.style.display === 'none' || !el.style.display) ? 'block' : 'none';
+            }
+        };
+
+        function getPatientAgeStr(patientObj, apptObj) {
+            if (apptObj?.patient_age) return `${apptObj.patient_age} Yrs`;
+            if (patientObj?.age) return `${patientObj.age} Yrs`;
+            if (apptObj?.age) return `${apptObj.age} Yrs`;
+            const dob = patientObj?.date_of_birth || apptObj?.date_of_birth;
+            if (dob) {
+                if (/^\d{1,3}$/.test(String(dob).trim())) return `${dob} Yrs`;
+                const bDate = new Date(dob);
+                if (!isNaN(bDate.getTime())) {
+                    const ageMs = Date.now() - bDate.getTime();
+                    const ageDate = new Date(ageMs);
+                    const calcAge = Math.abs(ageDate.getUTCFullYear() - 1970);
+                    if (calcAge >= 0 && calcAge < 120) return `${calcAge} Yrs`;
+                }
+            }
+            return 'N/A';
+        }
+
+        window.openConsultationMode = async (apptId) => {
             let queue = getSortedQueueForCurrentView();
             let idx = queue.findIndex(a => a.id === apptId);
             if (idx === -1 && cachedAppointments) {
@@ -3229,89 +3377,198 @@
             window.currentConsultationIndex = idx;
             window.currentConsultationApptId = appt.id;
 
+            // Dynamically load patient profile if not already attached or missing details
+            if (appt.patient_id && (!appt.patient || !appt.patient.phone)) {
+                if (window.supabase) {
+                    try {
+                        const { data: profData } = await supabase
+                            .from('profiles')
+                            .select('*')
+                            .eq('id', appt.patient_id)
+                            .maybeSingle();
+                        if (profData) {
+                            appt.patient = profData;
+                        }
+                    } catch (e) {
+                        console.warn("Could not load patient profile:", e);
+                    }
+                }
+            }
+
             const prevAppt = idx > 0 ? queue[idx - 1] : null;
             const nextAppt = idx < queue.length - 1 ? queue[idx + 1] : null;
 
+            // Sanitize patient details (No undefined / null / NaN)
             const pName = appt.patient_name || (appt.patient && appt.patient.full_name) || appt.patient_full_name || appt.user_name || 'Patient Name';
-            const patientPic = appt.patient_image || appt.patient?.avatar_url || appt.patient?.image_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150';
-            const tokenStr = `#${String(appt.token_number || 1).padStart(2, '0')}`;
-            const timeStr = formatTime(appt.start_time);
-            const feeVal = appt.fee || window.doctorContext?.fee || 500;
+            const patientPic = appt.patient?.avatar_url || appt.patient_image || appt.patient?.image_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150';
+            const tokenStr = `#${String(appt.slot_number || appt.token_number || 1).padStart(2, '0')}`;
+            const timeStr = typeof formatTime === 'function' ? formatTime(appt.start_time) : (appt.start_time || 'N/A');
+            const feeVal = appt.fee !== undefined && appt.fee !== null ? appt.fee : (window.doctorContext?.fee || 500);
+
             const isFollowUp = appt.appointment_type === 'followup' || appt.is_followup === true;
+
+            // Badges
             const visitBadge = isFollowUp
-                ? `<span style="background:#e0e7ff; color:#3730a3; font-weight:700; padding:3px 10px; border-radius:12px; font-size:0.75rem;">🔄 Follow-up</span>`
-                : `<span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 10px; border-radius:12px; font-size:0.75rem;">✨ New Patient</span>`;
+                ? `<span style="background:#e0e7ff; color:#3730a3; border: 1px solid #c7d2fe; font-weight:800; padding:4px 12px; border-radius:20px; font-size:0.75rem; letter-spacing:0.5px; display:inline-flex; align-items:center; gap:4px;">↻ FOLLOW-UP</span>`
+                : `<span style="background:#dcfce7; color:#15803d; border: 1px solid #bbf7d0; font-weight:800; padding:4px 12px; border-radius:20px; font-size:0.75rem; letter-spacing:0.5px; display:inline-flex; align-items:center; gap:4px;">✨ NEW PATIENT</span>`;
 
             const pPhone = appt.patient?.phone || appt.phone || appt.patient_phone || 'N/A';
-            const pGender = appt.patient?.gender || appt.gender || appt.patient_gender || 'Male';
-            const pAge = appt.patient?.age ? `${appt.patient.age} Yrs` : (appt.age ? `${appt.age} Yrs` : '25 Yrs');
+            const pGender = appt.patient?.gender || appt.gender || appt.patient_gender || 'N/A';
+            const pAge = getPatientAgeStr(appt.patient, appt);
+            const pBloodGroup = appt.patient?.blood_group || appt.blood_group || appt.patient_blood_group || null;
+
+            // Check if last visit data exists for follow-up patient (Lightweight & Fast)
+            let lastVisitData = null;
+            let lastVisitText = '';
+
+            if (isFollowUp && appt.patient_id) {
+                // 1. Search cachedAppointments for completed past visit with this doctor
+                const completedPast = (cachedAppointments || []).filter(a =>
+                    a.patient_id === appt.patient_id &&
+                    a.id !== appt.id &&
+                    (a.status || '').toLowerCase().includes('completed')
+                );
+
+                if (completedPast.length > 0) {
+                    completedPast.sort((a, b) => new Date(b.appointment_date) - new Date(a.appointment_date));
+                    lastVisitData = completedPast[0];
+                } else if (window.supabase) {
+                    // Quick lightweight query (limit 1)
+                    try {
+                        const { data: pastData } = await supabase
+                            .from('appointments')
+                            .select('id, appointment_date, doctor_name, notes, prescription')
+                            .eq('patient_id', appt.patient_id)
+                            .eq('status', 'Completed')
+                            .neq('id', appt.id)
+                            .order('appointment_date', { ascending: false })
+                            .limit(1);
+
+                        if (pastData && pastData.length > 0) {
+                            lastVisitData = pastData[0];
+                        }
+                    } catch (e) {
+                        console.warn("Error checking last visit:", e);
+                    }
+                }
+
+                if (lastVisitData && lastVisitData.appointment_date) {
+                    const formattedDate = typeof formatDate === 'function' ? formatDate(lastVisitData.appointment_date) : lastVisitData.appointment_date;
+                    lastVisitText = `Last visit: ${formattedDate}`;
+                } else {
+                    lastVisitText = `Previous consultation with this doctor`;
+                }
+            }
 
             const modalContainer = document.getElementById('modal-container');
             modalContainer.innerHTML = `
                 <div class="modal-overlay" style="align-items:center; padding: 1rem;">
                     <div class="modal-content" style="max-width: 650px; width: 100%; max-height: 90vh; padding: 0; display: flex; flex-direction: column; border-radius: 20px; box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25); border: 1px solid var(--border); overflow: hidden;">
 
-                        <!-- Clean Header Bar -->
-                        <div style="background: #ffffff; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10;">
-                            <div style="display: flex; align-items: center; gap: 0.875rem;">
-                                <div style="background: #152C69; color: #ffffff; width: 52px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 900;">
+                        <!-- Clean Doctor-Focused Header Bar -->
+                        <div style="background: #ffffff; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; flex-shrink: 0;">
+                            <div style="display: flex; align-items: center; gap: 0.875rem; flex-wrap: wrap;">
+                                <div style="background: #152C69; color: #ffffff; min-width: 52px; height: 44px; padding: 0 8px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; font-weight: 900; box-shadow: 0 2px 6px rgba(21, 44, 105, 0.2);">
                                     ${tokenStr}
                                 </div>
                                 <img src="${patientPic}" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary);" alt="Patient Photo">
                                 <div>
-                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                        <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin: 0;">${pName}</h3>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                        <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--primary); margin: 0;">${pName}</h3>
                                         ${visitBadge}
                                     </div>
-                                    <p style="font-size: 0.825rem; color: var(--text-secondary); margin-top: 2px;">
-                                        🕒 Slot: <strong>${timeStr}</strong> &bull; Fee: <strong style="color:var(--success);">₹${feeVal}</strong>
-                                    </p>
+                                    <div style="font-size: 0.825rem; color: var(--text-secondary); margin-top: 3px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                        <span>🕒 <strong>${timeStr}</strong> &bull; Fee: <strong style="color:var(--success);">₹${feeVal}</strong></span>
+                                        ${isFollowUp ? `<span style="font-size: 0.775rem; color: #4338ca; font-weight: 600; background: #eef2ff; padding: 1px 8px; border-radius: 6px;">${lastVisitText}</span>` : ''}
+                                    </div>
                                 </div>
                             </div>
-                            <button class="btn btn-outline btn-sm" style="border-radius: 50%; width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;" onclick="document.getElementById('modal-container').innerHTML=''">✕</button>
+                            <button type="button" class="btn btn-outline btn-sm" style="border-radius: 50%; width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;" onclick="document.getElementById('modal-container').innerHTML=''">✕</button>
                         </div>
 
                         <!-- Scrollable Body Content -->
                         <div style="padding: 1.25rem 1.5rem; overflow-y: auto; flex: 1; background: #ffffff;">
 
-                            <!-- Compact Patient Demographics Pill Strip -->
-                            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.25rem; background: #f8fafc; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--border); font-size: 0.825rem; color: var(--text-primary);">
-                                <div>📞 <strong>Phone:</strong> ${pPhone}</div>
-                                <div style="color: var(--border);">|</div>
-                                <div>👤 <strong>Gender:</strong> ${pGender}</div>
-                                <div style="color: var(--border);">|</div>
-                                <div>🎂 <strong>Age:</strong> ${pAge}</div>
+                            <!-- Patient Demographics Card -->
+                            <div style="background: #f8fafc; padding: 12px 16px; border-radius: 14px; border: 1px solid var(--border); margin-bottom: 1.25rem;">
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.75rem; align-items: center;">
+                                    <div>
+                                        <div style="font-size: 0.725rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">📞 Phone</div>
+                                        <div style="font-size: 0.875rem; font-weight: 700; color: var(--text-primary); margin-top: 2px;">${pPhone}</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 0.725rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">👤 Gender</div>
+                                        <div style="font-size: 0.875rem; font-weight: 700; color: var(--text-primary); margin-top: 2px;">${pGender}</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 0.725rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">🎂 Age</div>
+                                        <div style="font-size: 0.875rem; font-weight: 700; color: var(--text-primary); margin-top: 2px;">${pAge}</div>
+                                    </div>
+                                    ${(pBloodGroup && pBloodGroup !== 'N/A' && pBloodGroup !== 'null') ? `
+                                    <div>
+                                        <div style="font-size: 0.725rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">🩸 Blood Group</div>
+                                        <div style="font-size: 0.875rem; font-weight: 700; color: #dc2626; margin-top: 2px;">${pBloodGroup}</div>
+                                    </div>
+                                    ` : ''}
+                                    ${(isFollowUp && lastVisitData) ? `
+                                    <div style="display: flex; align-items: flex-end;">
+                                        <button type="button" class="btn btn-outline btn-sm" style="font-size: 0.775rem; font-weight: 700; border-color: #818cf8; color: #4338ca; background: #eef2ff; padding: 4px 10px; border-radius: 8px; cursor: pointer;" onclick="window.toggleLastVisitCard()">📋 View last visit</button>
+                                    </div>
+                                    ` : ''}
+                                </div>
                             </div>
+
+                            <!-- Optional Previous Visit Expandable Card -->
+                            ${(isFollowUp && lastVisitData) ? `
+                            <div id="previous-visit-card" style="display: none; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px; padding: 12px 16px; margin-bottom: 1.25rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <div style="font-size: 0.825rem; font-weight: 800; color: #0369a1; display: flex; align-items: center; gap: 6px;">
+                                        <span>📋 Previous Visit Details</span>
+                                        <span style="font-size: 0.75rem; font-weight: 600; background: #e0f2fe; padding: 2px 8px; border-radius: 6px;">${lastVisitData.appointment_date ? (typeof formatDate === 'function' ? formatDate(lastVisitData.appointment_date) : lastVisitData.appointment_date) : 'Past Visit'}</span>
+                                    </div>
+                                    <button type="button" style="background: none; border: none; font-size: 0.9rem; color: #0369a1; cursor: pointer; font-weight: 700; padding: 0 4px;" onclick="window.toggleLastVisitCard()">✕</button>
+                                </div>
+                                <div style="font-size: 0.8rem; color: #0c4a6e; display: flex; flex-direction: column; gap: 6px;">
+                                    <div><strong>Doctor:</strong> ${lastVisitData.doctor_name || window.doctorContext?.full_name || 'Current Doctor'}</div>
+                                    <div><strong>Symptoms / Notes:</strong> ${lastVisitData.notes || 'None recorded'}</div>
+                                    <div><strong>Prescription:</strong> ${lastVisitData.prescription || 'None recorded'}</div>
+                                </div>
+                            </div>
+                            ` : ''}
 
                             <!-- Symptoms / Diagnosis Field -->
                             <div class="form-group" style="margin-bottom: 1.25rem;">
-                                <label class="form-label" style="font-size: 0.9rem; font-weight: 700; color: var(--primary); display: flex; justify-content: space-between; align-items: center;">
-                                    <span>🩺 Symptoms / Illness Notes</span>
-                                    <span style="font-size: 0.75rem; font-weight: 500; color: var(--text-muted);">Patient's complaints &amp; diagnosis</span>
-                                </label>
-                                <textarea id="consult-symptoms-input" class="form-control" rows="3" style="border-radius: 12px; font-size: 0.875rem; line-height: 1.5; padding: 10px 14px;" placeholder="e.g. High fever for 2 days, dry cough, weakness...">${appt.notes || appt.patient_reason || ''}</textarea>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                    <label for="consult-symptoms-input" style="font-size: 0.9rem; font-weight: 700; color: var(--primary); margin: 0; display: flex; align-items: center; gap: 6px;">
+                                        <span>🩺 Symptoms / Illness Notes</span>
+                                    </label>
+                                    <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Patient complaint</span>
+                                </div>
+                                <textarea id="consult-symptoms-input" class="form-control" rows="3" style="border-radius: 12px; font-size: 0.875rem; line-height: 1.5; padding: 10px 14px; border: 1px solid var(--border);" placeholder="e.g. High fever for 2 days, dry cough, weakness...">${appt.notes || appt.patient_reason || ''}</textarea>
                             </div>
 
                             <!-- Prescription & Advice Field -->
                             <div class="form-group" style="margin-bottom: 0.5rem;">
-                                <label class="form-label" style="font-size: 0.9rem; font-weight: 700; color: var(--primary); display: flex; justify-content: space-between; align-items: center;">
-                                    <span>💊 Prescription &amp; Medicines</span>
-                                    <span style="font-size: 0.75rem; font-weight: 500; color: var(--text-muted);">Medicines &amp; instructions for patient</span>
-                                </label>
-                                <textarea id="consult-prescription-input" class="form-control" rows="3" style="border-radius: 12px; font-size: 0.875rem; line-height: 1.5; padding: 10px 14px;" placeholder="e.g. Tab Paracetamol 650mg (1-0-1 after food x 3 days)&#10;Tab Cetirizine 10mg (0-0-1 at night)&#10;Drink warm water &amp; take rest.">${appt.prescription || ''}</textarea>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                    <label for="consult-prescription-input" style="font-size: 0.9rem; font-weight: 700; color: var(--primary); margin: 0; display: flex; align-items: center; gap: 6px;">
+                                        <span>💊 Prescription &amp; Medicines</span>
+                                    </label>
+                                    <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Medicines &amp; instructions</span>
+                                </div>
+                                <textarea id="consult-prescription-input" class="form-control" rows="3" style="border-radius: 12px; font-size: 0.875rem; line-height: 1.5; padding: 10px 14px; border: 1px solid var(--border);" placeholder="e.g. Tab Paracetamol 650mg (1-0-1 after food × 3 days)&#10;Tab Cetirizine 10mg (0-0-1 at night)&#10;Drink warm water &amp; take rest.">${appt.prescription || ''}</textarea>
                             </div>
                         </div>
 
                         <!-- Sticky Footer Actions Bar -->
-                        <div style="padding: 1rem 1.5rem; background: #f8fafc; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; position: sticky; bottom: 0; z-index: 10;">
+                        <div style="padding: 1rem 1.5rem; background: #f8fafc; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; position: sticky; bottom: 0; z-index: 10; flex-shrink: 0;">
                             <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                <button class="btn btn-outline btn-sm" style="font-weight: 700; padding: 8px 14px;" ${!prevAppt ? 'disabled style="opacity:0.4;"' : ''} onclick="window.navigateConsultationMode(-1)">← Prev Patient</button>
-                                <button class="btn btn-outline btn-sm" style="font-weight: 700; padding: 8px 14px;" ${!nextAppt ? 'disabled style="opacity:0.4;"' : ''} onclick="window.navigateConsultationMode(1)">Next Patient →</button>
+                                <button type="button" class="btn btn-outline btn-sm" style="font-weight: 700; padding: 8px 14px; ${!prevAppt ? 'opacity:0.4; cursor:not-allowed;' : ''}" ${!prevAppt ? 'disabled' : ''} onclick="window.navigateConsultationMode(-1)">← Prev Patient</button>
+                                <button type="button" class="btn btn-outline btn-sm" style="font-weight: 700; padding: 8px 14px; ${!nextAppt ? 'opacity:0.4; cursor:not-allowed;' : ''}" ${!nextAppt ? 'disabled' : ''} onclick="window.navigateConsultationMode(1)">Next Patient →</button>
                             </div>
 
                             <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                <button class="btn btn-outline" style="font-weight: 600; font-size: 0.85rem;" onclick="document.getElementById('modal-container').innerHTML=''">← Close</button>
-                                <button class="btn btn-success" id="btn-complete-consult" style="padding: 10px 22px; font-weight: 800; font-size: 0.925rem; background: #22c55e; border-color: #22c55e; color: #ffffff;" onclick="window.completeConsultationFromModal('${appt.id}', this)">Complete &amp; Next Patient →</button>
+                                <button type="button" class="btn btn-outline" style="font-weight: 600; font-size: 0.85rem;" onclick="document.getElementById('modal-container').innerHTML=''">Close</button>
+                                <button type="button" class="btn btn-success" id="btn-complete-consult" style="padding: 10px 22px; font-weight: 800; font-size: 0.925rem; background: #22c55e; border-color: #22c55e; color: #ffffff;" onclick="window.completeConsultationFromModal('${appt.id}', this)">✓ Complete &amp; Next Patient →</button>
                             </div>
                         </div>
 
@@ -3324,7 +3581,10 @@
             const queue = getSortedQueueForCurrentView();
             if (!queue || queue.length === 0) return;
 
-            let newIdx = (window.currentConsultationIndex || 0) + direction;
+            let currentIdx = queue.findIndex(a => a.id === window.currentConsultationApptId);
+            if (currentIdx === -1) currentIdx = window.currentConsultationIndex || 0;
+
+            let newIdx = currentIdx + direction;
             if (newIdx < 0) newIdx = 0;
             if (newIdx >= queue.length) newIdx = queue.length - 1;
 
@@ -3336,73 +3596,93 @@
 
         window.completeConsultationFromModal = async (apptId, btnElement) => {
             if (btnElement) {
-                if (btnElement.disabled) return;
+                if (btnElement.disabled) return; // Prevent double click
                 btnElement.disabled = true;
                 btnElement.innerHTML = '⏳ Completing...';
             }
 
-            // Auto save symptoms & prescription input
-            const symptoms = document.getElementById('consult-symptoms-input')?.value.trim();
-            const prescription = document.getElementById('consult-prescription-input')?.value.trim();
+            // Get symptoms and prescription inputs
+            const symptomsInput = document.getElementById('consult-symptoms-input');
+            const prescriptionInput = document.getElementById('consult-prescription-input');
+
+            const symptoms = symptomsInput ? symptomsInput.value.trim() : '';
+            const prescription = prescriptionInput ? prescriptionInput.value.trim() : '';
 
             const queue = getSortedQueueForCurrentView();
 
-            // 1. INSTANT OPTIMISTIC LOCAL STATE UPDATE
+            // Find current appointment
             const finishedItem = (cachedAppointments || []).find(a => a.id === apptId);
-            if (finishedItem) {
-                finishedItem.status = 'Completed';
-                if (symptoms !== undefined) finishedItem.notes = symptoms;
-                if (prescription !== undefined) finishedItem.prescription = prescription;
-            }
 
-            // Find next waiting or confirmed patient in queue
+            // Find next patient in queue
             const nextPatient = queue.find(a => {
                 if (a.id === apptId) return false;
                 const st = (a.status || '').toLowerCase().trim();
-                return st.includes('confirm') || st.includes('pending') || st.includes('waiting');
+                return st.includes('confirm') || st.includes('pending') || st.includes('waiting') || st.includes('consultation');
             });
 
-            if (nextPatient) {
-                const st = (nextPatient.status || '').toLowerCase();
-                if (!st.includes('consultation')) {
-                    nextPatient.status = 'In Consultation';
-                }
-                const nextPName = nextPatient.patient_name || (nextPatient.patient && nextPatient.patient.full_name) || 'Next Patient';
-                if (window.showToast) window.showToast(`✅ Consultation Completed! Next: ${nextPName} (Token #${nextPatient.token_number || 1})`, "success", 2500);
-
-                // Instantly load next patient in consultation mode!
-                window.openConsultationMode(nextPatient.id);
-            } else {
-                document.getElementById('modal-container').innerHTML = '';
-                if (window.showToast) window.showToast("✅ Consultation Completed! All queued patients completed for today.", "success", 2500);
-            }
-
-            // Re-render UI instantly
-            if (window.location.hash.includes('dashboard')) {
-                if (typeof initDashboard === 'function') initDashboard();
-            } else {
-                if (typeof renderAppointmentsTable === 'function') renderAppointmentsTable();
-            }
-
-            // 2. PARALLEL NON-BLOCKING BACKGROUND DB UPDATES
+            // 1. SAVE TO DATABASE FIRST TO PREVENT DATA LOSS
             try {
-                const dbPromises = [
-                    supabase.from('appointments').update({
-                        notes: symptoms,
-                        prescription: prescription,
-                        status: 'Completed'
-                    }).eq('id', apptId)
-                ];
+                const updatePayload = {
+                    notes: symptoms,
+                    patient_reason: symptoms,
+                    prescription: prescription,
+                    status: 'Completed'
+                };
+
+                let { error: updateErr } = await supabase.from('appointments').update(updatePayload).eq('id', apptId);
+                if (updateErr) {
+                    delete updatePayload.notes;
+                    let { error: retryErr } = await supabase.from('appointments').update(updatePayload).eq('id', apptId);
+                    if (retryErr) throw retryErr;
+                }
 
                 if (nextPatient) {
-                    dbPromises.push(
-                        supabase.from('appointments').update({ status: 'In Consultation' }).eq('id', nextPatient.id)
-                    );
+                    const nextSt = (nextPatient.status || '').toLowerCase();
+                    if (!nextSt.includes('consultation')) {
+                        await supabase.from('appointments').update({ status: 'In Consultation' }).eq('id', nextPatient.id);
+                    }
                 }
 
-                await Promise.all(dbPromises);
+                // 2. SUCCESS: UPDATE LOCAL MEMORY STATE
+                if (finishedItem) {
+                    finishedItem.status = 'Completed';
+                    finishedItem.notes = symptoms;
+                    finishedItem.prescription = prescription;
+                }
+
+                if (nextPatient) {
+                    nextPatient.status = 'In Consultation';
+                }
+
+                // Re-render UI table
+                if (window.location.hash.includes('dashboard')) {
+                    if (typeof initDashboard === 'function') initDashboard();
+                } else {
+                    if (typeof renderAppointmentsTable === 'function') renderAppointmentsTable();
+                }
+
+                // 3. LOAD NEXT PATIENT OR FINISH
+                if (nextPatient) {
+                    const nextPName = nextPatient.patient_name || (nextPatient.patient && nextPatient.patient.full_name) || 'Next Patient';
+                    if (window.showToast) window.showToast(`✅ Consultation Completed! Next: ${nextPName} (Token #${nextPatient.token_number || 1})`, "success", 2500);
+                    window.openConsultationMode(nextPatient.id);
+                } else {
+                    document.getElementById('modal-container').innerHTML = '';
+                    if (window.showToast) window.showToast("✅ Consultation Completed! All queued patients completed for today.", "success", 2500);
+                }
+
             } catch (err) {
-                console.warn("Background consultation update error:", err);
+                console.error("Consultation save failed:", err);
+                if (btnElement) {
+                    btnElement.disabled = false;
+                    btnElement.innerHTML = '✓ Complete &amp; Next Patient →';
+                }
+                const errorMsg = "Unable to complete consultation. Please try again.";
+                if (window.showToast) {
+                    window.showToast(`⚠️ ${errorMsg}`, "error", 4000);
+                } else {
+                    alert(errorMsg);
+                }
             }
         };
 
@@ -3691,6 +3971,7 @@
                     }
                     return Math.max(0, gross - commDeducted);
                 }
+                window.calcNetEarning = calcNetEarning;
 
                 // Today's Earnings calculation (ONLY Completed appointments count towards earnings)
                 let todayEarnings = 0;
@@ -3772,7 +4053,7 @@
                 });
 
                 if (document.getElementById('stat-queue-current')) {
-                    document.getElementById('stat-queue-current').textContent = window.activeLiveAppt ? `#${String(window.activeLiveAppt.token_number || 1).padStart(2, '0')}` : '#--';
+                    document.getElementById('stat-queue-current').textContent = window.activeLiveAppt ? `#${String(window.activeLiveAppt.slot_number || window.activeLiveAppt.token_number || 1).padStart(2, '0')}` : '#--';
                 }
 
                 window.todayApptsList = todayAppts;
@@ -3782,7 +4063,7 @@
                     if (window.activeLiveAppt) {
                         liveCard.style.display = 'block';
                         const livePName = window.activeLiveAppt.patient_name || (window.activeLiveAppt.patient && window.activeLiveAppt.patient.full_name) || window.activeLiveAppt.patient_full_name || ('Patient #' + (window.activeLiveAppt.id ? window.activeLiveAppt.id.substring(0, 5) : '01'));
-                        const tokenStr = `#${String(window.activeLiveAppt.token_number || 1).padStart(2, '0')}`;
+                        const tokenStr = `#${String(window.activeLiveAppt.slot_number || window.activeLiveAppt.token_number || 1).padStart(2, '0')}`;
                         const timeStr = formatTime(window.activeLiveAppt.start_time);
                         const apptType = (window.activeLiveAppt.appointment_type === 'followup' || window.activeLiveAppt.is_followup) ? 'Follow-up Patient' : 'New Patient';
                         const feeVal = window.activeLiveAppt.fee || window.doctorContext.fee || 500;
@@ -3809,7 +4090,7 @@
                         nextBar.style.display = 'flex';
                         const nextPName = nextPatient.patient_name || (nextPatient.patient && nextPatient.patient.full_name) || nextPatient.patient_full_name || ('Patient #' + (nextPatient.id ? nextPatient.id.substring(0, 5) : '01'));
                         const waitTimeStr = calcWaitingTime(nextPatient.start_time, today);
-                        nextInfo.textContent = `Token #${String(nextPatient.token_number || 1).padStart(2, '0')} • ${nextPName} • ${formatTime(nextPatient.start_time)} • Waiting ${waitTimeStr}`;
+                        nextInfo.textContent = `Your Number: #${String(nextPatient.slot_number || nextPatient.token_number || 1).padStart(2, '0')} • ${nextPName} • ${formatTime(nextPatient.start_time)} • Waiting ${waitTimeStr}`;
                         window.nextQueueApptId = nextPatient.id;
                     } else {
                         nextBar.style.display = 'none';
@@ -3831,7 +4112,7 @@
                 todayAppts.forEach((appt, idx) => {
                     const pName = appt.patient_name || (appt.patient && appt.patient.full_name) || appt.patient_full_name || appt.user_name || ('Patient #' + (appt.id ? appt.id.substring(0, 5) : '01'));
                     const apptFee = appt.fee || window.doctorContext.fee || 500;
-                    const tokenStr = `#${String(appt.token_number || 1).padStart(2, '0')}`;
+                    const tokenStr = `#${String(appt.slot_number || appt.token_number || 1).padStart(2, '0')}`;
                     const waitTime = calcWaitingTime(appt.start_time, today);
 
                     const st = (appt.status || 'Confirmed').toLowerCase().trim();
@@ -3912,10 +4193,372 @@
                 if (tbody) tbody.innerHTML = html;
                 if (mobileContainer) mobileContainer.innerHTML = mobileHtml;
 
+                // Load Analytics & Graphs Insights
+                const timeFilterVal = document.getElementById('analytics-time-filter')?.value || 30;
+                renderDashboardAnalytics(timeFilterVal);
+
             } catch (err) {
                 console.error("Dashboard error:", err);
             }
         }
+
+        // ----------------------------------------------------
+        // DASHBOARD ANALYTICS MODULE (GRAPHS & INSIGHTS)
+        // ----------------------------------------------------
+        window.dashboardCharts = window.dashboardCharts || {};
+
+        async function renderDashboardAnalytics(days = 30) {
+            if (!window.doctorContext) return;
+            const doctorId = window.doctorContext.id;
+            days = parseInt(days) || 30;
+
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(endDate.getDate() - (days - 1));
+            const startDateStr = startDate.toISOString().split('T')[0];
+
+            try {
+                let { data: appts, error } = await supabase
+                    .from('appointments')
+                    .select('*')
+                    .eq('doctor_id', doctorId)
+                    .gte('appointment_date', startDateStr)
+                    .order('appointment_date', { ascending: true });
+
+                if (error || !appts) {
+                    let { data: fallbackAppts } = await supabase.from('appointments').select('*');
+                    appts = (fallbackAppts || []).filter(a =>
+                        a.doctor_id && a.doctor_id.trim().toLowerCase() === doctorId.trim().toLowerCase() &&
+                        a.appointment_date >= startDateStr
+                    );
+                }
+
+                appts = appts || [];
+
+                // Build continuous date map
+                const dateMap = {};
+                for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                    const dStr = d.toISOString().split('T')[0];
+                    dateMap[dStr] = { count: 0, revenue: 0, completed: 0, cancelled: 0 };
+                }
+
+                let totalPeriodAppts = appts.length;
+                let totalPeriodCompleted = 0;
+                let totalPeriodRevenue = 0;
+                let newPatientCount = 0;
+                let followupCount = 0;
+                let statusCounts = { Completed: 0, Confirmed: 0, Pending: 0, 'In Consultation': 0, Cancelled: 0 };
+                let slotCounts = { Morning: 0, Afternoon: 0, Evening: 0, Night: 0 };
+
+                appts.forEach(a => {
+                    const aDate = a.appointment_date;
+                    const status = (a.status || 'Confirmed').trim();
+                    const statusLower = status.toLowerCase();
+                    const isFollowUp = a.appointment_type === 'followup' || a.is_followup === true;
+                    const fee = parseInt(a.fee) || parseInt(window.doctorContext ? window.doctorContext.fee : 500) || 500;
+
+                    // Date tracking
+                    if (dateMap[aDate]) {
+                        dateMap[aDate].count++;
+                        if (statusLower.includes('completed') || statusLower.includes('complete')) {
+                            dateMap[aDate].completed++;
+                            const netEarn = window.calcNetEarning ? window.calcNetEarning(fee, isFollowUp) : fee;
+                            dateMap[aDate].revenue += netEarn;
+                        } else if (statusLower.includes('cancel') || statusLower.includes('reject')) {
+                            dateMap[aDate].cancelled++;
+                        }
+                    }
+
+                    // Overall period metrics
+                    if (statusLower.includes('completed') || statusLower.includes('complete')) {
+                        totalPeriodCompleted++;
+                        const netEarn = window.calcNetEarning ? window.calcNetEarning(fee, isFollowUp) : fee;
+                        totalPeriodRevenue += netEarn;
+                        statusCounts.Completed++;
+                    } else if (statusLower.includes('cancel') || statusLower.includes('reject')) {
+                        statusCounts.Cancelled++;
+                    } else if (statusLower.includes('consultation')) {
+                        statusCounts['In Consultation']++;
+                    } else if (statusLower.includes('pending')) {
+                        statusCounts.Pending++;
+                    } else {
+                        statusCounts.Confirmed++;
+                    }
+
+                    // Patient type tracking
+                    if (isFollowUp) {
+                        followupCount++;
+                    } else {
+                        newPatientCount++;
+                    }
+
+                    // Slot time tracking
+                    const timeStr = a.start_time || '09:00';
+                    let hour = 9;
+                    if (timeStr.includes(':')) {
+                        const parts = timeStr.split(':');
+                        hour = parseInt(parts[0]) || 9;
+                    }
+                    if (hour >= 8 && hour < 12) slotCounts.Morning++;
+                    else if (hour >= 12 && hour < 16) slotCounts.Afternoon++;
+                    else if (hour >= 16 && hour < 20) slotCounts.Evening++;
+                    else slotCounts.Night++;
+                });
+
+                // Update KPI Summary Badges
+                const elTotal = document.getElementById('graph-stat-total');
+                if (elTotal) elTotal.textContent = totalPeriodAppts;
+
+                const elRate = document.getElementById('graph-stat-rate');
+                if (elRate) {
+                    const completionRate = totalPeriodAppts > 0 ? Math.round((totalPeriodCompleted / totalPeriodAppts) * 100) : 0;
+                    elRate.textContent = `${completionRate}%`;
+                }
+
+                const elRev = document.getElementById('graph-stat-revenue');
+                if (elRev) elRev.textContent = `₹${Math.round(totalPeriodRevenue).toLocaleString('en-IN')}`;
+
+                const elAvg = document.getElementById('graph-stat-avg');
+                if (elAvg) {
+                    const avgDaily = (totalPeriodAppts / days).toFixed(1);
+                    elAvg.textContent = avgDaily;
+                }
+
+                // Format chart labels
+                const sortedDates = Object.keys(dateMap).sort();
+                const formattedLabels = sortedDates.map(d => {
+                    const parts = d.split('-');
+                    if (parts.length === 3) {
+                        const dObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                        return dObj.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+                    }
+                    return d;
+                });
+
+                const apptCounts = sortedDates.map(d => dateMap[d].count);
+                const revenueCounts = sortedDates.map(d => Math.round(dateMap[d].revenue));
+
+                // Chart 1: Appointments & Revenue Trend
+                const ctxTrend = document.getElementById('chart-appointment-trend');
+                if (ctxTrend && typeof Chart !== 'undefined') {
+                    if (window.dashboardCharts.trendChart) {
+                        window.dashboardCharts.trendChart.destroy();
+                    }
+
+                    const ctx2d = ctxTrend.getContext('2d');
+                    const gradient = ctx2d.createLinearGradient(0, 0, 0, 220);
+                    gradient.addColorStop(0, 'rgba(37, 99, 235, 0.35)');
+                    gradient.addColorStop(1, 'rgba(37, 99, 235, 0.01)');
+
+                    window.dashboardCharts.trendChart = new Chart(ctxTrend, {
+                        type: 'line',
+                        data: {
+                            labels: formattedLabels,
+                            datasets: [
+                                {
+                                    label: 'Appointments',
+                                    data: apptCounts,
+                                    borderColor: '#2563eb',
+                                    backgroundColor: gradient,
+                                    borderWidth: 3,
+                                    fill: true,
+                                    tension: 0.35,
+                                    pointRadius: days > 14 ? 2 : 4,
+                                    pointBackgroundColor: '#2563eb',
+                                    yAxisID: 'y'
+                                },
+                                {
+                                    label: 'Net Revenue (₹)',
+                                    data: revenueCounts,
+                                    borderColor: '#10b981',
+                                    borderWidth: 2,
+                                    borderDash: [4, 4],
+                                    fill: false,
+                                    tension: 0.35,
+                                    pointRadius: days > 14 ? 2 : 3,
+                                    pointBackgroundColor: '#10b981',
+                                    yAxisID: 'y1'
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            interaction: { mode: 'index', intersect: false },
+                            plugins: {
+                                legend: { position: 'top', labels: { usePointStyle: true, font: { size: 12, weight: '600' } } },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            if (context.dataset.label.includes('Revenue')) {
+                                                return ` Revenue: ₹${context.raw.toLocaleString('en-IN')}`;
+                                            }
+                                            return ` Appointments: ${context.raw}`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                                y: {
+                                    type: 'linear',
+                                    display: true,
+                                    position: 'left',
+                                    title: { display: true, text: 'Appointments', font: { size: 11, weight: '600' } },
+                                    ticks: { precision: 0 },
+                                    grid: { color: '#f1f5f9' }
+                                },
+                                y1: {
+                                    type: 'linear',
+                                    display: true,
+                                    position: 'right',
+                                    title: { display: true, text: 'Revenue (₹)', font: { size: 11, weight: '600' } },
+                                    grid: { drawOnChartArea: false },
+                                    ticks: {
+                                        callback: function(value) { return '₹' + value; }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // Chart 2: Patient Types (Doughnut)
+                const ctxTypes = document.getElementById('chart-patient-types');
+                if (ctxTypes && typeof Chart !== 'undefined') {
+                    if (window.dashboardCharts.typesChart) {
+                        window.dashboardCharts.typesChart.destroy();
+                    }
+
+                    const total = newPatientCount + followupCount;
+
+                    window.dashboardCharts.typesChart = new Chart(ctxTypes, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['New Patients', 'Follow-up Consultations'],
+                            datasets: [{
+                                data: total === 0 ? [1, 0] : [newPatientCount, followupCount],
+                                backgroundColor: ['#3b82f6', '#8b5cf6'],
+                                borderWidth: 2,
+                                borderColor: '#ffffff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'bottom', labels: { usePointStyle: true, font: { size: 11, weight: '600' } } },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            if (total === 0) return ' No appointments in period';
+                                            const val = context.raw;
+                                            const pct = Math.round((val / total) * 100);
+                                            return ` ${context.label}: ${val} (${pct}%)`;
+                                        }
+                                    }
+                                }
+                            },
+                            cutout: '68%'
+                        }
+                    });
+                }
+
+                // Chart 3: Status Distribution (Bar)
+                const ctxStatus = document.getElementById('chart-status-dist');
+                if (ctxStatus && typeof Chart !== 'undefined') {
+                    if (window.dashboardCharts.statusChart) {
+                        window.dashboardCharts.statusChart.destroy();
+                    }
+
+                    window.dashboardCharts.statusChart = new Chart(ctxStatus, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Completed', 'Confirmed', 'In Consultation', 'Pending', 'Cancelled'],
+                            datasets: [{
+                                label: 'Appointments',
+                                data: [
+                                    statusCounts.Completed,
+                                    statusCounts.Confirmed,
+                                    statusCounts['In Consultation'],
+                                    statusCounts.Pending,
+                                    statusCounts.Cancelled
+                                ],
+                                backgroundColor: [
+                                    '#22c55e',
+                                    '#3b82f6',
+                                    '#eab308',
+                                    '#f97316',
+                                    '#ef4444'
+                                ],
+                                borderRadius: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) { return ` Count: ${context.raw}`; }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: { grid: { display: false }, ticks: { font: { size: 10, weight: '600' } } },
+                                y: { ticks: { precision: 0 }, grid: { color: '#f1f5f9' } }
+                            }
+                        }
+                    });
+                }
+
+                // Chart 4: Consultation Rush Hours (Horizontal Bar)
+                const ctxSlots = document.getElementById('chart-time-slots');
+                if (ctxSlots && typeof Chart !== 'undefined') {
+                    if (window.dashboardCharts.slotsChart) {
+                        window.dashboardCharts.slotsChart.destroy();
+                    }
+
+                    window.dashboardCharts.slotsChart = new Chart(ctxSlots, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Morning (8am-12pm)', 'Afternoon (12pm-4pm)', 'Evening (4pm-8pm)', 'Night (8pm+)'],
+                            datasets: [{
+                                label: 'Patient Rush',
+                                data: [slotCounts.Morning, slotCounts.Afternoon, slotCounts.Evening, slotCounts.Night],
+                                backgroundColor: '#f97316',
+                                borderRadius: 6
+                            }]
+                        },
+                        options: {
+                            indexAxis: 'y',
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) { return ` Patients: ${context.raw}`; }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: { ticks: { precision: 0 }, grid: { color: '#f1f5f9' } },
+                                y: { grid: { display: false }, ticks: { font: { size: 10, weight: '600' } } }
+                            }
+                        }
+                    });
+                }
+
+            } catch (err) {
+                console.error("Dashboard Analytics error:", err);
+            }
+        }
+
+        window.reloadDashboardAnalytics = function(days) {
+            renderDashboardAnalytics(days);
+        };
 
         // ----------------------------------------------------
         // APPOINTMENTS MODULE
@@ -4076,6 +4719,27 @@
                         if (docName && aDocName && (aDocName.includes(docName) || docName.includes(aDocName))) return true;
                         return false;
                     });
+
+                    // Enrich cachedAppointments with patient profiles
+                    const patientIds = Array.from(new Set(cachedAppointments.map(a => a.patient_id).filter(Boolean)));
+                    if (patientIds.length > 0) {
+                        try {
+                            const { data: profs } = await supabase
+                                .from('profiles')
+                                .select('*')
+                                .in('id', patientIds);
+                            if (profs && profs.length > 0) {
+                                const profMap = new Map(profs.map(p => [p.id, p]));
+                                cachedAppointments.forEach(a => {
+                                    if (a.patient_id && profMap.has(a.patient_id)) {
+                                        a.patient = profMap.get(a.patient_id);
+                                    }
+                                });
+                            }
+                        } catch (e) {
+                            console.warn("Could not batch load patient profiles:", e);
+                        }
+                    }
                 } else {
                     cachedAppointments = [];
                 }
@@ -4151,7 +4815,7 @@
                 const pName = appt.patient_name || (appt.patient && appt.patient.full_name) || appt.patient_full_name || appt.user_name || ('Patient #' + (appt.id ? appt.id.substring(0, 5) : '01'));
                 const st = (appt.status || 'Confirmed').toLowerCase().trim();
                 const apptFee = appt.fee || window.doctorContext.fee || 500;
-                const tokenStr = `#${String(appt.token_number || 1).padStart(2, '0')}`;
+                const tokenStr = `#${String(appt.slot_number || appt.token_number || 1).padStart(2, '0')}`;
                 const waitTime = calcWaitingTime(appt.start_time, appt.appointment_date);
 
                 let mainActionBtn = '';
@@ -4336,7 +5000,7 @@
 
         window.currentQueueSheetIndex = 0;
 
-        window.openQueueBottomSheet = (target = 0) => {
+        window.openQueueBottomSheet = async (target = 0) => {
             const queue = (cachedAppointments && cachedAppointments.length > 0)
                 ? cachedAppointments
                 : (window.todayApptsList || []);
@@ -4352,6 +5016,22 @@
                 if (idx === -1) idx = 0;
             } else if (typeof target === 'number') {
                 idx = Math.max(0, Math.min(target, queue.length - 1));
+            }
+
+            const selectedAppt = queue[idx];
+            if (selectedAppt && selectedAppt.patient_id && (!selectedAppt.patient || !selectedAppt.patient.phone)) {
+                if (window.supabase) {
+                    try {
+                        const { data: profData } = await supabase
+                            .from('profiles')
+                            .select('*')
+                            .eq('id', selectedAppt.patient_id)
+                            .maybeSingle();
+                        if (profData) selectedAppt.patient = profData;
+                    } catch (e) {
+                        console.warn("Could not load patient profile:", e);
+                    }
+                }
             }
 
             window.currentQueueSheetIndex = idx;
@@ -4371,7 +5051,7 @@
 
             const pName = appt.patient_name || (appt.patient && appt.patient.full_name) || appt.patient_full_name || appt.user_name || ('Patient #' + (appt.id ? appt.id.substring(0, 5) : '01'));
             const patientPic = appt.patient_image || appt.patient?.avatar_url || appt.patient?.image_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150';
-            const tokenStr = `#${String(appt.token_number || 1).padStart(2, '0')}`;
+            const tokenStr = `#${String(appt.slot_number || appt.token_number || 1).padStart(2, '0')}`;
             const timeStr = formatTime(appt.start_time);
             const feeVal = appt.fee || window.doctorContext?.fee || 500;
             const isFollowUp = appt.appointment_type === 'followup' || appt.is_followup === true;
@@ -4405,7 +5085,7 @@
                         <!-- Header -->
                         <div style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
                             <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <span class="token-badge-lg" style="font-size: 1.35rem;">Token ${tokenStr}</span>
+                                <span class="token-badge-lg" style="font-size: 1.35rem;">Your Number ${tokenStr}</span>
                                 <img src="${patientPic}" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary);" alt="Patient Photo">
                                 <div>
                                     <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700;">PATIENT ${idx + 1} OF ${queue.length} IN QUEUE</div>
@@ -4428,8 +5108,8 @@
                                 <div>🕒 <strong>Scheduled Slot:</strong> ${timeStr}</div>
                                 <div>⏱ <strong>Waiting Duration:</strong> ${waitTime}</div>
                                 <div>💰 <strong>Consultation Fee:</strong> ₹${feeVal}</div>
-                                <div>📞 <strong>Phone:</strong> ${appt.patient?.phone || 'N/A'}</div>
-                                <div>👤 <strong>Gender &amp; Age:</strong> ${appt.patient?.gender || 'Patient'}, ${appt.patient?.age || '25'} Yrs</div>
+                                <div>📞 <strong>Phone:</strong> ${appt.patient?.phone || appt.phone || appt.patient_phone || 'N/A'}</div>
+                                <div>👤 <strong>Gender &amp; Age:</strong> ${appt.patient?.gender || appt.gender || 'N/A'}, ${typeof getPatientAgeStr === 'function' ? getPatientAgeStr(appt.patient, appt) : 'N/A'}</div>
                                 <div>🏥 <strong>Clinic Branch:</strong> ${appt.clinic_name || window.doctorContext?.clinic_name || 'Main Clinic'}</div>
                             </div>
 
@@ -4906,6 +5586,13 @@
             return pairs;
         }
 
+        function getLocalYYYYMMDD(d = new Date()) {
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
         async function initSlots() {
             if (!window.doctorContext) return;
 
@@ -4917,7 +5604,7 @@
             if (doc.fee && document.getElementById('slot-consult-fee')) document.getElementById('slot-consult-fee').value = doc.fee;
             if (doc.followup_fee && document.getElementById('slot-followup-fee')) document.getElementById('slot-followup-fee').value = doc.followup_fee;
 
-            const today = new Date().toISOString().split('T')[0];
+            const today = getLocalYYYYMMDD(new Date());
             const singleDateInput = document.getElementById('slot-single-date');
             if (singleDateInput && !singleDateInput.value) {
                 singleDateInput.value = today;
@@ -5111,10 +5798,23 @@
             const duration = consultTime + bufferGap;
             const maxPatients = parseInt(document.getElementById('slot-max-patients')?.value) || 1;
 
+            const consultFeeVal = parseInt(document.getElementById('slot-consult-fee')?.value);
+            const followupFeeVal = parseInt(document.getElementById('slot-followup-fee')?.value);
+
             const msgEl = document.getElementById('slot-gen-msg');
             const btn = document.getElementById('btn-generate-slots');
 
             msgEl.style.display = 'none';
+
+            if (isNaN(consultFeeVal) || consultFeeVal < 0 || isNaN(followupFeeVal) || followupFeeVal < 0) {
+                msgEl.style.color = 'var(--error)';
+                msgEl.textContent = '⚠️ Please enter valid non-negative fees for New Patient Fee and Follow-up Consultation Fee.';
+                msgEl.style.display = 'block';
+                return;
+            }
+
+            const consultFee = consultFeeVal;
+            const followupFee = followupFeeVal;
 
             let dates = [];
             if (mode === 'single') {
@@ -5131,14 +5831,16 @@
                     alert("Please select both From Date and To Date.");
                     return;
                 }
-                let curr = new Date(startDateStr);
-                const end = new Date(endDateStr);
+                const [sY, sM, sD] = startDateStr.split('-').map(Number);
+                const [eY, eM, eD] = endDateStr.split('-').map(Number);
+                let curr = new Date(sY, sM - 1, sD);
+                const end = new Date(eY, eM - 1, eD);
                 if (curr > end) {
                     alert("From Date cannot be after To Date.");
                     return;
                 }
                 while (curr <= end) {
-                    dates.push(curr.toISOString().split('T')[0]);
+                    dates.push(getLocalYYYYMMDD(curr));
                     curr.setDate(curr.getDate() + 1);
                 }
             }
@@ -5163,17 +5865,21 @@
                     return;
                 }
 
+                const clinicId = window.doctorContext?.clinic_id || null;
                 const slotsToInsert = [];
                 dates.forEach(dateStr => {
                     allPairs.forEach(pair => {
                         slotsToInsert.push({
                             doctor_id: doctorId,
+                            clinic_id: clinicId,
                             slot_date: dateStr,
                             start_time: pair.start_time,
                             end_time: pair.end_time,
                             session: pair.session,
                             status: 'available',
-                            max_patients: maxPatients
+                            max_patients: maxPatients,
+                            fee: consultFee,
+                            followup_fee: followupFee
                         });
                     });
                 });

@@ -414,7 +414,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="4dp"
-                            android:text="DOCTOR POINT VIP"
+                            android:text="DOCTOR'S POINT VIP"
                             android:textColor="@color/warning_yellow"
                             android:textSize="11sp"
                             android:textStyle="bold" />

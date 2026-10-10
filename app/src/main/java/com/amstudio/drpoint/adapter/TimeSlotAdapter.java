@@ -107,10 +107,21 @@ public class TimeSlotAdapter extends ListAdapter<DoctorSlot, TimeSlotAdapter.Vie
             String timeStr = slot != null ? slot.getFormattedTime() : "";
             binding.getRoot().setText(timeStr);
 
-            boolean isAvailable = slot != null && "available".equalsIgnoreCase(slot.getStatus());
+            boolean isTimeLocked = slot != null && (
+                    "locked".equalsIgnoreCase(slot.getStatus()) ||
+                    "expired".equalsIgnoreCase(slot.getStatus()) ||
+                    AvailabilityHelper.isSlotTimeReachedOrPassed(slot)
+            );
+            boolean isBooked = slot != null && "booked".equalsIgnoreCase(slot.getStatus());
+            boolean isAvailable = slot != null && "available".equalsIgnoreCase(slot.getStatus()) && !isTimeLocked;
 
-            if (!isAvailable) {
-                // Booked / Blocked -> Grayed out background with red text
+            if (isTimeLocked) {
+                // Time-locked slot -> Grayed out background with locked indicator
+                binding.getRoot().setBackgroundResource(R.drawable.bg_calendar_day_unavailable);
+                binding.getRoot().setTextColor(ContextCompat.getColor(context, R.color.error_red));
+                binding.getRoot().setAlpha(0.5f);
+            } else if (isBooked || !isAvailable) {
+                // Booked / Blocked -> Grayed out background
                 binding.getRoot().setBackgroundResource(R.drawable.bg_calendar_day_unavailable);
                 binding.getRoot().setTextColor(ContextCompat.getColor(context, R.color.error_red));
                 binding.getRoot().setAlpha(0.5f);
@@ -127,7 +138,11 @@ public class TimeSlotAdapter extends ListAdapter<DoctorSlot, TimeSlotAdapter.Vie
             }
 
             itemView.setOnClickListener(v -> {
-                if (!isAvailable) {
+                if (isTimeLocked) {
+                    ToastUtils.showWarning(context, "This appointment slot is locked because the slot time has passed.");
+                    return;
+                }
+                if (isBooked || !isAvailable) {
                     ToastUtils.showWarning(context, "Slot is already booked or unavailable.");
                     return;
                 }

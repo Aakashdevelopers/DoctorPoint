@@ -221,7 +221,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Note: If your appointment was uncompleted or cancelled, Doctor Point automatically refunds 100% of your consultation amount within 3-5 business days."
+                    android:text="Note: If your appointment was uncompleted or cancelled, Doctor's Point automatically refunds 100% of your consultation amount within 3-5 business days."
                     android:textColor="@color/text_secondary"
                     android:textSize="11.5sp" />
             </LinearLayout>

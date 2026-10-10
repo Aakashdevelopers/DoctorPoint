@@ -265,26 +265,27 @@
                 </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
 
-            <!-- Address Input -->
+            <!-- State Dropdown Spinner -->
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/til_address"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:id="@+id/til_state"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:hint="Address"
+                android:hint="State"
                 app:boxCornerRadiusBottomEnd="12dp"
                 app:boxCornerRadiusBottomStart="12dp"
                 app:boxCornerRadiusTopEnd="12dp"
                 app:boxCornerRadiusTopStart="12dp"
                 app:boxStrokeColor="@color/primary"
+                app:endIconTint="@color/primary"
                 app:hintTextColor="@color/primary">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/et_address"
+                <AutoCompleteTextView
+                    android:id="@+id/actv_state"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textPostalAddress"
+                    android:inputType="none"
                     android:textColor="@color/text_primary"
                     android:textSize="14sp" />
             </com.google.android.material.textfield.TextInputLayout>

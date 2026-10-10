@@ -4,6 +4,8 @@ import com.amstudio.drpoint.model.DoctorSlot;
 import com.amstudio.drpoint.network.model.BookAppointmentRpcRequest;
 import com.amstudio.drpoint.network.model.BookAppointmentRpcResponse;
 import com.amstudio.drpoint.network.model.CancelAppointmentRpcRequest;
+import com.amstudio.drpoint.network.model.RescheduleAppointmentRpcRequest;
+import com.amstudio.drpoint.network.model.RescheduleAppointmentRpcResponse;
 
 import java.util.List;
 import java.util.Map;
@@ -64,9 +66,19 @@ public interface SupabaseSlotService {
             @Body BookAppointmentRpcRequest request
     );
 
+    @POST("rest/v1/rpc/get_slot_booking_details")
+    Call<Map<String, Object>> getSlotBookingDetails(
+            @Body Map<String, Object> request
+    );
+
     @POST("rest/v1/rpc/cancel_appointment")
     Call<Map<String, Object>> cancelAppointment(
             @Body CancelAppointmentRpcRequest request
+    );
+
+    @POST("rest/v1/rpc/reschedule_appointment")
+    Call<RescheduleAppointmentRpcResponse> rescheduleAppointment(
+            @Body RescheduleAppointmentRpcRequest request
     );
 
     @PATCH("rest/v1/doctor_slots")

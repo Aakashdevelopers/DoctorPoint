@@ -122,6 +122,21 @@
 
             </LinearLayout>
 
+            <TextView
+                android:id="@+id/tv_see_all_specialities"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="4dp"
+                android:text="See All"
+                android:textColor="@color/secondary"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
         </RelativeLayout>
 
         <!-- Shimmer Placeholder for Specialities Grid (2 rows horizontal) -->
@@ -259,7 +274,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:padding="4dp"
-                android:text="See All →"
+                android:text="See All"
                 android:textColor="@color/secondary"
                 android:textSize="13sp"
                 android:textStyle="bold" />

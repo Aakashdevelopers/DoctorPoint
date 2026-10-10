@@ -1136,6 +1136,9 @@
             <li data-tab="refunds">
                 <a href="#"><i class='bx bx-receipt'></i> Patient Refunds</a>
             </li>
+            <li data-tab="customer-care">
+                <a href="#"><i class='bx bx-headphone'></i> Customer Care</a>
+            </li>
         </ul>
     </aside>
 
@@ -1577,6 +1580,48 @@
                                 <tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:2rem;">Loading patient refund requests...</td></tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 9: CUSTOMER CARE CONTACT SETTINGS -->
+            <div id="tab-customer-care" class="tab-content">
+                <div class="content-card" style="max-width: 800px; margin: 0 auto;">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3><i class='bx bx-headphone'></i> Customer Care Contact Settings</h3>
+                        <span class="badge badge-verified" id="cc-status-badge"><i class='bx bx-check-shield'></i> Live Supabase Sync</span>
+                    </div>
+                    <div style="padding: 24px;">
+                        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">
+                            Configure support contact details shown in the Patient App's Profile &gt; Customer Care section. Changes saved here reflect instantly in the Patient App without requiring an app update.
+                        </p>
+                        <form id="form-customer-care" onsubmit="event.preventDefault(); saveCustomerCareSettings();">
+                            <div class="form-group" style="margin-bottom: 18px;">
+                                <label class="form-label" for="cc-email"><i class='bx bx-envelope'></i> Support Email Address</label>
+                                <input type="email" id="cc-email" class="form-control" placeholder="support@example.com" style="width: 100%;">
+                                <small style="color: var(--text-muted); display: block; margin-top: 4px;">Patient App will open device email app when tapped.</small>
+                            </div>
+                            <div class="form-row" style="margin-bottom: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                                <div class="form-group">
+                                    <label class="form-label" for="cc-phone-1"><i class='bx bx-phone'></i> Primary Phone Number (Phone 1)</label>
+                                    <input type="text" id="cc-phone-1" class="form-control" placeholder="+91 9876543210" style="width: 100%;">
+                                    <small style="color: var(--text-muted); display: block; margin-top: 4px;">Primary calling line for patient support.</small>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="cc-phone-2"><i class='bx bx-phone-call'></i> Secondary Phone Number (Phone 2 - Optional)</label>
+                                    <input type="text" id="cc-phone-2" class="form-control" placeholder="+91 9123456789" style="width: 100%;">
+                                    <small style="color: var(--text-muted); display: block; margin-top: 4px;">Leave blank to automatically hide Secondary Phone card in Patient App.</small>
+                                </div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-color, #e2e8f0);">
+                                <span style="font-size: 12.5px; color: var(--text-muted);" id="cc-last-updated-text">
+                                    <i class='bx bx-time-five'></i> Last updated: Loading...
+                                </span>
+                                <button type="submit" class="btn btn-primary" id="btn-save-customer-care" style="padding: 10px 24px;">
+                                    <i class='bx bx-save'></i> Save Customer Care Settings
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -2027,6 +2072,21 @@
                     console.warn('Commission settings fetch note:', e);
                 }
 
+                // 8. Fetch Customer Care Settings from public.customer_care_settings
+                try {
+                    let { data: ccData, error: ccErr } = await supabase
+                        .from('customer_care_settings')
+                        .select('*')
+                        .limit(1)
+                        .maybeSingle();
+
+                    if (!ccErr && ccData) {
+                        customerCareSettings = ccData;
+                    }
+                } catch (e) {
+                    console.warn('Customer care settings fetch note:', e);
+                }
+
                 // Update UI
                 renderAll();
                 document.getElementById('db-status-badge').className = 'badge badge-active';
@@ -2068,10 +2128,111 @@
                 'appointments': 'Appointments & Slots Management',
                 'commissions': 'Commission & Pricing Settings',
                 'withdrawals': 'Doctor Payouts & Withdrawal Requests',
-                'refunds': 'Patient Refund Requests & Anti-Fraud Control'
+                'refunds': 'Patient Refund Requests & Anti-Fraud Control',
+                'customer-care': 'Customer Care Contact Settings'
             };
             document.getElementById('page-heading').innerText = titles[tabName] || 'Super Panel';
         }
+
+        function renderCustomerCare() {
+            const emailInput = document.getElementById('cc-email');
+            const phone1Input = document.getElementById('cc-phone-1');
+            const phone2Input = document.getElementById('cc-phone-2');
+            const lastUpdatedElem = document.getElementById('cc-last-updated-text');
+
+            if (emailInput && customerCareSettings) {
+                emailInput.value = customerCareSettings.email || '';
+                if (phone1Input) phone1Input.value = customerCareSettings.phone_1 || customerCareSettings.phone1 || '';
+                if (phone2Input) phone2Input.value = customerCareSettings.phone_2 || customerCareSettings.phone2 || '';
+
+                if (lastUpdatedElem) {
+                    if (customerCareSettings.updated_at) {
+                        try {
+                            const d = new Date(customerCareSettings.updated_at);
+                            const formatted = d.toLocaleString('en-IN', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true
+                            });
+                            lastUpdatedElem.innerHTML = `<i class='bx bx-time-five'></i> Last updated: ${formatted}`;
+                        } catch(e) {
+                            lastUpdatedElem.innerHTML = `<i class='bx bx-time-five'></i> Last updated: ${customerCareSettings.updated_at}`;
+                        }
+                    } else {
+                        lastUpdatedElem.innerHTML = `<i class='bx bx-time-five'></i> Last updated: Not saved yet`;
+                    }
+                }
+            }
+        }
+
+        window.saveCustomerCareSettings = async function() {
+            const email = (document.getElementById('cc-email')?.value || '').trim();
+            const phone_1 = (document.getElementById('cc-phone-1')?.value || '').trim();
+            const phone_2 = (document.getElementById('cc-phone-2')?.value || '').trim();
+
+            if (email) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    showToast('Please enter a valid email address.', 'danger');
+                    return;
+                }
+            }
+
+            if (!email && !phone_1 && !phone_2) {
+                showToast('At least one contact method (Email or Phone) must be provided.', 'danger');
+                return;
+            }
+
+            const payload = {
+                email: email || null,
+                phone_1: phone_1 || null,
+                phone_2: phone_2 || null,
+                updated_at: new Date().toISOString()
+            };
+
+            if (customerCareSettings && customerCareSettings.id) {
+                payload.id = customerCareSettings.id;
+            }
+
+            showToast('Saving customer care settings to Supabase...', 'info');
+
+            try {
+                let response;
+                if (customerCareSettings && customerCareSettings.id) {
+                    response = await supabase
+                        .from('customer_care_settings')
+                        .update(payload)
+                        .eq('id', customerCareSettings.id)
+                        .select();
+                } else {
+                    response = await supabase
+                        .from('customer_care_settings')
+                        .insert([payload])
+                        .select();
+                }
+
+                if (response.error) {
+                    showToast('Supabase Error: ' + response.error.message, 'danger');
+                    return;
+                }
+
+                if (response.data && response.data.length > 0) {
+                    customerCareSettings = response.data[0];
+                } else {
+                    customerCareSettings = { ...customerCareSettings, ...payload };
+                }
+
+                showToast('Customer care settings updated successfully.', 'success');
+                renderCustomerCare();
+                await fetchAllFromSupabase();
+            } catch (err) {
+                console.error(err);
+                showToast('Error saving settings: ' + err.message, 'danger');
+            }
+        };
 
         function renderAll() {
             renderDashboard();
@@ -2082,12 +2243,14 @@
             renderCommissions();
             renderWithdrawals();
             renderRefunds();
+            renderCustomerCare();
         }
 
         window.renderCategories = renderCategories;
         window.renderDoctors = renderDoctors;
         window.renderUsers = renderUsers;
         window.renderAppointments = renderAppointments;
+        window.renderCustomerCare = renderCustomerCare;
         window.renderCommissions = renderCommissions;
         window.renderWithdrawals = renderWithdrawals;
         window.renderRefunds = renderRefunds;

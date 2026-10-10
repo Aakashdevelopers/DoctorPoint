@@ -17,6 +17,15 @@ public class Appointment implements Serializable {
     @SerializedName(value = "patient_name", alternate = {"patient_full_name", "userName", "patientName"})
     private String patientName;
 
+    @SerializedName(value = "patient_age", alternate = {"age"})
+    private Integer patientAge;
+
+    @SerializedName(value = "patient_gender", alternate = {"gender"})
+    private String patientGender;
+
+    @SerializedName(value = "slot_number", alternate = {"slotNumber"})
+    private Integer slotNumber;
+
     @SerializedName("doctor_id")
     private String doctorId;
 
@@ -58,6 +67,9 @@ public class Appointment implements Serializable {
 
     @SerializedName("payment_status")
     private String paymentStatus = "Pending";
+
+    @SerializedName(value = "payment_id", alternate = {"paymentId", "razorpay_payment_id"})
+    private String paymentId;
 
     @SerializedName(value = "amount", alternate = {"fee"})
     private int amount;
@@ -113,6 +125,12 @@ public class Appointment implements Serializable {
 
     public String getPatientName() { return patientName; }
     public void setPatientName(String patientName) { this.patientName = patientName; }
+
+    public Integer getPatientAge() { return patientAge; }
+    public void setPatientAge(Integer patientAge) { this.patientAge = patientAge; }
+
+    public String getPatientGender() { return patientGender; }
+    public void setPatientGender(String patientGender) { this.patientGender = patientGender; }
 
     public String getUserId() { return patientId; }
     public void setUserId(String userId) { this.patientId = userId; }
@@ -241,14 +259,20 @@ public class Appointment implements Serializable {
     }
     public void setPaymentStatus(String paymentStatus) { this.paymentStatus = paymentStatus; }
 
+    public String getPaymentId() { return paymentId; }
+    public void setPaymentId(String paymentId) { this.paymentId = paymentId; }
+
     public int getAmount() { return amount; }
     public void setAmount(int amount) { this.amount = amount; }
 
     public int getFee() { return amount; }
     public void setFee(int fee) { this.amount = fee; }
 
-    public int getTokenNumber() { return tokenNumber; }
+    public int getTokenNumber() { return slotNumber != null && slotNumber > 0 ? slotNumber : (tokenNumber > 0 ? tokenNumber : 1); }
     public void setTokenNumber(int tokenNumber) { this.tokenNumber = tokenNumber; }
+
+    public int getSlotNumber() { return slotNumber != null && slotNumber > 0 ? slotNumber : (tokenNumber > 0 ? tokenNumber : 1); }
+    public void setSlotNumber(int slotNumber) { this.slotNumber = slotNumber; }
 
     public String getPatientReason() { return patientReason; }
     public void setPatientReason(String patientReason) { this.patientReason = patientReason; }
