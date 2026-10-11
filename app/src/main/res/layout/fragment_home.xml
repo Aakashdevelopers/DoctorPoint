@@ -78,6 +78,26 @@
                             android:textStyle="bold" />
                     </LinearLayout>
 
+                    <!-- Customer Care Button -->
+                    <FrameLayout
+                        android:id="@+id/fl_customer_care"
+                        android:layout_width="38dp"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/bg_squircle_icon"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackgroundBorderless">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_gravity="center"
+                            android:contentDescription="Customer Care Support"
+                            android:src="@drawable/ic_help"
+                            app:tint="@color/success_green" />
+                    </FrameLayout>
+
                     <!-- Bell Button -->
                     <FrameLayout
                         android:id="@+id/fl_bell"
@@ -448,7 +468,7 @@
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     android:paddingHorizontal="14dp"
-                    android:text="Explore VIP"
+                    android:text="Coming Soon"
                     android:textColor="@color/primary"
                     android:textSize="11.5sp"
                     android:textStyle="bold"

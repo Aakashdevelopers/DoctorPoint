@@ -118,16 +118,17 @@ public class CustomerCareBottomSheetFragment extends BottomSheetDialogFragment {
 
         binding.llCcContent.setVisibility(View.VISIBLE);
 
-        // Email Support Card
-        if (hasEmail) {
-            binding.cardCcEmail.setVisibility(View.VISIBLE);
-            binding.tvCcEmailValue.setText(email);
-            binding.btnCcEmail.setOnClickListener(v -> openEmailClient(email));
+        // WhatsApp Support Card (uses phone1 or phone2)
+        String whatsappPhone = hasPhone1 ? phone1 : phone2;
+        if (!whatsappPhone.isEmpty()) {
+            binding.cardCcWhatsapp.setVisibility(View.VISIBLE);
+            binding.tvCcWhatsappValue.setText("Chat live with Admin Support (" + whatsappPhone + ")");
+            binding.btnCcWhatsapp.setOnClickListener(v -> openWhatsAppChat(whatsappPhone));
         } else {
-            binding.cardCcEmail.setVisibility(View.GONE);
+            binding.cardCcWhatsapp.setVisibility(View.GONE);
         }
 
-        // Phone 1 Card
+        // Phone 1 Card (Primary)
         if (hasPhone1) {
             binding.cardCcPhone1.setVisibility(View.VISIBLE);
             binding.tvCcPhone1Value.setText(phone1);
@@ -136,13 +137,43 @@ public class CustomerCareBottomSheetFragment extends BottomSheetDialogFragment {
             binding.cardCcPhone1.setVisibility(View.GONE);
         }
 
-        // Phone 2 Card
+        // Phone 2 Card (Secondary)
         if (hasPhone2) {
             binding.cardCcPhone2.setVisibility(View.VISIBLE);
             binding.tvCcPhone2Value.setText(phone2);
             binding.btnCcPhone2.setOnClickListener(v -> openDialer(phone2));
         } else {
             binding.cardCcPhone2.setVisibility(View.GONE);
+        }
+
+        // Email Support Card
+        if (hasEmail) {
+            binding.cardCcEmail.setVisibility(View.VISIBLE);
+            binding.tvCcEmailValue.setText(email);
+            binding.btnCcEmail.setOnClickListener(v -> openEmailClient(email));
+        } else {
+            binding.cardCcEmail.setVisibility(View.GONE);
+        }
+    }
+
+    private void openWhatsAppChat(String phoneNumber) {
+        Context context = getContext();
+        if (context == null || phoneNumber == null || phoneNumber.trim().isEmpty()) return;
+
+        String cleanNumber = phoneNumber.replaceAll("[^0-9]", "");
+        if (cleanNumber.length() == 10) {
+            cleanNumber = "91" + cleanNumber;
+        }
+
+        try {
+            String defaultMessage = Uri.encode("Hello DoctorPoint Support, I need help with my app/appointment.");
+            String whatsappUrl = "https://wa.me/" + cleanNumber + "?text=" + defaultMessage;
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(whatsappUrl));
+            startActivity(intent);
+        } catch (ActivityNotFoundException e) {
+            openDialer(phoneNumber);
+        } catch (Exception e) {
+            ToastUtils.showError(context, "Could not open WhatsApp");
         }
     }
 

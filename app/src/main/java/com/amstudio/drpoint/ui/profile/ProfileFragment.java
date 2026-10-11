@@ -240,6 +240,11 @@ public class ProfileFragment extends Fragment {
         binding.cardJoinAsDoctor.setOnClickListener(v -> openJoinAsDoctorBottomSheet());
         binding.btnJoinDoctorBanner.setOnClickListener(v -> openJoinAsDoctorBottomSheet());
 
+        View.OnClickListener customerCareListener = v -> openCustomerCareBottomSheet();
+        if (binding.cardCustomerCareSupport != null) {
+            binding.cardCustomerCareSupport.setOnClickListener(customerCareListener);
+        }
+
 
         setupProfileSections();
 
@@ -313,8 +318,7 @@ public class ProfileFragment extends Fragment {
         } else if (title.toLowerCase().contains("doctor") || title.toLowerCase().contains("join") || title.toLowerCase().contains("apply")) {
             openJoinAsDoctorBottomSheet();
         } else if (title.toLowerCase().contains("customer") || title.toLowerCase().contains("care") || title.toLowerCase().contains("help") || title.toLowerCase().contains("support")) {
-            CustomerCareBottomSheetFragment fragment = CustomerCareBottomSheetFragment.newInstance();
-            fragment.show(getChildFragmentManager(), CustomerCareBottomSheetFragment.TAG);
+            openCustomerCareBottomSheet();
         } else if (title.toLowerCase().contains("privacy")) {
             ToastUtils.showInfo(context, "Opening Privacy Policy...");
         } else if (title.toLowerCase().contains("term")) {
@@ -330,6 +334,12 @@ public class ProfileFragment extends Fragment {
         Context context = getContext();
         if (context == null) return;
         ToastUtils.showInfo(context, "Join as a Doctor feature is coming soon!");
+    }
+
+    private void openCustomerCareBottomSheet() {
+        if (!isAdded()) return;
+        CustomerCareBottomSheetFragment fragment = CustomerCareBottomSheetFragment.newInstance();
+        fragment.show(getChildFragmentManager(), CustomerCareBottomSheetFragment.TAG);
     }
 
     @Override

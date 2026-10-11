@@ -29,6 +29,7 @@ import com.amstudio.drpoint.network.SupabaseClient;
 import com.amstudio.drpoint.ui.doctor.DoctorDetailActivity;
 import com.amstudio.drpoint.ui.doctor.DoctorListActivity;
 import com.amstudio.drpoint.ui.explore.FindDoctorsActivity;
+import com.amstudio.drpoint.ui.profile.CustomerCareBottomSheetFragment;
 import com.amstudio.drpoint.util.DummyDataProvider;
 import com.amstudio.drpoint.util.PreferenceManager;
 import com.amstudio.drpoint.util.ToastUtils;
@@ -78,6 +79,13 @@ public class HomeFragment extends Fragment {
             binding.cardCarePlan.setOnClickListener(v -> openFindDoctors());
             binding.layoutSearch.setOnClickListener(v -> openFindDoctors());
             binding.flFilter.setOnClickListener(v -> openFindDoctors());
+
+            if (binding.flCustomerCare != null) {
+                binding.flCustomerCare.setOnClickListener(v -> {
+                    CustomerCareBottomSheetFragment fragment = CustomerCareBottomSheetFragment.newInstance();
+                    fragment.show(getChildFragmentManager(), CustomerCareBottomSheetFragment.TAG);
+                });
+            }
 
             binding.flBell.setOnClickListener(v -> {
                 Context context = getContext();

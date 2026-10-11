@@ -1595,7 +1595,7 @@
                         <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">
                             Configure support contact details shown in the Patient App's Profile &gt; Customer Care section. Changes saved here reflect instantly in the Patient App without requiring an app update.
                         </p>
-                        <form id="form-customer-care" onsubmit="event.preventDefault(); saveCustomerCareSettings();">
+                        <form id="form-customer-care" onsubmit="event.preventDefault(); saveCustomerCareSettings(event);">
                             <div class="form-group" style="margin-bottom: 18px;">
                                 <label class="form-label" for="cc-email"><i class='bx bx-envelope'></i> Support Email Address</label>
                                 <input type="email" id="cc-email" class="form-control" placeholder="support@example.com" style="width: 100%;">
@@ -1617,7 +1617,7 @@
                                 <span style="font-size: 12.5px; color: var(--text-muted);" id="cc-last-updated-text">
                                     <i class='bx bx-time-five'></i> Last updated: Loading...
                                 </span>
-                                <button type="submit" class="btn btn-primary" id="btn-save-customer-care" style="padding: 10px 24px;">
+                                <button type="submit" onclick="saveCustomerCareSettings(event)" class="btn btn-primary" id="btn-save-customer-care" style="padding: 10px 24px;">
                                     <i class='bx bx-save'></i> Save Customer Care Settings
                                 </button>
                             </div>
@@ -1898,6 +1898,7 @@
         let appointments = [];
         let withdrawals = [];
         let refundRequests = [];
+        let customerCareSettings = null;
         let globalCommission = {
             new_patient_commission: 100,
             new_patient_type: 'FLAT',
@@ -2168,7 +2169,9 @@
             }
         }
 
-        window.saveCustomerCareSettings = async function() {
+        window.saveCustomerCareSettings = async function(e) {
+            if (e && e.preventDefault) e.preventDefault();
+
             const email = (document.getElementById('cc-email')?.value || '').trim();
             const phone_1 = (document.getElementById('cc-phone-1')?.value || '').trim();
             const phone_2 = (document.getElementById('cc-phone-2')?.value || '').trim();
@@ -2186,6 +2189,14 @@
                 return;
             }
 
+            const btn = document.getElementById('btn-save-customer-care');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<i class='bx bx-loader-alt bx-spin'></i> Saving...`;
+            }
+
+            showToast('Saving customer care settings to Supabase...', 'info');
+
             const payload = {
                 email: email || null,
                 phone_1: phone_1 || null,
@@ -2193,21 +2204,28 @@
                 updated_at: new Date().toISOString()
             };
 
-            if (customerCareSettings && customerCareSettings.id) {
-                payload.id = customerCareSettings.id;
-            }
-
-            showToast('Saving customer care settings to Supabase...', 'info');
-
             try {
+                // If customerCareSettings is null/not loaded, query Supabase for an existing row
+                if (!customerCareSettings || !customerCareSettings.id) {
+                    const { data: existingRows, error: checkErr } = await supabase
+                        .from('customer_care_settings')
+                        .select('*')
+                        .limit(1);
+                    if (!checkErr && existingRows && existingRows.length > 0) {
+                        customerCareSettings = existingRows[0];
+                    }
+                }
+
                 let response;
                 if (customerCareSettings && customerCareSettings.id) {
+                    // Update existing row (do NOT pass id in payload for UPDATE)
                     response = await supabase
                         .from('customer_care_settings')
                         .update(payload)
                         .eq('id', customerCareSettings.id)
                         .select();
                 } else {
+                    // Insert new row if no existing row exists
                     response = await supabase
                         .from('customer_care_settings')
                         .insert([payload])
@@ -2215,22 +2233,24 @@
                 }
 
                 if (response.error) {
+                    console.error('Supabase customer care save error:', response.error);
                     showToast('Supabase Error: ' + response.error.message, 'danger');
-                    return;
-                }
-
-                if (response.data && response.data.length > 0) {
+                } else if (response.data && response.data.length > 0) {
                     customerCareSettings = response.data[0];
+                    showToast('Customer care settings saved successfully.', 'success');
+                    renderCustomerCare();
                 } else {
-                    customerCareSettings = { ...customerCareSettings, ...payload };
+                    showToast('Customer care settings saved.', 'success');
+                    await fetchAllFromSupabase();
                 }
-
-                showToast('Customer care settings updated successfully.', 'success');
-                renderCustomerCare();
-                await fetchAllFromSupabase();
             } catch (err) {
-                console.error(err);
-                showToast('Error saving settings: ' + err.message, 'danger');
+                console.error('Save customer care failed:', err);
+                showToast('Error saving settings: ' + (err.message || err), 'danger');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class='bx bx-save'></i> Save Customer Care Settings`;
+                }
             }
         };
 

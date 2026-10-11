@@ -134,18 +134,7 @@ public class AppointmentsFragment extends Fragment {
             });
         }
 
-        PreferenceManager prefManager = PreferenceManager.getInstance(context);
-        if (binding.swReminders != null) {
-            binding.swReminders.setChecked(prefManager.getRemindersEnabled());
-            binding.swReminders.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                prefManager.setRemindersEnabled(isChecked);
-                Context ctx = getContext();
-                if (ctx != null) {
-                    String msg = isChecked ? "Reminders enabled" : "Reminders disabled";
-                    ToastUtils.showInfo(ctx, msg);
-                }
-            });
-        }
+
 
         if (binding.tabLayoutAppointments != null) {
             binding.tabLayoutAppointments.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
@@ -426,18 +415,27 @@ public class AppointmentsFragment extends Fragment {
                 continue;
             }
 
-            String st = appt.getStatus() != null ? appt.getStatus().toLowerCase() : "confirmed";
+            String st = appt.getStatus() != null ? appt.getStatus().toLowerCase(Locale.US) : "confirmed";
 
             if (tabPosition == 0) {
-                if ("pending".equals(st) || "confirmed".equals(st) || "checked_in".equals(st) || "waiting".equals(st) || "in_consultation".equals(st) || st.contains("confirm")) {
-                    displayed.add(appt);
+                boolean isExcludedStatus = st.contains("cancel") || st.contains("reject") ||
+                        st.contains("no_show") || st.contains("completed") || st.contains("refund");
+
+                boolean isSchedulePassed = AvailabilityHelper.isAppointmentSchedulePassed(appt, 20) ||
+                        AvailabilityHelper.isSlotEndPassed(appt.getAppointmentDate(), appt.getStartTime(), appt.getEndTime(), 20);
+
+                if (!isExcludedStatus && !isSchedulePassed) {
+                    if ("pending".equals(st) || "confirmed".equals(st) || "checked_in".equals(st) ||
+                            "waiting".equals(st) || "in_consultation".equals(st) || st.contains("confirm")) {
+                        displayed.add(appt);
+                    }
                 }
             } else if (tabPosition == 1) {
                 if ("completed".equals(st)) {
                     displayed.add(appt);
                 }
             } else if (tabPosition == 2) {
-                if ("cancelled".equals(st) || "rejected".equals(st) || "no_show".equals(st)) {
+                if ("cancelled".equals(st) || "rejected".equals(st) || "no_show".equals(st) || st.contains("cancel") || st.contains("reject")) {
                     displayed.add(appt);
                 }
             }
@@ -1384,10 +1382,13 @@ public class AppointmentsFragment extends Fragment {
         for (Appointment appt : appointments) {
             if (appt == null) continue;
             String st = appt.getStatus() != null ? appt.getStatus().trim() : "";
+            String lowerSt = st.toLowerCase(Locale.US);
 
-            if ("pending".equalsIgnoreCase(st)) {
-                if (AvailabilityHelper.isPendingAppointmentExpired(appt, 20)) {
-                    String cancelReason = "Appointment cancelled because doctor confirmation was not received before the appointment schedule ended.";
+            if (!"completed".equals(lowerSt) && !"cancelled".equals(lowerSt) &&
+                !"rejected".equals(lowerSt) && !"no_show".equals(lowerSt)) {
+
+                if (AvailabilityHelper.isAppointmentSchedulePassed(appt, 20)) {
+                    String cancelReason = "Appointment cancelled automatically because doctor consultation was not completed before the appointment schedule ended.";
                     appt.setStatus("Cancelled");
                     appt.setPatientReason(cancelReason);
 

@@ -146,10 +146,14 @@ public class AppointmentListAdapter extends ListAdapter<Appointment, Appointment
                 binding.btnRequestRefund.setVisibility(View.VISIBLE);
 
                 String reason = appointment.getPatientReason() != null ? appointment.getPatientReason() : appointment.getNotes();
-                if (reason != null && (reason.toLowerCase().contains("doctor confirmation") || reason.toLowerCase().contains("schedule ended") || reason.toLowerCase().contains("automatically"))) {
+                if (reason != null && !reason.trim().isEmpty()) {
                     if (binding.tvCancellationReason != null) {
                         binding.tvCancellationReason.setVisibility(View.VISIBLE);
-                        binding.tvCancellationReason.setText("Appointment cancelled because doctor confirmation was not received before the appointment schedule ended.");
+                        if (reason.toLowerCase(Locale.US).contains("doctor") || reason.toLowerCase(Locale.US).contains("schedule ended") || reason.toLowerCase(Locale.US).contains("automatically") || reason.toLowerCase(Locale.US).contains("consultation")) {
+                            binding.tvCancellationReason.setText("Appointment cancelled because doctor consultation or confirmation was not completed before the appointment schedule ended.");
+                        } else {
+                            binding.tvCancellationReason.setText("Cancellation Reason: " + reason);
+                        }
                     }
                 } else if (binding.tvCancellationReason != null) {
                     binding.tvCancellationReason.setVisibility(View.GONE);

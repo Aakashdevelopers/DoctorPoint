@@ -193,13 +193,18 @@ public class AvailabilityHelper {
     }
 
     /**
-     * Checks if a pending/unconfirmed appointment has passed its appointment schedule window.
-     * Applies ONLY to pending appointments. Confirmed or Cancelled appointments are not affected.
+     * Checks if an uncompleted appointment's scheduled slot end time has passed.
+     * Applies to uncompleted statuses (pending, confirmed, checked_in, waiting, in_consultation, etc.).
+     * Returns false if status is completed, cancelled, rejected, or no_show.
      */
-    public static boolean isPendingAppointmentExpired(Appointment appointment, int defaultSlotDurationMins) {
+    public static boolean isAppointmentSchedulePassed(Appointment appointment, int defaultSlotDurationMins) {
         if (appointment == null) return false;
         String st = appointment.getStatus();
-        if (st == null || !st.trim().equalsIgnoreCase("Pending")) {
+        if (st == null) return false;
+        String lowerSt = st.trim().toLowerCase(Locale.US);
+
+        if ("completed".equals(lowerSt) || "cancelled".equals(lowerSt) ||
+            "rejected".equals(lowerSt) || "no_show".equals(lowerSt)) {
             return false;
         }
 
@@ -210,6 +215,13 @@ public class AvailabilityHelper {
         if (apptDate == null || apptDate.trim().isEmpty()) return false;
 
         return isSlotEndPassed(apptDate, startTime, endTime, defaultSlotDurationMins > 0 ? defaultSlotDurationMins : 20);
+    }
+
+    /**
+     * Checks if a pending/unconfirmed appointment has passed its appointment schedule window.
+     */
+    public static boolean isPendingAppointmentExpired(Appointment appointment, int defaultSlotDurationMins) {
+        return isAppointmentSchedulePassed(appointment, defaultSlotDurationMins);
     }
 
     /**
