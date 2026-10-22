@@ -19,6 +19,7 @@ import com.amstudio.drpoint.ui.doctor.DoctorListActivity;
 import com.amstudio.drpoint.util.DummyDataProvider;
 import com.amstudio.drpoint.util.PreferenceManager;
 import com.amstudio.drpoint.util.ToastUtils;
+import com.amstudio.drpoint.util.WindowInsetsUtil;
 
 import java.util.List;
 
@@ -33,6 +34,8 @@ public class FindDoctorsActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityFindDoctorsBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+        WindowInsetsUtil.applySystemBarInsets(binding.getRoot());
         setContentView(binding.getRoot());
 
         binding.ivBack.setOnClickListener(v -> finish());

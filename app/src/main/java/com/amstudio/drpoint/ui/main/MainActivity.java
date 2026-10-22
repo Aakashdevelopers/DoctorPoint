@@ -15,6 +15,7 @@ import com.amstudio.drpoint.ui.appointments.AppointmentsFragment;
 import com.amstudio.drpoint.ui.explore.ExploreFragment;
 import com.amstudio.drpoint.ui.home.HomeFragment;
 import com.amstudio.drpoint.ui.profile.ProfileFragment;
+import com.amstudio.drpoint.util.WindowInsetsUtil;
 
 import java.util.Objects;
 
@@ -38,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        WindowInsetsUtil.applySystemBarInsets(binding.getRoot());
 
         setupBackNavigation();
 
@@ -112,6 +114,8 @@ public class MainActivity extends AppCompatActivity {
         if (isFinishing() || isDestroyed()) return;
 
         FragmentManager fm = getSupportFragmentManager();
+        if (fm.isStateSaved()) return;
+
         Fragment currentFrag = getActiveFragment(fm);
 
         if (currentFrag != null && Objects.equals(targetTag, currentFrag.getTag())) {
@@ -161,16 +165,16 @@ public class MainActivity extends AppCompatActivity {
 
     private Fragment getActiveFragment(FragmentManager fm) {
         Fragment homeFrag = fm.findFragmentByTag(TAG_HOME);
-        if (homeFrag != null && homeFrag.isVisible()) return homeFrag;
+        if (homeFrag != null && !homeFrag.isHidden()) return homeFrag;
 
         Fragment exploreFrag = fm.findFragmentByTag(TAG_EXPLORE);
-        if (exploreFrag != null && exploreFrag.isVisible()) return exploreFrag;
+        if (exploreFrag != null && !exploreFrag.isHidden()) return exploreFrag;
 
         Fragment apptsFrag = fm.findFragmentByTag(TAG_APPOINTMENTS);
-        if (apptsFrag != null && apptsFrag.isVisible()) return apptsFrag;
+        if (apptsFrag != null && !apptsFrag.isHidden()) return apptsFrag;
 
         Fragment profileFrag = fm.findFragmentByTag(TAG_PROFILE);
-        if (profileFrag != null && profileFrag.isVisible()) return profileFrag;
+        if (profileFrag != null && !profileFrag.isHidden()) return profileFrag;
 
         return null;
     }
@@ -201,12 +205,10 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
 
-        // 1) Explicitly switch to target fragment to guarantee initial load on startup
-        switchFragment(targetTag);
-
-        // 2) Update bottom navigation selected item if different
         if (binding.bottomNavigation.getSelectedItemId() != targetItemId) {
             binding.bottomNavigation.setSelectedItemId(targetItemId);
+        } else {
+            switchFragment(targetTag);
         }
     }
 }

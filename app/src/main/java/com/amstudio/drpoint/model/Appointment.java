@@ -68,7 +68,7 @@ public class Appointment implements Serializable {
     @SerializedName("payment_status")
     private String paymentStatus = "Pending";
 
-    @SerializedName(value = "payment_id", alternate = {"paymentId", "razorpay_payment_id"})
+    @SerializedName(value = "payment_id", alternate = {"paymentId", "zapupi_payment_id", "razorpay_payment_id"})
     private String paymentId;
 
     @SerializedName(value = "amount", alternate = {"fee"})

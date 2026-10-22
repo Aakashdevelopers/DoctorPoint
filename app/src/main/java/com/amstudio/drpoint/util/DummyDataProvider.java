@@ -63,6 +63,25 @@ public class DummyDataProvider {
     private static List<PatientUser> patientUsers;
     private static List<Speciality> specialitiesList;
 
+    // In-memory cache variables for high performance & reducing Supabase network overhead
+    private static List<Doctor> cachedDoctors;
+    private static long doctorsCacheTimestamp = 0;
+    private static final long DOCTORS_CACHE_DURATION_MS = 3 * 60 * 1000L; // 3 minutes cache TTL
+
+    private static List<Speciality> cachedSpecialities;
+    private static long specialitiesCacheTimestamp = 0;
+    private static final long SPECIALITIES_CACHE_DURATION_MS = 10 * 60 * 1000L; // 10 minutes cache TTL
+
+    public static synchronized void invalidateDoctorsCache() {
+        doctorsCacheTimestamp = 0;
+        cachedDoctors = null;
+    }
+
+    public static synchronized void invalidateSpecialitiesCache() {
+        specialitiesCacheTimestamp = 0;
+        cachedSpecialities = null;
+    }
+
     public static synchronized List<QuickAccessItem> getQuickAccessItems() {
         List<QuickAccessItem> items = new ArrayList<>();
         items.add(new QuickAccessItem("Doctors", "By Specialty", R.drawable.ic_stethoscope, R.color.bg_blue_light));
@@ -153,6 +172,13 @@ public class DummyDataProvider {
     }
 
     public static synchronized void fetchSpecialitiesFromSupabase(SpecialitiesCallback callback) {
+        if (cachedSpecialities != null && !cachedSpecialities.isEmpty() && (System.currentTimeMillis() - specialitiesCacheTimestamp < SPECIALITIES_CACHE_DURATION_MS)) {
+            if (callback != null) {
+                callback.onSpecialitiesLoaded(new ArrayList<>(cachedSpecialities));
+            }
+            return;
+        }
+
         SupabaseClient.getDoctorService().getSpecialities().enqueue(new Callback<List<Speciality>>() {
             @Override
             public void onResponse(Call<List<Speciality>> call, Response<List<Speciality>> response) {
@@ -164,6 +190,10 @@ public class DummyDataProvider {
                         }
                     }
                     if (!validList.isEmpty()) {
+                        synchronized (DummyDataProvider.class) {
+                            cachedSpecialities = new ArrayList<>(validList);
+                            specialitiesCacheTimestamp = System.currentTimeMillis();
+                        }
                         if (callback != null) {
                             callback.onSpecialitiesLoaded(validList);
                         }
@@ -395,6 +425,13 @@ public class DummyDataProvider {
     }
 
     public static synchronized void fetchDoctorsFromSupabase(DoctorsCallback callback) {
+        if (cachedDoctors != null && !cachedDoctors.isEmpty() && (System.currentTimeMillis() - doctorsCacheTimestamp < DOCTORS_CACHE_DURATION_MS)) {
+            if (callback != null) {
+                callback.onDoctorsLoaded(new ArrayList<>(cachedDoctors));
+            }
+            return;
+        }
+
         String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 
         SupabaseClient.getDoctorService().getDoctors().enqueue(new Callback<List<Doctor>>() {
@@ -479,6 +516,8 @@ public class DummyDataProvider {
                         }
                         synchronized (DummyDataProvider.class) {
                             doctors = new ArrayList<>(fetchedDocs);
+                            cachedDoctors = new ArrayList<>(fetchedDocs);
+                            doctorsCacheTimestamp = System.currentTimeMillis();
                         }
                         if (callback != null) callback.onDoctorsLoaded(getDoctors());
                     }
@@ -487,6 +526,8 @@ public class DummyDataProvider {
                     public void onFailure(Call<List<DoctorSlot>> c, Throwable t) {
                         synchronized (DummyDataProvider.class) {
                             doctors = new ArrayList<>(fetchedDocs);
+                            cachedDoctors = new ArrayList<>(fetchedDocs);
+                            doctorsCacheTimestamp = System.currentTimeMillis();
                         }
                         if (callback != null) callback.onDoctorsLoaded(getDoctors());
                     }
@@ -1015,6 +1056,7 @@ public class DummyDataProvider {
         List<MenuItem> items = new ArrayList<>();
         items.add(new MenuItem("Join as a Doctor", "Apply & list your clinic on Doctor's Point", R.drawable.ic_stethoscope, R.color.primary, R.color.bg_blue_light, R.color.text_primary));
         items.add(new MenuItem("My Appointments", "View & manage booked appointments", R.drawable.ic_calendar, R.color.secondary, R.color.bg_blue_light, R.color.text_primary));
+        items.add(new MenuItem("Booking History", "View completed consultations", R.drawable.ic_check_circle, R.color.success_green, R.color.bg_green_light, R.color.text_primary));
         items.add(new MenuItem("Cancel Appointment", "Cancel your upcoming appointments", R.drawable.ic_calendar_cancel, R.color.error_red, R.color.error_light, R.color.text_primary));
         items.add(new MenuItem("Refund & Payment", "View refund status and payment details", R.drawable.ic_refund, R.color.primary, R.color.primary_light, R.color.text_primary));
         items.add(new MenuItem("Saved Doctors", "Your favorite doctors & specialists", R.drawable.ic_heart_filled, R.color.error_red, R.color.bg_pink_light, R.color.text_primary));

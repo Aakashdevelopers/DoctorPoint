@@ -227,12 +227,20 @@ public class PreferenceManager {
 
     public void recordDoctorBooking(String doctorId) {
         if (doctorId == null || doctorId.trim().isEmpty()) return;
-        prefs.edit().putBoolean("booked_doc_" + doctorId, true).apply();
+        String userId = getUserId();
+        if (userId != null && !userId.trim().isEmpty()) {
+            prefs.edit().putBoolean("booked_doc_" + userId.trim() + "_" + doctorId.trim(), true).apply();
+        }
+        prefs.edit().putBoolean("booked_doc_" + doctorId.trim(), true).apply();
     }
 
     public boolean hasBookedWithDoctor(String doctorId) {
         if (doctorId == null || doctorId.trim().isEmpty()) return false;
-        return prefs.getBoolean("booked_doc_" + doctorId, false);
+        String userId = getUserId();
+        if (userId != null && !userId.trim().isEmpty()) {
+            return prefs.getBoolean("booked_doc_" + userId.trim() + "_" + doctorId.trim(), false);
+        }
+        return false;
     }
 
     public void clearSession() {

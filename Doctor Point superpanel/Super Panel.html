@@ -1702,6 +1702,14 @@
                             <label class="form-label" for="doc-fee-input">Consultation Fee (₹)</label>
                             <input type="number" id="doc-fee-input" class="form-control" placeholder="e.g. 500">
                         </div>
+                        <div class="form-group">
+                            <label class="form-label" for="doc-gender-input">Gender *</label>
+                            <select id="doc-gender-input" class="form-control">
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
@@ -2776,6 +2784,7 @@
             document.getElementById('doc-qual-input').value = doc ? doc.qualification : '';
             document.getElementById('doc-exp-input').value = doc ? doc.experience : '';
             document.getElementById('doc-fee-input').value = doc ? doc.fee : 500;
+            if (document.getElementById('doc-gender-input')) document.getElementById('doc-gender-input').value = doc ? (doc.gender && doc.gender !== 'Doctor' ? doc.gender : 'Male') : 'Male';
             document.getElementById('doc-new-comm-input').value = doc && doc.new_patient_commission !== undefined ? doc.new_patient_commission : (globalCommission.new_patient_commission || 100);
             document.getElementById('doc-followup-comm-input').value = doc && doc.followup_commission !== undefined ? doc.followup_commission : (globalCommission.followup_commission || 50);
             document.getElementById('doc-comm-type-input').value = doc ? (doc.commission_type || 'FLAT') : 'FLAT';
@@ -2792,6 +2801,7 @@
             const qualification = document.getElementById('doc-qual-input').value.trim() || 'MBBS';
             const experience = document.getElementById('doc-exp-input').value.toString() || '5';
             const fee = parseInt(document.getElementById('doc-fee-input').value) || 500;
+            const gender = document.getElementById('doc-gender-input')?.value || 'Male';
             const new_patient_commission = parseFloat(document.getElementById('doc-new-comm-input').value) || 0;
             const followup_commission = parseFloat(document.getElementById('doc-followup-comm-input').value) || 0;
             const commission_type = document.getElementById('doc-comm-type-input').value || 'FLAT';
@@ -2808,6 +2818,7 @@
                 qualification,
                 experience,
                 fee,
+                gender,
                 new_patient_commission,
                 followup_commission,
                 commission_type,

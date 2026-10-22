@@ -23,6 +23,7 @@ import com.amstudio.drpoint.ui.booking.BookAppointmentActivity;
 import com.amstudio.drpoint.util.DummyDataProvider;
 import com.amstudio.drpoint.util.PreferenceManager;
 import com.amstudio.drpoint.util.ToastUtils;
+import com.amstudio.drpoint.util.WindowInsetsUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +41,7 @@ public class DoctorListActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityDoctorListBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        WindowInsetsUtil.applySystemBarInsets(binding.getRoot());
 
         if (getIntent().hasExtra("category_name")) {
             categoryName = getIntent().getStringExtra("category_name");

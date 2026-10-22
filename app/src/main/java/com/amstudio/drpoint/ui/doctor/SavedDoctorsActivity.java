@@ -15,6 +15,7 @@ import com.amstudio.drpoint.ui.booking.BookAppointmentActivity;
 import com.amstudio.drpoint.ui.explore.FindDoctorsActivity;
 import com.amstudio.drpoint.util.DummyDataProvider;
 import com.amstudio.drpoint.util.PreferenceManager;
+import com.amstudio.drpoint.util.WindowInsetsUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +36,7 @@ public class SavedDoctorsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivitySavedDoctorsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        WindowInsetsUtil.applySystemBarInsets(binding.getRoot());
 
         binding.ivBack.setOnClickListener(v -> finish());
         binding.flBackBg.setOnClickListener(v -> finish());

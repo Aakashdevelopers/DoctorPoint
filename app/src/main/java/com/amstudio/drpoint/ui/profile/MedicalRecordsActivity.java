@@ -24,6 +24,7 @@ import com.amstudio.drpoint.model.MedicalRecord;
 import com.amstudio.drpoint.network.SupabaseClient;
 import com.amstudio.drpoint.util.PreferenceManager;
 import com.amstudio.drpoint.util.ToastUtils;
+import com.amstudio.drpoint.util.WindowInsetsUtil;
 import com.bumptech.glide.Glide;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.tabs.TabLayout;

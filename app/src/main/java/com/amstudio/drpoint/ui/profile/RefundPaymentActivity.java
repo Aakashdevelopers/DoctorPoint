@@ -19,8 +19,10 @@ import com.amstudio.drpoint.model.Appointment;
 import com.amstudio.drpoint.model.Doctor;
 import com.amstudio.drpoint.model.RefundRequest;
 import com.amstudio.drpoint.network.SupabaseClient;
+import com.amstudio.drpoint.util.AvailabilityHelper;
 import com.amstudio.drpoint.util.PreferenceManager;
 import com.amstudio.drpoint.util.ToastUtils;
+import com.amstudio.drpoint.util.WindowInsetsUtil;
 import com.bumptech.glide.Glide;
 
 import java.nio.charset.StandardCharsets;
@@ -59,6 +61,7 @@ public class RefundPaymentActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityRefundPaymentBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        WindowInsetsUtil.applySystemBarInsets(binding.getRoot());
 
         binding.flBack.setOnClickListener(v -> finish());
 
@@ -238,8 +241,12 @@ public class RefundPaymentActivity extends AppCompatActivity {
             return true;
         }
 
-        // 2. If no RefundRequest record exists, show ONLY if appointment is Cancelled/Rejected/No_Show AND payment was Paid
+        // 2. If no RefundRequest record exists, show ONLY if appointment is Cancelled/Rejected/No_Show AND payment was Paid AND refund eligible
         if (a != null) {
+            if (!AvailabilityHelper.isRefundEligible(a)) {
+                return false;
+            }
+
             String st = a.getStatus() != null ? a.getStatus().trim().toLowerCase(Locale.US) : "";
             boolean isCancelled = "cancelled".equals(st) || "rejected".equals(st) || "no_show".equals(st);
 
@@ -394,6 +401,27 @@ public class RefundPaymentActivity extends AppCompatActivity {
     private void submitRefundRequest(Appointment a) {
         if (a == null || a.getId() == null) return;
 
+        // Verify if a refund request already exists
+        SupabaseClient.getAppointmentService().getRefundRequestByAppointment("eq." + a.getId())
+                .enqueue(new Callback<List<RefundRequest>>() {
+                    @Override
+                    public void onResponse(@NonNull Call<List<RefundRequest>> call, @NonNull Response<List<RefundRequest>> response) {
+                        if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                            ToastUtils.showWarning(RefundPaymentActivity.this, "Refund request has already been submitted for this appointment.");
+                            loadRefundAndPaymentData();
+                            return;
+                        }
+                        performSubmitRefundRequest(a);
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Call<List<RefundRequest>> call, @NonNull Throwable t) {
+                        performSubmitRefundRequest(a);
+                    }
+                });
+    }
+
+    private void performSubmitRefundRequest(Appointment a) {
         PreferenceManager prefManager = PreferenceManager.getInstance(this);
         String patientId = prefManager.getUserId();
         String patientName = prefManager.getUserName();
@@ -472,7 +500,16 @@ public class RefundPaymentActivity extends AppCompatActivity {
 
                 String dateStr = a.getDate() != null ? a.getDate() : "";
                 String timeStr = a.getFormattedTime();
-                b.tvAppointmentDateTime.setText(dateStr + " • " + timeStr);
+                String st = a.getStatus() != null ? a.getStatus().toLowerCase(Locale.US) : "";
+                boolean isCancelled = st.equals("cancelled") || st.equals("rejected") || st.equals("no_show") || st.contains("cancel");
+
+                if (isCancelled) {
+                    b.tvAppointmentDateTime.setText(dateStr + " • " + timeStr + " (canceled)");
+                    b.tvAppointmentDateTime.setTextColor(ContextCompat.getColor(context, R.color.error_red));
+                } else {
+                    b.tvAppointmentDateTime.setText(dateStr + " • " + timeStr);
+                    b.tvAppointmentDateTime.setTextColor(ContextCompat.getColor(context, R.color.text_primary));
+                }
 
                 String apptStatus = a.getUserFriendlyStatus();
                 b.tvAppointmentStatus.setText(apptStatus);

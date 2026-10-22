@@ -19,8 +19,10 @@ import com.amstudio.drpoint.model.Appointment;
 import com.amstudio.drpoint.model.Doctor;
 import com.amstudio.drpoint.network.SupabaseClient;
 import com.amstudio.drpoint.network.model.CancelAppointmentRpcRequest;
+import com.amstudio.drpoint.util.AvailabilityHelper;
 import com.amstudio.drpoint.util.PreferenceManager;
 import com.amstudio.drpoint.util.ToastUtils;
+import com.amstudio.drpoint.util.WindowInsetsUtil;
 import com.bumptech.glide.Glide;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
@@ -47,6 +49,8 @@ public class CancelAppointmentActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityCancelAppointmentBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+        WindowInsetsUtil.applySystemBarInsets(binding.getRoot());
         setContentView(binding.getRoot());
 
         binding.flBack.setOnClickListener(v -> finish());
@@ -316,10 +320,14 @@ public class CancelAppointmentActivity extends AppCompatActivity {
 
         ToastUtils.showInfo(this, "Cancelling appointment...");
 
+        boolean isLateCancel = AvailabilityHelper.isLessThanOneHourBeforeStart(appointment);
+        String cancelReason = isLateCancel ? "Cancelled by patient (Late cancellation - Less than 1 hour remaining)" : "Cancelled by patient";
+
         appointment.setStatus("Cancelled");
+        appointment.setPatientReason(cancelReason);
 
         // Step 1: Send RPC cancellation request
-        CancelAppointmentRpcRequest rpcRequest = new CancelAppointmentRpcRequest(appointment.getId(), patientId, "Cancelled by patient");
+        CancelAppointmentRpcRequest rpcRequest = new CancelAppointmentRpcRequest(appointment.getId(), patientId, cancelReason);
         final String finalPatientId = patientId;
 
         SupabaseClient.getSlotService().cancelAppointment(rpcRequest).enqueue(new Callback<Map<String, Object>>() {
@@ -333,6 +341,8 @@ public class CancelAppointmentActivity extends AppCompatActivity {
                 // Fallback: Direct status update
                 Map<String, Object> updateMap = new HashMap<>();
                 updateMap.put("status", "Cancelled");
+                updateMap.put("patient_reason", cancelReason);
+                updateMap.put("notes", cancelReason);
 
                 SupabaseClient.getAppointmentService().updateAppointmentStatus("eq." + appointment.getId(), updateMap)
                         .enqueue(new Callback<Void>() {
@@ -351,36 +361,42 @@ public class CancelAppointmentActivity extends AppCompatActivity {
     }
 
     private void onCancellationSuccess(Appointment appointment, String patientId) {
-        ToastUtils.showSuccess(this, "Appointment cancelled successfully");
+        boolean isLateCancel = !AvailabilityHelper.isRefundEligible(appointment) || AvailabilityHelper.isLessThanOneHourBeforeStart(appointment);
 
-        // Post refund request if payment was made
-        int paidAmt = appointment.getAmount();
-        String payStatus = appointment.getPaymentStatus() != null ? appointment.getPaymentStatus() : "";
-        if (paidAmt > 0 || "Paid".equalsIgnoreCase(payStatus) || "Paid Online".equalsIgnoreCase(payStatus)) {
-            PreferenceManager prefManager = PreferenceManager.getInstance(this);
-            String patientName = prefManager.getUserName();
-            String patientPhone = prefManager.getUserPhone();
+        if (isLateCancel) {
+            ToastUtils.showSuccess(this, "Appointment cancelled successfully. (No refund applicable for cancellations within 1 hour of schedule)");
+        } else {
+            ToastUtils.showSuccess(this, "Appointment cancelled successfully");
 
-            Map<String, Object> refundMap = new HashMap<>();
-            refundMap.put("appointment_id", appointment.getId());
-            refundMap.put("patient_id", patientId);
-            refundMap.put("patient_name", patientName != null ? patientName : "Patient");
-            refundMap.put("patient_phone", patientPhone != null ? patientPhone : "");
-            refundMap.put("doctor_id", appointment.getDoctorId() != null ? appointment.getDoctorId() : "doc_1");
-            refundMap.put("doctor_name", appointment.getDoctorName());
-            refundMap.put("doctor_specialization", appointment.getSpecialization());
-            refundMap.put("clinic_name", appointment.getClinicName());
-            refundMap.put("appointment_date", appointment.getDate());
-            refundMap.put("amount", paidAmt > 0 ? paidAmt : 500);
-            refundMap.put("reason", "Cancelled by patient from Cancel Appointment menu");
-            refundMap.put("status", "pending");
+            // Post refund request if payment was made
+            int paidAmt = appointment.getAmount();
+            String payStatus = appointment.getPaymentStatus() != null ? appointment.getPaymentStatus() : "";
+            if (paidAmt > 0 || "Paid".equalsIgnoreCase(payStatus) || "Paid Online".equalsIgnoreCase(payStatus)) {
+                PreferenceManager prefManager = PreferenceManager.getInstance(this);
+                String patientName = prefManager.getUserName();
+                String patientPhone = prefManager.getUserPhone();
 
-            SupabaseClient.getAppointmentService()
-                    .postRefundRequestPayload("resolution=merge-duplicates", "return=minimal", refundMap)
-                    .enqueue(new Callback<List<Map<String, Object>>>() {
-                        @Override public void onResponse(@NonNull Call<List<Map<String, Object>>> call, @NonNull Response<List<Map<String, Object>>> response) {}
-                        @Override public void onFailure(@NonNull Call<List<Map<String, Object>>> call, @NonNull Throwable t) {}
-                    });
+                Map<String, Object> refundMap = new HashMap<>();
+                refundMap.put("appointment_id", appointment.getId());
+                refundMap.put("patient_id", patientId);
+                refundMap.put("patient_name", patientName != null ? patientName : "Patient");
+                refundMap.put("patient_phone", patientPhone != null ? patientPhone : "");
+                refundMap.put("doctor_id", appointment.getDoctorId() != null ? appointment.getDoctorId() : "doc_1");
+                refundMap.put("doctor_name", appointment.getDoctorName());
+                refundMap.put("doctor_specialization", appointment.getSpecialization());
+                refundMap.put("clinic_name", appointment.getClinicName());
+                refundMap.put("appointment_date", appointment.getDate());
+                refundMap.put("amount", paidAmt > 0 ? paidAmt : 500);
+                refundMap.put("reason", "Cancelled by patient from Cancel Appointment menu");
+                refundMap.put("status", "pending");
+
+                SupabaseClient.getAppointmentService()
+                        .postRefundRequestPayload("resolution=merge-duplicates", "return=minimal", refundMap)
+                        .enqueue(new Callback<List<Map<String, Object>>>() {
+                            @Override public void onResponse(@NonNull Call<List<Map<String, Object>>> call, @NonNull Response<List<Map<String, Object>>> response) {}
+                            @Override public void onFailure(@NonNull Call<List<Map<String, Object>>> call, @NonNull Throwable t) {}
+                        });
+            }
         }
 
         loadCancellableAppointments();
@@ -422,7 +438,16 @@ public class CancelAppointmentActivity extends AppCompatActivity {
 
                 String dateStr = appointment.getDate() != null ? appointment.getDate() : "";
                 String timeStr = appointment.getFormattedTime();
-                b.tvDateTime.setText(dateStr + " • " + timeStr);
+                String st = appointment.getStatus() != null ? appointment.getStatus().toLowerCase(Locale.US) : "";
+                boolean isCancelled = st.equals("cancelled") || st.equals("rejected") || st.equals("no_show") || st.contains("cancel");
+
+                if (isCancelled) {
+                    b.tvDateTime.setText(dateStr + " • " + timeStr + " (canceled)");
+                    b.tvDateTime.setTextColor(ContextCompat.getColor(context, R.color.error_red));
+                } else {
+                    b.tvDateTime.setText(dateStr + " • " + timeStr);
+                    b.tvDateTime.setTextColor(ContextCompat.getColor(context, R.color.text_primary));
+                }
 
                 int token = appointment.getSlotNumber();
                 b.tvTokenNumber.setText("Your Number: #" + (token > 0 ? token : 1));

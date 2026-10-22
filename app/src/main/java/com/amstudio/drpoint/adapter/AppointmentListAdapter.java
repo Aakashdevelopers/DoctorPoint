@@ -1,6 +1,7 @@
 package com.amstudio.drpoint.adapter;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.amstudio.drpoint.R;
 import com.amstudio.drpoint.databinding.ItemAppointmentCardBinding;
 import com.amstudio.drpoint.model.Appointment;
+import com.amstudio.drpoint.util.AvailabilityHelper;
 
 import java.util.Locale;
 import java.util.Objects;
@@ -79,7 +81,6 @@ public class AppointmentListAdapter extends ListAdapter<Appointment, Appointment
 
             binding.tvApptDoctorName.setText(appointment.getDoctorName());
             binding.tvApptSpecialization.setText(appointment.getSpecialization());
-            binding.tvApptTime.setText(appointment.getFormattedTime());
             binding.tvApptLocation.setText(appointment.getClinicName() + " • " + appointment.getLocation());
             binding.tvStatusText.setText(appointment.getUserFriendlyStatus());
 
@@ -114,6 +115,22 @@ public class AppointmentListAdapter extends ListAdapter<Appointment, Appointment
             }
 
             String st = appointment.getStatus() != null ? appointment.getStatus().toLowerCase() : "";
+            boolean isCancelled = "cancelled".equals(st) || "rejected".equals(st) || "no_show".equals(st) || st.contains("cancel");
+
+            if (isCancelled) {
+                binding.tvApptTime.setText(appointment.getFormattedTime() + " (canceled)");
+                binding.tvApptTime.setTextColor(ContextCompat.getColor(context, R.color.error_red));
+                if (binding.ivApptTimeIcon != null) {
+                    binding.ivApptTimeIcon.setImageTintList(ColorStateList.valueOf(ContextCompat.getColor(context, R.color.error_red)));
+                }
+            } else {
+                binding.tvApptTime.setText(appointment.getFormattedTime());
+                binding.tvApptTime.setTextColor(ContextCompat.getColor(context, R.color.primary));
+                if (binding.ivApptTimeIcon != null) {
+                    binding.ivApptTimeIcon.setImageTintList(ColorStateList.valueOf(ContextCompat.getColor(context, R.color.primary)));
+                }
+            }
+
             int numVal = appointment.getSlotNumber();
             String tokenPrefix = numVal > 0 ? "Your Number: #" + String.format(Locale.US, "%02d", numVal) + " • " : "";
 
@@ -134,16 +151,23 @@ public class AppointmentListAdapter extends ListAdapter<Appointment, Appointment
                 binding.btnRateDoctor.setVisibility(View.VISIBLE);
                 binding.btnRequestRefund.setVisibility(View.GONE);
                 if (binding.tvCancellationReason != null) binding.tvCancellationReason.setVisibility(View.GONE);
-            } else if ("cancelled".equals(st) || "rejected".equals(st) || "no_show".equals(st)) {
+            } else if (isCancelled) {
                 binding.tvStatusText.setText(tokenPrefix + appointment.getUserFriendlyStatus());
                 binding.tvStatusText.setTextColor(ContextCompat.getColor(context, R.color.error_red));
                 binding.llStatusBadge.setBackgroundResource(R.drawable.bg_date_chip_unselected);
 
-                binding.llActionButtons.setVisibility(View.VISIBLE);
                 binding.btnReschedule.setVisibility(View.GONE);
                 binding.btnCancel.setVisibility(View.GONE);
                 binding.btnRateDoctor.setVisibility(View.GONE);
-                binding.btnRequestRefund.setVisibility(View.VISIBLE);
+
+                boolean isRefundEligible = AvailabilityHelper.isRefundEligible(appointment);
+                if (isRefundEligible) {
+                    binding.llActionButtons.setVisibility(View.VISIBLE);
+                    binding.btnRequestRefund.setVisibility(View.VISIBLE);
+                } else {
+                    binding.btnRequestRefund.setVisibility(View.GONE);
+                    binding.llActionButtons.setVisibility(View.GONE);
+                }
 
                 String reason = appointment.getPatientReason() != null ? appointment.getPatientReason() : appointment.getNotes();
                 if (reason != null && !reason.trim().isEmpty()) {

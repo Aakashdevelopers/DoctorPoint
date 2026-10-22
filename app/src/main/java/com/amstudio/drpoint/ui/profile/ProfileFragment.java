@@ -13,12 +13,14 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebView;
 import android.widget.ArrayAdapter;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -71,6 +73,8 @@ public class ProfileFragment extends Fragment {
     private ActivityResultLauncher<Intent> editImagePickerLauncher;
     private ActivityResultLauncher<Intent> cropLauncher;
     private BottomSheetEditProfileBinding activeSheetBinding;
+    private static long profileCacheTimestamp = 0;
+    private static final long PROFILE_CACHE_TTL_MS = 5 * 60 * 1000L; // 5 minutes cache
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -183,8 +187,9 @@ public class ProfileFragment extends Fragment {
                 okhttp3.Response response = client.newCall(request).execute();
                 if (response.isSuccessful() || response.code() == 200 || response.code() == 201) {
                     pendingAvatarUrl = publicUrl;
-                    if (isAdded() && getActivity() != null) {
-                        getActivity().runOnUiThread(() -> {
+                    Activity activity = getActivity();
+                    if (isAdded() && activity != null && !activity.isFinishing()) {
+                        activity.runOnUiThread(() -> {
                             Context ctx = getContext();
                             if (activeSheetBinding != null && ctx != null) {
                                 activeSheetBinding.tvEditUploadLabel.setText("Photo Uploaded!");
@@ -197,8 +202,9 @@ public class ProfileFragment extends Fragment {
             } catch (Exception e) {
                 Log.e("ProfileFragment", "Supabase image upload failed: " + e.getMessage());
             }
-            if (isAdded() && getActivity() != null) {
-                getActivity().runOnUiThread(() -> {
+            Activity activity = getActivity();
+            if (isAdded() && activity != null && !activity.isFinishing()) {
+                activity.runOnUiThread(() -> {
                     if (activeSheetBinding != null) {
                         activeSheetBinding.tvEditUploadLabel.setText("Tap to Change Profile Photo");
                     }
@@ -252,31 +258,22 @@ public class ProfileFragment extends Fragment {
     }
 
     private void setupProfileSections() {
-        Context context = getContext();
-        if (context == null || binding == null) return;
+        if (binding == null) return;
 
-        ProfileMenuAdapter.OnMenuItemClickListener clickListener = this::handleMenuItemClick;
+        if (binding.itemJoinDoctor != null) binding.itemJoinDoctor.setOnClickListener(v -> handleMenuItemClick(new MenuItem("Join as a Doctor")));
+        if (binding.itemMyAppointments != null) binding.itemMyAppointments.setOnClickListener(v -> handleMenuItemClick(new MenuItem("My Appointments")));
+        if (binding.itemBookingHistory != null) binding.itemBookingHistory.setOnClickListener(v -> handleMenuItemClick(new MenuItem("Booking History")));
+        if (binding.itemMedicalRecords != null) binding.itemMedicalRecords.setOnClickListener(v -> handleMenuItemClick(new MenuItem("Medical Records & Reports")));
+        if (binding.itemCancelAppointment != null) binding.itemCancelAppointment.setOnClickListener(v -> handleMenuItemClick(new MenuItem("Cancel Appointment")));
+        if (binding.itemRefundPayment != null) binding.itemRefundPayment.setOnClickListener(v -> handleMenuItemClick(new MenuItem("Refund & Payment")));
+        if (binding.itemSavedDoctors != null) binding.itemSavedDoctors.setOnClickListener(v -> handleMenuItemClick(new MenuItem("Saved Doctors")));
+        if (binding.itemFindDoctors != null) binding.itemFindDoctors.setOnClickListener(v -> handleMenuItemClick(new MenuItem("Find Doctors & Specialists")));
+        if (binding.itemCustomerCare != null) binding.itemCustomerCare.setOnClickListener(v -> handleMenuItemClick(new MenuItem("Customer Care")));
 
-        if (binding.rvHistoryMenu != null) {
-            ProfileMenuAdapter historyAdapter = new ProfileMenuAdapter(clickListener);
-            binding.rvHistoryMenu.setLayoutManager(new LinearLayoutManager(context));
-            binding.rvHistoryMenu.setAdapter(historyAdapter);
-            historyAdapter.submitList(DummyDataProvider.getHistoryMenuItems());
-        }
-
-        if (binding.rvHelpMenu != null) {
-            ProfileMenuAdapter helpAdapter = new ProfileMenuAdapter(clickListener);
-            binding.rvHelpMenu.setLayoutManager(new LinearLayoutManager(context));
-            binding.rvHelpMenu.setAdapter(helpAdapter);
-            helpAdapter.submitList(DummyDataProvider.getHelpSupportMenuItems());
-        }
-
-        if (binding.rvMoreMenu != null) {
-            ProfileMenuAdapter moreAdapter = new ProfileMenuAdapter(clickListener);
-            binding.rvMoreMenu.setLayoutManager(new LinearLayoutManager(context));
-            binding.rvMoreMenu.setAdapter(moreAdapter);
-            moreAdapter.submitList(DummyDataProvider.getMoreMenuItems());
-        }
+        if (binding.itemPrivacyPolicy != null) binding.itemPrivacyPolicy.setOnClickListener(v -> handleMenuItemClick(new MenuItem("Privacy Policy")));
+        if (binding.itemTermsConditions != null) binding.itemTermsConditions.setOnClickListener(v -> handleMenuItemClick(new MenuItem("Terms & Conditions")));
+        if (binding.itemRateUs != null) binding.itemRateUs.setOnClickListener(v -> handleMenuItemClick(new MenuItem("Like us? Give us 5 stars")));
+        if (binding.itemLogout != null) binding.itemLogout.setOnClickListener(v -> handleMenuItemClick(new MenuItem("Logout")));
     }
 
     private void handleMenuItemClick(MenuItem item) {
@@ -294,6 +291,12 @@ public class ProfileFragment extends Fragment {
             if (getActivity() != null) {
                 getActivity().finish();
             }
+        } else if (title.toLowerCase().contains("history")) {
+            Intent intent = new Intent(context, BookingHistoryActivity.class);
+            startActivity(intent);
+        } else if (title.toLowerCase().contains("record") || title.toLowerCase().contains("medical")) {
+            Intent intent = new Intent(context, MedicalRecordsActivity.class);
+            startActivity(intent);
         } else if (title.toLowerCase().contains("cancel")) {
             Intent intent = new Intent(context, CancelAppointmentActivity.class);
             startActivity(intent);
@@ -320,7 +323,7 @@ public class ProfileFragment extends Fragment {
         } else if (title.toLowerCase().contains("customer") || title.toLowerCase().contains("care") || title.toLowerCase().contains("help") || title.toLowerCase().contains("support")) {
             openCustomerCareBottomSheet();
         } else if (title.toLowerCase().contains("privacy")) {
-            ToastUtils.showInfo(context, "Opening Privacy Policy...");
+            openPrivacyPolicy();
         } else if (title.toLowerCase().contains("term")) {
             ToastUtils.showInfo(context, "Opening Terms & Conditions...");
         } else if (title.toLowerCase().contains("star") || title.toLowerCase().contains("rate") || title.toLowerCase().contains("like")) {
@@ -340,6 +343,22 @@ public class ProfileFragment extends Fragment {
         if (!isAdded()) return;
         CustomerCareBottomSheetFragment fragment = CustomerCareBottomSheetFragment.newInstance();
         fragment.show(getChildFragmentManager(), CustomerCareBottomSheetFragment.TAG);
+    }
+
+    private void openPrivacyPolicy() {
+        Context context = getContext();
+        if (context == null) return;
+        try {
+            WebView webView = new WebView(context);
+            webView.loadUrl("file:///android_asset/privacy_policy.html");
+            new AlertDialog.Builder(context)
+                    .setTitle("Privacy Policy")
+                    .setView(webView)
+                    .setPositiveButton("Close", null)
+                    .show();
+        } catch (Exception e) {
+            ToastUtils.showInfo(context, "Opening Privacy Policy...");
+        }
     }
 
     @Override
@@ -393,6 +412,11 @@ public class ProfileFragment extends Fragment {
         String userId = PreferenceManager.getInstance(context).getUserId();
         if (userId == null || userId.trim().isEmpty()) return;
 
+        // Use cache if profile was loaded recently (< 5 mins) to avoid redundant Supabase network calls
+        if (profileCacheTimestamp > 0 && (System.currentTimeMillis() - profileCacheTimestamp < PROFILE_CACHE_TTL_MS)) {
+            return;
+        }
+
         SupabaseClient.getPatientService().getProfile("eq." + userId).enqueue(new Callback<List<PatientProfile>>() {
             @Override
             public void onResponse(Call<List<PatientProfile>> call, Response<List<PatientProfile>> response) {
@@ -401,6 +425,7 @@ public class ProfileFragment extends Fragment {
                     PatientProfile fetched = response.body().get(0);
                     updateCurrentProfileWith(fetched);
                     updateProfileHeader();
+                    profileCacheTimestamp = System.currentTimeMillis();
                 }
             }
 
@@ -416,6 +441,7 @@ public class ProfileFragment extends Fragment {
                     PatientProfile fetched = response.body().get(0);
                     updateCurrentProfileWith(fetched);
                     updateProfileHeader();
+                    profileCacheTimestamp = System.currentTimeMillis();
                 }
             }
 

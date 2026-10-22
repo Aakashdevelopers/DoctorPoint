@@ -51,6 +51,8 @@ public class HomeFragment extends Fragment {
     private FragmentHomeBinding binding;
     private DoctorListAdapter availableAdapter;
     private DoctorListAdapter doctorAdapter;
+    private static long lastNotificationBadgeFetchTime = 0;
+    private static long lastProfileHeaderFetchTime = 0;
 
     @Nullable
     @Override
@@ -80,12 +82,7 @@ public class HomeFragment extends Fragment {
             binding.layoutSearch.setOnClickListener(v -> openFindDoctors());
             binding.flFilter.setOnClickListener(v -> openFindDoctors());
 
-            if (binding.flCustomerCare != null) {
-                binding.flCustomerCare.setOnClickListener(v -> {
-                    CustomerCareBottomSheetFragment fragment = CustomerCareBottomSheetFragment.newInstance();
-                    fragment.show(getChildFragmentManager(), CustomerCareBottomSheetFragment.TAG);
-                });
-            }
+
 
             binding.flBell.setOnClickListener(v -> {
                 Context context = getContext();
@@ -257,7 +254,7 @@ public class HomeFragment extends Fragment {
         if (context == null) return;
         String selectedState = PreferenceManager.getInstance(context).getSelectedState();
         if (binding.tvLocationChip != null) {
-            binding.tvLocationChip.setText("📍 " + selectedState + " ▾");
+            binding.tvLocationChip.setText(selectedState + " ▾");
         }
     }
 
@@ -342,6 +339,11 @@ public class HomeFragment extends Fragment {
         Context context = getContext();
         if (context == null) return;
 
+        // Skip network call if fetched within last 2 minutes
+        if (lastNotificationBadgeFetchTime > 0 && (System.currentTimeMillis() - lastNotificationBadgeFetchTime < 2 * 60 * 1000L)) {
+            return;
+        }
+
         String userId = PreferenceManager.getInstance(context).getUserId();
         if (userId == null || userId.trim().isEmpty()) return;
 
@@ -362,6 +364,7 @@ public class HomeFragment extends Fragment {
                         if (binding.vUnreadBadge != null) {
                             binding.vUnreadBadge.setVisibility(hasUnread ? View.VISIBLE : View.GONE);
                         }
+                        lastNotificationBadgeFetchTime = System.currentTimeMillis();
                     }
 
                     @Override
@@ -398,6 +401,11 @@ public class HomeFragment extends Fragment {
             }
         }
 
+        // Only fetch profile if avatar/username is missing or > 5 minutes since last fetch
+        if (lastProfileHeaderFetchTime > 0 && (System.currentTimeMillis() - lastProfileHeaderFetchTime < 5 * 60 * 1000L)) {
+            return;
+        }
+
         String userId = prefManager.getUserId();
         if (userId != null && !userId.trim().isEmpty()) {
             SupabaseClient.getPatientService().getProfile("eq." + userId)
@@ -424,6 +432,7 @@ public class HomeFragment extends Fragment {
                                         } catch (Exception ignored) {}
                                     }
                                 }
+                                lastProfileHeaderFetchTime = System.currentTimeMillis();
                             }
                         }
 

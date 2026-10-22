@@ -458,4 +458,53 @@ public class AvailabilityHelper {
             return timeStr;
         }
     }
+
+    /**
+     * Checks if an appointment's start time is less than 1 hour (60 minutes) away
+     * or has already reached/passed relative to current calibrated time.
+     */
+    public static boolean isLessThanOneHourBeforeStart(String slotDateStr, String startTimeStr) {
+        if (slotDateStr == null || slotDateStr.trim().isEmpty()) return true;
+        if (startTimeStr == null || startTimeStr.trim().isEmpty()) return true;
+
+        try {
+            String cleanDate = cleanDateString(slotDateStr);
+            String normTime = normalizeTimeFormat(startTimeStr);
+
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
+            sdf.setTimeZone(getAppTimeZone());
+
+            Date slotStartDateTime = sdf.parse(cleanDate + " " + normTime);
+            if (slotStartDateTime == null) return true;
+
+            long currentTime = getCalibratedCurrentTimeMillis();
+            long diffMillis = slotStartDateTime.getTime() - currentTime;
+
+            // Less than 1 hour (3600,000 ms) remaining before appointment start time
+            return diffMillis < (60L * 60L * 1000L);
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    public static boolean isLessThanOneHourBeforeStart(Appointment appointment) {
+        if (appointment == null) return false;
+        return isLessThanOneHourBeforeStart(appointment.getAppointmentDate(), appointment.getStartTime());
+    }
+
+    /**
+     * Determines if a cancelled/rejected appointment is eligible for refund.
+     * Non-eligible if user cancelled less than 1 hour before start time or if reason notes late cancellation.
+     */
+    public static boolean isRefundEligible(Appointment appointment) {
+        if (appointment == null) return false;
+        String reason = appointment.getPatientReason() != null ? appointment.getPatientReason() : appointment.getNotes();
+        if (reason != null) {
+            String lower = reason.toLowerCase(Locale.US);
+            if (lower.contains("late cancellation") || lower.contains("no refund") || lower.contains("within 1 hour") || lower.contains("less than 1 hour")) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

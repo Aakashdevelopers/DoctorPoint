@@ -10,6 +10,7 @@
         <item name="android:statusBarColor">@color/white</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowBackground">@color/background_light</item>
+        <item name="android:fitsSystemWindows">true</item>
     </style>
 
     <style name="Theme.CareWell" parent="Base.Theme.CareWell" />

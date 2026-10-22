@@ -18,6 +18,7 @@ import com.amstudio.drpoint.network.model.User;
 import com.amstudio.drpoint.ui.main.MainActivity;
 import com.amstudio.drpoint.util.PreferenceManager;
 import com.amstudio.drpoint.util.ToastUtils;
+import com.amstudio.drpoint.util.WindowInsetsUtil;
 import com.google.gson.Gson;
 
 import retrofit2.Call;
@@ -33,6 +34,7 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityLoginBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        WindowInsetsUtil.applySystemBarInsets(binding.getRoot());
 
         setupTextWatchers();
 

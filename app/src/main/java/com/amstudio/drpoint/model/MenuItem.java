@@ -11,6 +11,10 @@ public class MenuItem {
     private int textColorRes;
     private String badgeText;
 
+    public MenuItem(String title) {
+        this(title, null, 0, 0, 0, 0, null);
+    }
+
     public MenuItem(String title, int iconRes, int textColorRes) {
         this(title, null, iconRes, 0, 0, textColorRes, null);
     }

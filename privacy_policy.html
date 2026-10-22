@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Doctor's Point</title>
+    <style>
+        :root {
+            --primary: #2563EB;
+            --primary-dark: #1D4ED8;
+            --primary-light: #EFF6FF;
+            --text-main: #0F172A;
+            --text-sub: #475569;
+            --bg-page: #F8FAFC;
+            --bg-card: #FFFFFF;
+            --border: #E2E8F0;
+            --accent-blue-bg: #F0F7FF;
+            --success-bg: #ECFDF5;
+            --success-border: #A7F3D0;
+            --success-text: #065F46;
+            --warning-bg: #FFFBEB;
+            --warning-border: #FDE68A;
+            --warning-text: #92400E;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --primary: #3B82F6;
+                --primary-dark: #60A5FA;
+                --primary-light: rgba(59, 130, 246, 0.15);
+                --text-main: #F8FAFC;
+                --text-sub: #94A3B8;
+                --bg-page: #0F172A;
+                --bg-card: #1E293B;
+                --border: #334155;
+                --accent-blue-bg: rgba(59, 130, 246, 0.1);
+                --success-bg: rgba(6, 95, 70, 0.25);
+                --success-border: rgba(16, 185, 129, 0.3);
+                --success-text: #6EE7B7;
+                --warning-bg: rgba(146, 64, 14, 0.25);
+                --warning-border: rgba(245, 158, 11, 0.3);
+                --warning-text: #FDE68A;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.65;
+            color: var(--text-main);
+            background-color: var(--bg-page);
+            padding: 16px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 840px;
+            margin: 12px auto;
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1E40AF, #2563EB);
+            color: #FFFFFF;
+            padding: 36px 24px;
+            text-align: center;
+        }
+
+        .header .logo-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 52px;
+            height: 52px;
+            background: rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(8px);
+            border-radius: 50%;
+            margin-bottom: 12px;
+        }
+
+        .header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 6px;
+        }
+
+        .header p {
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 400;
+        }
+
+        .content {
+            padding: 28px 24px;
+        }
+
+        .meta-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 12px;
+            background-color: var(--accent-blue-bg);
+            padding: 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            margin-bottom: 28px;
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .meta-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-sub);
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .meta-item strong {
+            font-size: 0.88rem;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .intro-text {
+            font-size: 0.96rem;
+            color: var(--text-main);
+            margin-bottom: 16px;
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-top: 32px;
+            margin-bottom: 14px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--primary-light);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-top: 20px;
+            margin-bottom: 8px;
+        }
+
+        p {
+            margin-bottom: 14px;
+            color: var(--text-sub);
+            font-size: 0.93rem;
+        }
+
+        ul {
+            margin-bottom: 16px;
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 8px;
+            color: var(--text-sub);
+            font-size: 0.93rem;
+        }
+
+        li strong {
+            color: var(--text-main);
+        }
+
+        .highlight-box {
+            background-color: var(--success-bg);
+            border: 1px solid var(--success-border);
+            border-left: 4px solid #10B981;
+            padding: 18px 20px;
+            border-radius: var(--radius-md);
+            margin: 24px 0;
+        }
+
+        .highlight-box h3 {
+            color: var(--success-text);
+            margin-top: 0;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .highlight-box p {
+            color: var(--success-text);
+            margin-bottom: 0;
+            opacity: 0.95;
+        }
+
+        .alert-box {
+            background-color: var(--warning-bg);
+            border: 1px solid var(--warning-border);
+            border-left: 4px solid #F59E0B;
+            padding: 18px 20px;
+            border-radius: var(--radius-md);
+            margin: 24px 0;
+        }
+
+        .alert-box h3 {
+            color: var(--warning-text);
+            margin-top: 0;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .alert-box p, .alert-box li {
+            color: var(--warning-text);
+        }
+
+        .alert-box ul {
+            margin-top: 8px;
+            margin-bottom: 12px;
+        }
+
+        .footer {
+            background-color: var(--bg-page);
+            padding: 20px 24px;
+            text-align: center;
+            font-size: 0.82rem;
+            color: var(--text-sub);
+            border-top: 1px solid var(--border);
+        }
+
+        a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 0;
+            }
+            .container {
+                margin: 0;
+                border-radius: 0;
+                border: none;
+                box-shadow: none;
+            }
+            .header {
+                padding: 28px 18px;
+            }
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            .content {
+                padding: 20px 16px;
+            }
+            .meta-info {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="logo-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                <path d="M12 8v8"/>
+                <path d="M8 12h8"/>
+            </svg>
+        </div>
+        <h1>Privacy Policy</h1>
+        <p>Doctor's Point Healthcare & Appointment Booking</p>
+    </div>
+
+    <div class="content">
+        <div class="meta-info">
+            <div class="meta-item"><span class="meta-label">Application</span><strong>Doctor's Point</strong></div>
+            <div class="meta-item"><span class="meta-label">Package</span><strong>com.amstudio.drpoint</strong></div>
+            <div class="meta-item"><span class="meta-label">Effective Date</span><strong>Oct 24, 2023</strong></div>
+            <div class="meta-item"><span class="meta-label">Last Updated</span><strong>May 10, 2024</strong></div>
+        </div>
+
+        <p class="intro-text">
+            Welcome to <strong>Doctor's Point</strong> ("we", "our", or "us"). We are committed to protecting your personal privacy and safeguarding your health and medical information. This Privacy Policy outlines how we collect, use, store, disclose, and protect your information when you use our mobile application and related services.
+        </p>
+
+        <p class="intro-text">
+            By downloading, accessing, or using <strong>Doctor's Point</strong>, you agree to the collection and use of information in accordance with this Privacy Policy.
+        </p>
+
+        <h2>1. Scope & Services</h2>
+        <p>
+            Doctor's Point provides digital scheduling services, doctor discovery, consultation booking management, payment processing for appointments, and a secure repository for personal medical records and prescriptions.
+        </p>
+
+        <div class="highlight-box">
+            <h3>🔒 Your Health Data Privacy Commitment</h3>
+            <p>
+                Your health and medical data (including appointment records, doctor consultation details, and medical files) is stored securely and processed strictly to deliver healthcare management services. <strong>We NEVER sell, rent, or monetize your health or personal data for advertising or marketing purposes.</strong>
+            </p>
+        </div>
+
+        <h2>2. Information We Collect</h2>
+        <p>We collect information directly provided by you, as well as automatic technical information generated during your use of the application:</p>
+
+        <h3>A. Personal Profile Information</h3>
+        <ul>
+            <li><strong>User Identifiers:</strong> Full Name, Email Address, Phone Number.</li>
+            <li><strong>Demographic Data:</strong> Age, Gender, Blood Group.</li>
+            <li><strong>Account Credentials:</strong> Encrypted authentication tokens generated via Supabase Auth.</li>
+        </ul>
+
+        <h3>B. Health & Medical Information</h3>
+        <ul>
+            <li><strong>Appointment Data:</strong> Chosen doctor, specialty, clinic location, appointment date and time slot, consultation mode, and appointment status.</li>
+            <li><strong>Medical Records & Prescriptions:</strong> User-uploaded medical reports, laboratory test results, doctor prescriptions, diagnosis notes, symptoms descriptions, and follow-up consultation details.</li>
+        </ul>
+
+        <h3>C. Payment & Financial Information</h3>
+        <ul>
+            <li><strong>Transaction References:</strong> UPI Transaction IDs, booking payment status, and refund request records.</li>
+            <li><em>Note:</em> Payments are processed securely via <strong>ZapUPI / Payment Gateway</strong>. Doctor's Point does <strong>not</strong> collect or store sensitive financial credentials such as UPI PINs, banking passwords, or full credit card numbers.</li>
+        </ul>
+
+        <h3>D. Technical & Device Information</h3>
+        <ul>
+            <li>Network connectivity status (WiFi/Cellular) and IP address for secure API communication.</li>
+            <li>Device logs and crash data to troubleshoot technical errors and maintain app stability.</li>
+        </ul>
+
+        <h2>3. How We Use Your Information</h2>
+        <p>We use the collected information strictly for legitimate healthcare management purposes, including:</p>
+        <ul>
+            <li>Facilitating appointment bookings, rescheduling, and cancellations with healthcare providers.</li>
+            <li>Allowing you to store, view, and organize your personal medical records and digital prescriptions.</li>
+            <li>Authenticating user login and securing user profile access.</li>
+            <li>Processing consultation fee payments and managing refund requests.</li>
+            <li>Sending critical transactional updates, appointment confirmations, and care reminders.</li>
+            <li>Providing customer support and responding to user queries.</li>
+        </ul>
+
+        <h2>4. Data Sharing and Disclosure</h2>
+        <p>We do not share your personal or health data except in the following limited scenarios necessary to provide our services:</p>
+        <ul>
+            <li><strong>Participating Healthcare Providers:</strong> Your appointment details, name, and relevant consultation context are shared strictly with the doctor or clinic you explicitly choose to book an appointment with.</li>
+            <li><strong>Secure Cloud Infrastructure:</strong> We store user data using <strong>Supabase Cloud</strong>, utilizing encrypted cloud database storage and Row Level Security (RLS) policies.</li>
+            <li><strong>Payment Processors:</strong> Transaction details are shared with <strong>ZapUPI</strong> and authorized payment gateways solely to process payments and handle refund claims.</li>
+            <li><strong>Legal Requirements:</strong> We may disclose information if required by applicable law, regulation, legal process, or governmental request.</li>
+        </ul>
+
+        <h2>5. Data Security and Encryption</h2>
+        <p>
+            We implement robust physical, administrative, and technical safeguards to protect your personal and medical information:
+        </p>
+        <ul>
+            <li><strong>Encryption in Transit:</strong> All communications between the Doctor's Point mobile application and backend services are encrypted using HTTPS (SSL/TLS).</li>
+            <li><strong>Encryption at Rest:</strong> Database records and uploaded medical files are stored in secured cloud storage infrastructure with strict access permissions.</li>
+            <li><strong>Access Controls:</strong> User accounts are protected using secure token authentication to ensure that only authorized users can access their medical profile and documents.</li>
+        </ul>
+
+        <h2>6. Data Retention and Account Deletion</h2>
+        <p>
+            We retain your information for as long as your user account remains active or as required to fulfill healthcare management services and legal compliance.
+        </p>
+
+        <div class="alert-box">
+            <h3>🗑️ Account and Data Deletion Rights</h3>
+            <p>You have the right to request the complete deletion of your account and associated personal and medical data at any time:</p>
+            <ul>
+                <li><strong>In-App Deletion:</strong> Go to <strong>Profile &gt; Settings &gt; Delete Account</strong> in the Doctor's Point app.</li>
+                <li><strong>Email Deletion Request:</strong> Send an email to <a href="mailto:vikasshraj182002@gmail.com">vikasshraj182002@gmail.com</a> with the subject line <em>"Account Deletion Request"</em> using your registered email address.</li>
+            </ul>
+            <p>Upon receiving a deletion request, all personal information, appointment history, and uploaded medical files will be permanently purged from our primary database within <strong>30 days</strong>.</p>
+        </div>
+
+        <h2>7. Children's Privacy</h2>
+        <p>
+            Doctor's Point is intended for use by individuals who are at least 18 years of age, or minors under the direct supervision and consent of a parent or legal guardian. We do not knowingly collect personal information directly from children under 13 years of age without parental consent.
+        </p>
+
+        <h2>8. Changes to This Privacy Policy</h2>
+        <p>
+            We may update our Privacy Policy periodically to reflect changes in app functionality or regulatory obligations. Any updates will be posted on this page with an updated "Last Updated" date. We encourage users to review this policy regularly.
+        </p>
+
+        <h2>9. Contact Us</h2>
+        <p>
+            If you have any questions, concerns, or requests regarding this Privacy Policy or your health data privacy, please contact us at:
+        </p>
+        <p>
+            <strong>AM Studio - Doctor's Point Team</strong><br>
+            Email: <a href="mailto:vikasshraj182002@gmail.com">vikasshraj182002@gmail.com</a><br>
+            Application: Doctor's Point (com.amstudio.drpoint)
+        </p>
+    </div>
+
+    <div class="footer">
+        &copy; 2024 AM Studio. All rights reserved. | Doctor's Point Privacy Policy
+    </div>
+</div>
+
+</body>
+</html>

@@ -1441,6 +1441,15 @@
                     </div>
 
                     <div class="form-group">
+                        <label class="form-label" for="signup-gender">Gender *</label>
+                        <select id="signup-gender" class="form-control" required>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
                         <label class="form-label" for="signup-profile-file">Profile Picture (Upload via ImgBB)</label>
                         <input type="file" id="signup-profile-file" accept="image/*" class="form-control" style="margin-bottom: 0.5rem;">
                         <input type="url" id="signup-profile-pic" class="form-control" placeholder="Direct Image URL (auto-filled on upload)">
@@ -2127,6 +2136,15 @@
                     </div>
 
                     <div class="form-group">
+                        <label class="form-label" for="prof-gender">Gender *</label>
+                        <select id="prof-gender" class="form-control" required>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
                         <label class="form-label" for="prof-spec">Category / Specialization *</label>
                         <input type="text" id="prof-spec" class="form-control" required placeholder="e.g. General Physician, Dermatologist, Cardiologist" list="specialties-datalist">
                     </div>
@@ -2537,6 +2555,7 @@
                     const fallbackName = session.user.user_metadata?.full_name || 'Dr. Medical Specialist';
                     const fallbackPhone = session.user.user_metadata?.phone || '';
                     const fallbackEmail = session.user.email || '';
+                    const fallbackGender = session.user.user_metadata?.gender || 'Male';
 
                     doc = {
                         id: userId,
@@ -2558,7 +2577,7 @@
                         is_approved: false,
                         verification_status: 'pending',
                         admin_message: 'Your profile has been created and is currently under review by Doctor Point Admin.',
-                        gender: 'Doctor',
+                        gender: fallbackGender,
                         is_available_today: true,
                         is_nearby: true,
                         is_popular: true,
@@ -2670,6 +2689,7 @@
             const password = document.getElementById('signup-password').value;
             const phone = document.getElementById('signup-phone').value.trim();
             const receptionPhone = document.getElementById('signup-reception-phone')?.value.trim() || '';
+            const gender = document.getElementById('signup-gender')?.value || 'Male';
             const profilePic = document.getElementById('signup-profile-pic').value.trim();
             const experience = document.getElementById('signup-experience').value.trim();
             const spec = document.getElementById('signup-spec').value.trim();
@@ -2704,6 +2724,7 @@
                         data: {
                             full_name: name,
                             phone: phone,
+                            gender: gender,
                             role: 'doctor'
                         }
                     }
@@ -2746,7 +2767,7 @@
                         verification_status: 'pending',
                         admin_message: 'Your profile has been created and is currently under review by Doctor Point Admin.',
                         about: about || null,
-                        gender: 'Doctor',
+                        gender: gender,
                         is_available_today: true,
                         is_nearby: true,
                         is_popular: true,
@@ -6426,6 +6447,7 @@
             document.getElementById('prof-name').value = doc.name || '';
             if (document.getElementById('prof-phone')) document.getElementById('prof-phone').value = doc.doctor_phone || doc.phone || '';
             if (document.getElementById('prof-reception-phone')) document.getElementById('prof-reception-phone').value = doc.reception_phone || '';
+            if (document.getElementById('prof-gender')) document.getElementById('prof-gender').value = doc.gender && doc.gender !== 'Doctor' ? doc.gender : 'Male';
             document.getElementById('prof-spec').value = doc.specialization || '';
             document.getElementById('prof-experience').value = doc.experience || '';
             document.getElementById('prof-qualification').value = doc.qualification || '';
@@ -6468,6 +6490,7 @@
                 const name = document.getElementById('prof-name').value.trim();
                 const doctorPhone = document.getElementById('prof-phone')?.value.trim() || '';
                 const receptionPhone = document.getElementById('prof-reception-phone')?.value.trim() || '';
+                const gender = document.getElementById('prof-gender')?.value || 'Male';
                 const spec = document.getElementById('prof-spec').value.trim();
                 const experience = document.getElementById('prof-experience').value.trim();
                 const qualification = document.getElementById('prof-qualification').value.trim();
@@ -6497,6 +6520,7 @@
                         phone: doctorPhone,
                         doctor_phone: doctorPhone,
                         reception_phone: receptionPhone || null,
+                        gender: gender,
                         specialization: spec,
                         experience: experience,
                         qualification: qualification,
@@ -6522,6 +6546,7 @@
                     window.doctorContext.phone = doctorPhone;
                     window.doctorContext.doctor_phone = doctorPhone;
                     window.doctorContext.reception_phone = receptionPhone;
+                    window.doctorContext.gender = gender;
                     window.doctorContext.specialization = spec;
                     window.doctorContext.experience = experience;
                     window.doctorContext.qualification = qualification;

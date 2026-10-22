@@ -17,6 +17,7 @@ import com.amstudio.drpoint.network.model.User;
 import com.amstudio.drpoint.ui.auth.LoginActivity;
 import com.amstudio.drpoint.ui.main.MainActivity;
 import com.amstudio.drpoint.util.PreferenceManager;
+import com.amstudio.drpoint.util.WindowInsetsUtil;
 
 import retrofit2.Call;
 import retrofit2.Callback;

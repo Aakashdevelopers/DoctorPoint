@@ -19,29 +19,47 @@
             android:layout_height="wrap_content"
             app:cardBackgroundColor="@color/surface_white"
             app:cardCornerRadius="0dp"
-            app:cardElevation="2dp"
-            app:strokeWidth="0dp">
+            app:cardElevation="3dp"
+            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.HeaderCard"
+            app:strokeColor="@color/card_stroke"
+            app:strokeWidth="1dp">
 
             <RelativeLayout
+                android:id="@+id/toolbar_card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingHorizontal="20dp"
-                android:paddingTop="16dp"
-                android:paddingBottom="16dp">
+                android:paddingTop="18dp"
+                android:paddingBottom="18dp">
 
-                <com.google.android.material.imageview.ShapeableImageView
-                    android:id="@+id/iv_avatar"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
+                <!-- Avatar Container with Active Status Indicator -->
+                <FrameLayout
+                    android:id="@+id/fl_avatar_container"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
                     android:layout_alignParentStart="true"
-                    android:layout_centerVertical="true"
-                    android:background="@drawable/bg_squircle_icon"
-                    android:contentDescription="User Avatar"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/ic_user"
-                    app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.Circle"
-                    app:strokeColor="@color/primary_light"
-                    app:strokeWidth="1.5dp" />
+                    android:layout_centerVertical="true">
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/iv_avatar"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:contentDescription="User Avatar"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/ic_user"
+                        app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.Circle"
+                        app:strokeColor="@color/primary_light"
+                        app:strokeWidth="2dp" />
+
+                    <!-- Active Online Dot on Avatar -->
+                    <View
+                        android:layout_width="12dp"
+                        android:layout_height="12dp"
+                        android:layout_gravity="bottom|end"
+                        android:layout_marginEnd="1dp"
+                        android:layout_marginBottom="1dp"
+                        android:background="@drawable/bg_dot_online" />
+                </FrameLayout>
 
                 <!-- Action Container on Far Right -->
                 <LinearLayout
@@ -59,44 +77,34 @@
                         android:layout_width="wrap_content"
                         android:layout_height="38dp"
                         android:layout_marginEnd="8dp"
-                        android:background="@drawable/bg_squircle_icon"
+                        android:background="@drawable/bg_location_pill"
                         android:clickable="true"
                         android:focusable="true"
                         android:foreground="?attr/selectableItemBackgroundBorderless"
-                        android:gravity="center"
+                        android:gravity="center_vertical"
                         android:paddingHorizontal="10dp">
+
+                        <ImageView
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
+                            android:contentDescription="Location Icon"
+                            android:src="@drawable/ic_location"
+                            app:tint="@color/primary" />
 
                         <TextView
                             android:id="@+id/tv_location_chip"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
                             android:ellipsize="end"
                             android:maxLines="1"
-                            android:text="📍 Karnataka ▾"
+                            android:text="Karnataka ▾"
                             android:textColor="@color/primary"
                             android:textSize="11.5sp"
                             android:textStyle="bold" />
                     </LinearLayout>
 
                     <!-- Customer Care Button -->
-                    <FrameLayout
-                        android:id="@+id/fl_customer_care"
-                        android:layout_width="38dp"
-                        android:layout_height="38dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="@drawable/bg_squircle_icon"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:foreground="?attr/selectableItemBackgroundBorderless">
-
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:layout_gravity="center"
-                            android:contentDescription="Customer Care Support"
-                            android:src="@drawable/ic_help"
-                            app:tint="@color/success_green" />
-                    </FrameLayout>
 
                     <!-- Bell Button -->
                     <FrameLayout
@@ -119,12 +127,12 @@
                         <!-- Notification badge -->
                         <View
                             android:id="@+id/v_unread_badge"
-                            android:layout_width="9dp"
-                            android:layout_height="9dp"
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
                             android:layout_gravity="top|end"
-                            android:layout_marginTop="5dp"
-                            android:layout_marginEnd="5dp"
-                            android:background="@drawable/bg_badge_verified" />
+                            android:layout_marginTop="4dp"
+                            android:layout_marginEnd="4dp"
+                            android:background="@drawable/bg_unread_dot" />
                     </FrameLayout>
 
                 </LinearLayout>
@@ -137,14 +145,14 @@
                     android:layout_centerVertical="true"
                     android:layout_marginStart="12dp"
                     android:layout_marginEnd="8dp"
-                    android:layout_toEndOf="@id/iv_avatar"
+                    android:layout_toEndOf="@id/fl_avatar_container"
                     android:layout_toStartOf="@id/ll_right_actions"
                     android:orientation="vertical">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Welcome back,"
+                        android:text="Welcome back 👋"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
 
@@ -165,23 +173,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="3dp"
                         android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <View
-                            android:layout_width="7dp"
-                            android:layout_height="7dp"
-                            android:background="@drawable/bg_badge_verified" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="5dp"
-                            android:ellipsize="end"
-                            android:maxLines="1"
-                            android:text="How are you feeling today?"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="11sp" />
-                    </LinearLayout>
+                        android:orientation="horizontal"/>
                 </LinearLayout>
 
             </RelativeLayout>
@@ -408,74 +400,7 @@
             android:layout_marginTop="22dp"
             app:cardCornerRadius="18dp"
             app:cardElevation="3dp"
-            app:strokeWidth="0dp">
-
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_membership_gradient"
-                android:padding="18dp">
-
-                <LinearLayout
-                    android:id="@+id/ll_vip_text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentStart="true"
-                    android:layout_toStartOf="@id/btn_vip_claim"
-                    android:orientation="vertical">
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="4dp"
-                            android:text="DOCTOR'S POINT VIP"
-                            android:textColor="@color/warning_yellow"
-                            android:textSize="11sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="5dp"
-                        android:text="12 FREE Appointments a Year"
-                        android:textColor="@color/white"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="3dp"
-                        android:text="Save up to ₹5,000/yr on healthcare"
-                        android:textColor="@color/primary_light"
-                        android:textSize="11.5sp" />
-                </LinearLayout>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_vip_claim"
-                    android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:backgroundTint="@color/white"
-                    android:insetTop="0dp"
-                    android:insetBottom="0dp"
-                    android:paddingHorizontal="14dp"
-                    android:text="Coming Soon"
-                    android:textColor="@color/primary"
-                    android:textSize="11.5sp"
-                    android:textStyle="bold"
-                    app:cornerRadius="18dp" />
-
-            </RelativeLayout>
-        </com.google.android.material.card.MaterialCardView>
+            app:strokeWidth="0dp"/>
 
         <!-- Available Today Section Header -->
         <RelativeLayout

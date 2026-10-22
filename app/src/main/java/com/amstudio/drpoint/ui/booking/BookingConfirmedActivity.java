@@ -17,6 +17,7 @@ import com.amstudio.drpoint.network.model.BookAppointmentRpcResponse;
 import com.amstudio.drpoint.ui.main.MainActivity;
 import com.amstudio.drpoint.util.PreferenceManager;
 import com.amstudio.drpoint.util.ToastUtils;
+import com.amstudio.drpoint.util.WindowInsetsUtil;
 import com.bumptech.glide.Glide;
 
 import java.util.List;
@@ -45,6 +46,7 @@ public class BookingConfirmedActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityBookingConfirmedBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        WindowInsetsUtil.applySystemBarInsets(binding.getRoot());
 
         currentUserId = PreferenceManager.getInstance(this).getUserId();
         Log.d(TAG, "onCreate initialized. Logged-in User ID: " + currentUserId);
@@ -308,9 +310,9 @@ public class BookingConfirmedActivity extends AppCompatActivity {
 
         String payStatusVal = appt.getPaymentStatus();
         if (payStatusVal == null || payStatusVal.trim().isEmpty() || payStatusVal.equalsIgnoreCase("Pending")) {
-            payStatusVal = "Paid Online (Razorpay)";
+            payStatusVal = "Paid Online (ZapUPI)";
         } else {
-            payStatusVal = "Status: " + payStatusVal + " (Razorpay)";
+            payStatusVal = "Status: " + payStatusVal + " (ZapUPI)";
         }
         binding.tvPaymentStatus.setText(payStatusVal);
 
@@ -372,9 +374,9 @@ public class BookingConfirmedActivity extends AppCompatActivity {
         binding.tvConsultationType.setText(typeDisplayFallback);
         binding.tvBookingFee.setText("₹" + feeAmount + " (" + feeLabelFallback + ")");
 
-        String payIdVal = paymentId != null && !paymentId.trim().isEmpty() ? paymentId : "Razorpay Online";
+        String payIdVal = paymentId != null && !paymentId.trim().isEmpty() ? paymentId : "ZapUPI Online";
         binding.tvPaymentId.setText("ID: " + payIdVal);
-        binding.tvPaymentStatus.setText("Status: Paid Online (Razorpay)");
+        binding.tvPaymentStatus.setText("Status: Paid Online (ZapUPI)");
 
         Log.d(TAG, "Fallback Intent UI populated for Appointment #" + displayApptId);
     }

@@ -20,6 +20,8 @@ import com.amstudio.drpoint.adapter.DoctorReviewsAdapter;
 import com.amstudio.drpoint.adapter.TimeSlotAdapter;
 import com.amstudio.drpoint.databinding.ActivityDoctorDetailBinding;
 import com.amstudio.drpoint.util.ToastUtils;
+import com.amstudio.drpoint.util.WindowInsetsUtil;
+import com.amstudio.drpoint.util.WindowInsetsUtil;
 import com.amstudio.drpoint.model.Appointment;
 import com.amstudio.drpoint.model.Clinic;
 import com.amstudio.drpoint.model.Doctor;
@@ -67,6 +69,7 @@ public class DoctorDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityDoctorDetailBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        WindowInsetsUtil.applySystemBarInsets(binding.getRoot());
 
         doctor = (Doctor) getIntent().getSerializableExtra("doctor");
         if (doctor == null) {
@@ -220,7 +223,11 @@ public class DoctorDetailActivity extends AppCompatActivity {
         }
         if (binding.tvAboutGender != null) {
             String gender = doctor.getGender();
-            binding.tvAboutGender.setText(gender != null && !gender.isEmpty() ? gender + " Doctor" : "Medical Practitioner");
+            if (gender == null || gender.isEmpty() || "Doctor".equalsIgnoreCase(gender.trim())) {
+                binding.tvAboutGender.setText("Medical Practitioner");
+            } else {
+                binding.tvAboutGender.setText(gender + " Doctor");
+            }
         }
         if (binding.tvAboutVerified != null) {
             binding.tvAboutVerified.setText(doctor.isVerified() ? "Verified Practitioner" : "Registered Practitioner");
@@ -336,65 +343,88 @@ public class DoctorDetailActivity extends AppCompatActivity {
                 });
 
         // Load schedules & slots from Supabase
-        String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
-        SupabaseClient.getSlotService().getDoctorSchedules("eq." + doctor.getId(), "gte." + todayDate)
+        SimpleDateFormat sdfToday = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+        sdfToday.setTimeZone(AvailabilityHelper.getAppTimeZone());
+        String todayDate = sdfToday.format(new Date(AvailabilityHelper.getCalibratedCurrentTimeMillis()));
+
+        if (doctor == null || doctor.getId() == null || doctor.getId().trim().isEmpty()) {
+            futureSlots = new ArrayList<>();
+            renderCurrentMonthCalendar();
+            return;
+        }
+
+        String doctorId = doctor.getId().trim();
+
+        SupabaseClient.getSlotService().getDoctorSchedules("eq." + doctorId, "gte." + todayDate)
                 .enqueue(new Callback<List<DoctorSlot>>() {
                     @Override
                     public void onResponse(Call<List<DoctorSlot>> call, Response<List<DoctorSlot>> response) {
-                        List<DoctorSlot> scheduleSlots = new ArrayList<>();
-                        if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                            scheduleSlots = expandSchedulesToSlots(response.body());
-                        }
+                        List<DoctorSlot> scheduleSlots = (response.isSuccessful() && response.body() != null) ? expandSchedulesToSlots(response.body()) : new ArrayList<>();
 
-                        List<DoctorSlot> finalScheduleSlots = scheduleSlots;
-
-                        // Also fetch doctor_slots table
-                        SupabaseClient.getSlotService().getAllFutureDoctorSlots("eq." + doctor.getId(), "gte." + todayDate)
+                        SupabaseClient.getSlotService().getAllFutureDoctorSlots("eq." + doctorId, "gte." + todayDate)
                                 .enqueue(new Callback<List<DoctorSlot>>() {
                                     @Override
                                     public void onResponse(Call<List<DoctorSlot>> call2, Response<List<DoctorSlot>> response2) {
-                                        futureSlots = new ArrayList<>(finalScheduleSlots);
-                                        if (response2.isSuccessful() && response2.body() != null) {
-                                            for (DoctorSlot slot : response2.body()) {
-                                                if (!futureSlots.contains(slot)) {
-                                                    futureSlots.add(slot);
-                                                }
-                                            }
-                                        }
-                                        renderCurrentMonthCalendar();
+                                        List<DoctorSlot> dbSlots = (response2.isSuccessful() && response2.body() != null) ? response2.body() : new ArrayList<>();
+                                        mergeAndRenderFutureSlots(dbSlots, scheduleSlots);
                                     }
 
                                     @Override
                                     public void onFailure(Call<List<DoctorSlot>> call2, Throwable t2) {
-                                        futureSlots = finalScheduleSlots;
-                                        renderCurrentMonthCalendar();
+                                        mergeAndRenderFutureSlots(new ArrayList<>(), scheduleSlots);
                                     }
                                 });
                     }
 
                     @Override
                     public void onFailure(Call<List<DoctorSlot>> call, Throwable t) {
-                        // Fallback to doctor_slots table
-                        SupabaseClient.getSlotService().getAllFutureDoctorSlots("eq." + doctor.getId(), "gte." + todayDate)
+                        SupabaseClient.getSlotService().getAllFutureDoctorSlots("eq." + doctorId, "gte." + todayDate)
                                 .enqueue(new Callback<List<DoctorSlot>>() {
                                     @Override
                                     public void onResponse(Call<List<DoctorSlot>> call2, Response<List<DoctorSlot>> response2) {
-                                        if (response2.isSuccessful() && response2.body() != null) {
-                                            futureSlots = response2.body();
-                                        } else {
-                                            futureSlots = new ArrayList<>();
-                                        }
-                                        renderCurrentMonthCalendar();
+                                        List<DoctorSlot> dbSlots = (response2.isSuccessful() && response2.body() != null) ? response2.body() : new ArrayList<>();
+                                        mergeAndRenderFutureSlots(dbSlots, new ArrayList<>());
                                     }
 
                                     @Override
                                     public void onFailure(Call<List<DoctorSlot>> call2, Throwable t2) {
-                                        futureSlots = new ArrayList<>();
-                                        renderCurrentMonthCalendar();
+                                        mergeAndRenderFutureSlots(new ArrayList<>(), new ArrayList<>());
                                     }
                                 });
                     }
                 });
+    }
+
+    private void mergeAndRenderFutureSlots(List<DoctorSlot> dbSlots, List<DoctorSlot> scheduleSlots) {
+        futureSlots = new ArrayList<>();
+        Set<String> keys = new HashSet<>();
+
+        if (dbSlots != null) {
+            for (DoctorSlot s : dbSlots) {
+                if (s != null && s.getSlotDate() != null && s.getStartTime() != null) {
+                    String cleanDate = AvailabilityHelper.cleanDateString(s.getSlotDate());
+                    String normTime = AvailabilityHelper.normalizeTimeFormat(s.getStartTime());
+                    keys.add(cleanDate + "_" + normTime);
+                    futureSlots.add(s);
+                }
+            }
+        }
+
+        if (scheduleSlots != null) {
+            for (DoctorSlot s : scheduleSlots) {
+                if (s != null && s.getSlotDate() != null && s.getStartTime() != null) {
+                    String cleanDate = AvailabilityHelper.cleanDateString(s.getSlotDate());
+                    String normTime = AvailabilityHelper.normalizeTimeFormat(s.getStartTime());
+                    String key = cleanDate + "_" + normTime;
+                    if (!keys.contains(key)) {
+                        keys.add(key);
+                        futureSlots.add(s);
+                    }
+                }
+            }
+        }
+
+        renderCurrentMonthCalendar();
     }
 
     private List<DoctorSlot> expandSchedulesToSlots(List<DoctorSlot> scheduleRows) {

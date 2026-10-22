@@ -23,6 +23,7 @@ import com.amstudio.drpoint.BuildConfig;
 import com.amstudio.drpoint.R;
 import com.amstudio.drpoint.adapter.DateChipAdapter;
 import com.amstudio.drpoint.adapter.TimeSlotAdapter;
+import com.amstudio.drpoint.util.WindowInsetsUtil;
 import com.amstudio.drpoint.databinding.ActivityBookAppointmentBinding;
 import com.amstudio.drpoint.databinding.BottomSheetEditProfileBinding;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -37,13 +38,12 @@ import com.amstudio.drpoint.network.model.BookAppointmentRpcResponse;
 import com.amstudio.drpoint.util.AvailabilityHelper;
 import com.amstudio.drpoint.util.CommissionHelper;
 import com.amstudio.drpoint.util.DummyDataProvider;
+import com.amstudio.drpoint.payment.ZapUPI;
+import com.amstudio.drpoint.payment.ZapUpiWebView;
 import com.amstudio.drpoint.util.PreferenceManager;
 import com.amstudio.drpoint.util.ToastUtils;
 import com.bumptech.glide.Glide;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.razorpay.Checkout;
-import com.razorpay.PaymentData;
-import com.razorpay.PaymentResultWithDataListener;
 
 import org.json.JSONObject;
 
@@ -74,7 +74,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class BookAppointmentActivity extends AppCompatActivity implements PaymentResultWithDataListener {
+public class BookAppointmentActivity extends AppCompatActivity {
 
     private ActivityBookAppointmentBinding binding;
     private Doctor doctor;
@@ -98,7 +98,9 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
     private ActivityResultLauncher<Intent> imagePickerLauncher;
     private String pendingUserId = null;
     private String pendingSlotId = null;
-    private String lastRazorpayPaymentId = null;
+    private String lastPaymentId = null;
+    private ZapUPI zapUPI;
+    private ZapUpiWebView zapUpiWebView;
     private boolean isBookingInProgress = false;
     private boolean isBookingSubmitted = false;
 
@@ -107,6 +109,7 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
         super.onCreate(savedInstanceState);
         binding = ActivityBookAppointmentBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        WindowInsetsUtil.applySystemBarInsets(binding.getRoot());
 
         doctor = (Doctor) getIntent().getSerializableExtra("doctor");
         selectedClinic = (Clinic) getIntent().getSerializableExtra("clinic");
@@ -222,9 +225,7 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
         String selectedClinicId = (selectedClinic != null) ? selectedClinic.getId() : null;
 
         if (doctor == null || doctor.getId() == null || doctor.getId().trim().isEmpty()) {
-            availableSlotsList = new ArrayList<>();
-            processAvailableDatesAndSlots(selectedClinicId);
-            hideShimmerLoaders();
+            generateFallbackSlotsForDoctor(todayDate, selectedClinicId);
             return;
         }
 
@@ -235,19 +236,14 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
                 .enqueue(new Callback<List<DoctorSlot>>() {
                     @Override
                     public void onResponse(Call<List<DoctorSlot>> call, Response<List<DoctorSlot>> response) {
-                        if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                            availableSlotsList = response.body();
-                            crossReferenceBookedAppointmentsAndProcess(selectedClinicId);
-                            return;
-                        }
-
-                        // 2. Secondary Lookup: Check doctor_schedules table strictly for this doctor
-                        fetchSchedulesFromSupabase(doctorId, todayDate, selectedClinicId);
+                        List<DoctorSlot> slotsFromDb = (response.isSuccessful() && response.body() != null) ? response.body() : new ArrayList<>();
+                        // Also fetch doctor_schedules table to combine schedules
+                        fetchSchedulesAndCombine(doctorId, todayDate, selectedClinicId, slotsFromDb);
                     }
 
                     @Override
                     public void onFailure(Call<List<DoctorSlot>> call, Throwable t) {
-                        fetchSchedulesFromSupabase(doctorId, todayDate, selectedClinicId);
+                        fetchSchedulesAndCombine(doctorId, todayDate, selectedClinicId, new ArrayList<>());
                     }
                 });
     }
@@ -257,25 +253,62 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
         return id1.trim().equalsIgnoreCase(id2.trim());
     }
 
-    private void fetchSchedulesFromSupabase(String doctorId, String todayDate, String selectedClinicId) {
+    private void fetchSchedulesAndCombine(String doctorId, String todayDate, String selectedClinicId, List<DoctorSlot> slotsFromDb) {
         SupabaseClient.getSlotService().getDoctorSchedules("eq." + doctorId, "gte." + todayDate)
                 .enqueue(new Callback<List<DoctorSlot>>() {
                     @Override
                     public void onResponse(Call<List<DoctorSlot>> call, Response<List<DoctorSlot>> response) {
-                        if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                            availableSlotsList = expandSchedulesToSlots(response.body());
-                        } else {
-                            availableSlotsList = new ArrayList<>();
-                        }
-                        crossReferenceBookedAppointmentsAndProcess(selectedClinicId);
+                        List<DoctorSlot> schedulesFromDb = (response.isSuccessful() && response.body() != null) ? response.body() : new ArrayList<>();
+                        mergeAndProcessSlots(slotsFromDb, schedulesFromDb, selectedClinicId, todayDate);
                     }
 
                     @Override
                     public void onFailure(Call<List<DoctorSlot>> call, Throwable t) {
-                        availableSlotsList = new ArrayList<>();
-                        crossReferenceBookedAppointmentsAndProcess(selectedClinicId);
+                        mergeAndProcessSlots(slotsFromDb, new ArrayList<>(), selectedClinicId, todayDate);
                     }
                 });
+    }
+
+    private void mergeAndProcessSlots(List<DoctorSlot> slotsFromDb, List<DoctorSlot> schedulesFromDb, String selectedClinicId, String todayDate) {
+        List<DoctorSlot> combined = new ArrayList<>();
+        Set<String> existingKeys = new HashSet<>();
+
+        // 1. Add real doctor_slots first
+        if (slotsFromDb != null) {
+            for (DoctorSlot slot : slotsFromDb) {
+                if (slot != null && slot.getSlotDate() != null && slot.getStartTime() != null) {
+                    String cleanDate = AvailabilityHelper.cleanDateString(slot.getSlotDate());
+                    String normTime = AvailabilityHelper.normalizeTimeFormat(slot.getStartTime());
+                    existingKeys.add(cleanDate + "_" + normTime);
+                    combined.add(slot);
+                }
+            }
+        }
+
+        // 2. Expand schedules and add non-duplicate slots
+        if (schedulesFromDb != null && !schedulesFromDb.isEmpty()) {
+            List<DoctorSlot> expanded = expandSchedulesToSlots(schedulesFromDb);
+            for (DoctorSlot schedSlot : expanded) {
+                if (schedSlot != null && schedSlot.getSlotDate() != null && schedSlot.getStartTime() != null) {
+                    String cleanDate = AvailabilityHelper.cleanDateString(schedSlot.getSlotDate());
+                    String normTime = AvailabilityHelper.normalizeTimeFormat(schedSlot.getStartTime());
+                    String key = cleanDate + "_" + normTime;
+                    if (!existingKeys.contains(key)) {
+                        existingKeys.add(key);
+                        combined.add(schedSlot);
+                    }
+                }
+            }
+        }
+
+        // 3. Fallback if empty
+        if (combined.isEmpty()) {
+            generateFallbackSlotsForDoctor(todayDate, selectedClinicId);
+            return;
+        }
+
+        availableSlotsList = combined;
+        crossReferenceBookedAppointmentsAndProcess(selectedClinicId);
     }
 
 
@@ -414,9 +447,7 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
                 slot.setFee(sched.getFee());
                 slot.setFollowUpFee(sched.getFollowUpFee());
 
-                if (!AvailabilityHelper.isSlotInPast(slot)) {
-                    slots.add(slot);
-                }
+                slots.add(slot);
                 curr += totalInterval;
             }
         } catch (Exception ignored) {}
@@ -792,7 +823,7 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
         if (!isProfileComplete) {
             openMandatoryProfileBottomSheet(userId);
         } else {
-            initiateRazorpayPaymentFlow(userId, selectedSlotId);
+            initiateZapUPIPaymentFlow(userId, selectedSlotId);
         }
     }
 
@@ -978,7 +1009,7 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
 
             dialog.dismiss();
 
-            initiateRazorpayPaymentFlow(userId, selectedSlotId);
+            initiateZapUPIPaymentFlow(userId, selectedSlotId);
         });
 
         dialog.show();
@@ -1091,7 +1122,7 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
                     ToastUtils.showWarning(this, "Please update your profile photo in Profile Settings");
                 })
                 .setNegativeButton("Proceed Without Photo", (dialog, which) -> {
-                    initiateRazorpayPaymentFlow(userId, slotId);
+                    initiateZapUPIPaymentFlow(userId, slotId);
                 })
                 .show();
     }
@@ -1130,7 +1161,68 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
         return activeFee > 0 ? activeFee : 500;
     }
 
-    private void initiateRazorpayPaymentFlow(String userId, String slotId) {
+    private void initZapUPI() {
+        if (zapUPI == null) {
+            zapUPI = new ZapUPI();
+        }
+        if (zapUpiWebView == null) {
+            zapUpiWebView = new ZapUpiWebView(this, new ZapUpiWebView.OnPaymentResult() {
+                @Override
+                public void onSuccess(String orderId) {
+                    lastPaymentId = orderId;
+                    Log.d("BookAppointment", "ZapUPI Payment Success. Order ID: " + orderId);
+                    if (isBookingSubmitted) {
+                        Log.w("BookAppointment", "Booking already submitted for order ID: " + orderId + ". Preventing duplicate execution.");
+                        return;
+                    }
+                    isBookingSubmitted = true;
+                    ToastUtils.showSuccess(BookAppointmentActivity.this, "Payment Verified!");
+                    binding.btnConfirmBooking.setEnabled(false);
+                    binding.btnConfirmBooking.setText("Booking Appointment...");
+                    if (pendingUserId != null && pendingSlotId != null) {
+                        sendBookingRpcRequest(pendingUserId, pendingSlotId);
+                    } else {
+                        String userId = PreferenceManager.getInstance(BookAppointmentActivity.this).getUserId();
+                        sendBookingRpcRequest(userId, selectedSlotId);
+                    }
+                }
+
+                @Override
+                public void onFailed(String orderId) {
+                    isBookingSubmitted = false;
+                    isBookingInProgress = false;
+                    binding.btnConfirmBooking.setEnabled(true);
+                    updateConsultationFeeUI();
+                    ToastUtils.showError(BookAppointmentActivity.this, "Payment failed: " + orderId);
+                }
+
+                @Override
+                public void onTimeout(String orderId) {
+                    isBookingSubmitted = false;
+                    isBookingInProgress = false;
+                    binding.btnConfirmBooking.setEnabled(true);
+                    updateConsultationFeeUI();
+                    ToastUtils.showWarning(BookAppointmentActivity.this, "Payment timed out");
+                }
+
+                @Override
+                public void onCancel(String orderId) {
+                    isBookingSubmitted = false;
+                    isBookingInProgress = false;
+                    binding.btnConfirmBooking.setEnabled(true);
+                    updateConsultationFeeUI();
+                    ToastUtils.showInfo(BookAppointmentActivity.this, "Payment cancelled by user");
+                }
+
+                @Override
+                public void onPageLoaded(String url) {
+                    Log.d("BookAppointment", "ZapUPI Payment Page Loaded: " + url);
+                }
+            });
+        }
+    }
+
+    private void initiateZapUPIPaymentFlow(String userId, String slotId) {
         if (slotId == null || slotId.trim().isEmpty()) {
             isBookingInProgress = false;
             ToastUtils.showWarning(this, "Please select an available time slot.");
@@ -1156,7 +1248,7 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
                     if (!success) {
                         isBookingInProgress = false;
                         binding.btnConfirmBooking.setEnabled(true);
-                        binding.btnConfirmBooking.setText("Confirm Booking");
+                        updateConsultationFeeUI();
                         String msg = (String) body.get("message");
                         if (msg == null || msg.trim().isEmpty()) msg = "This appointment slot is no longer available.";
                         ToastUtils.showError(BookAppointmentActivity.this, msg);
@@ -1164,35 +1256,33 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
                         return;
                     }
 
-                    Number amountNum = (Number) body.get("payable_amount");
-                    int verifiedAmount = (amountNum != null && amountNum.intValue() > 0) 
-                            ? amountNum.intValue() : getActiveConsultationFee();
-
                     Boolean isFollowUp = (Boolean) body.get("is_followup");
                     if (isFollowUp != null) {
                         isReturningPatientUser = isFollowUp;
                         updateConsultationFeeUI();
                     }
 
+                    int verifiedAmount = getActiveConsultationFee();
+
                     if (verifiedAmount <= 0) {
                         isBookingInProgress = false;
                         binding.btnConfirmBooking.setEnabled(true);
-                        binding.btnConfirmBooking.setText("Confirm Booking");
+                        updateConsultationFeeUI();
                         ToastUtils.showError(BookAppointmentActivity.this, "Invalid consultation fee for this slot.");
                         return;
                     }
 
-                    launchRazorpayCheckout(userId, slotId, verifiedAmount);
+                    launchZapUPICheckout(userId, slotId, verifiedAmount);
                 } else {
                     int activeFee = getActiveConsultationFee();
                     if (activeFee <= 0) {
                         isBookingInProgress = false;
                         binding.btnConfirmBooking.setEnabled(true);
-                        binding.btnConfirmBooking.setText("Confirm Booking");
+                        updateConsultationFeeUI();
                         ToastUtils.showError(BookAppointmentActivity.this, "Invalid consultation fee for this slot.");
                         return;
                     }
-                    launchRazorpayCheckout(userId, slotId, activeFee);
+                    launchZapUPICheckout(userId, slotId, activeFee);
                 }
             }
 
@@ -1202,21 +1292,23 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
                 if (activeFee <= 0) {
                     isBookingInProgress = false;
                     binding.btnConfirmBooking.setEnabled(true);
-                    binding.btnConfirmBooking.setText("Confirm Booking");
+                    updateConsultationFeeUI();
                     ToastUtils.showError(BookAppointmentActivity.this, "Invalid consultation fee for this slot.");
                     return;
                 }
-                launchRazorpayCheckout(userId, slotId, activeFee);
+                launchZapUPICheckout(userId, slotId, activeFee);
             }
         });
     }
 
-    private void launchRazorpayCheckout(String userId, String slotId, int finalFee) {
+    private void launchZapUPICheckout(String userId, String slotId, int finalFee) {
         pendingUserId = userId;
         pendingSlotId = slotId;
 
+        initZapUPI();
+
         binding.btnConfirmBooking.setEnabled(false);
-        binding.btnConfirmBooking.setText("Opening Payment Gateway (₹" + finalFee + ")...");
+        binding.btnConfirmBooking.setText("Creating payment order (₹" + finalFee + ")...");
 
         String userPhone = PreferenceManager.getInstance(this).getUserPhone();
         if (userPhone != null) {
@@ -1226,85 +1318,34 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
             userPhone = "9876543210";
         }
 
-        String userEmail = PreferenceManager.getInstance(this).getUserEmail();
-        if (TextUtils.isEmpty(userEmail) || !userEmail.contains("@")) {
-            userEmail = "patient@doctorpoint.app";
-        }
-
         String doctorNameStr = (doctor != null && doctor.getName() != null) ? doctor.getName() : "Doctor Specialist";
+        String consultationType = isReturningPatientUser ? "Follow-up Consultation" : "First Consultation";
 
-        Checkout checkout = new Checkout();
-        String razorpayKey = BuildConfig.RAZORPAY_KEY_ID;
-        if (razorpayKey != null && !razorpayKey.isEmpty()) {
-            checkout.setKeyID(razorpayKey);
-        }
+        String zapKey = BuildConfig.ZAP_KEY;
+        String orderId = "ORD" + System.currentTimeMillis();
 
-        try {
-            JSONObject options = new JSONObject();
-            if (razorpayKey != null && !razorpayKey.isEmpty()) {
-                options.put("key", razorpayKey);
+        HashMap<String, Object> orderData = new HashMap<>();
+        orderData.put("zap_key", zapKey);
+        orderData.put("order_id", orderId);
+        orderData.put("amount", String.valueOf(finalFee));
+        orderData.put("customer_mobile", userPhone);
+        orderData.put("remark", consultationType + " | " + doctorNameStr);
+
+        zapUPI.createOrder(orderData, new ZapUPI.OnResponse() {
+            @Override
+            public void onResponse(String paymentUrl, String createdOrderId, HashMap<String, Object> data) {
+                binding.btnConfirmBooking.setText("Processing Payment...");
+                zapUpiWebView.loadPayment(paymentUrl, createdOrderId);
             }
-            options.put("name", "Doctor's Point");
-            options.put("description", "Consultation Fee - " + doctorNameStr);
-            options.put("image", "https://s3.amazonaws.com/rzp-mobile/images/rzp.png");
-            options.put("theme.color", "#03A9F4");
-            options.put("currency", "INR");
-            options.put("amount", finalFee * 100); // Amount in paise
-            options.put("send_sms_hash", true);
 
-            JSONObject prefill = new JSONObject();
-            prefill.put("email", userEmail);
-            prefill.put("contact", userPhone);
-            options.put("prefill", prefill);
-
-            JSONObject retryObj = new JSONObject();
-            retryObj.put("enabled", true);
-            retryObj.put("max_count", 2);
-            options.put("retry", retryObj);
-
-            checkout.open(BookAppointmentActivity.this, options);
-        } catch (Exception e) {
-            Log.e("BookAppointment", "Error in starting Razorpay Checkout", e);
-            isBookingInProgress = false;
-            binding.btnConfirmBooking.setEnabled(true);
-            binding.btnConfirmBooking.setText("Confirm Booking");
-            ToastUtils.showError(this, "Error starting payment: " + e.getMessage());
-        }
-    }
-
-    @Override
-    public void onPaymentSuccess(String razorpayPaymentId, PaymentData paymentData) {
-        String paymentId = (paymentData != null && paymentData.getPaymentId() != null) 
-                ? paymentData.getPaymentId() : razorpayPaymentId;
-        this.lastRazorpayPaymentId = paymentId;
-        Log.d("BookAppointment", "Razorpay Payment Success. Payment ID: " + paymentId);
-        if (isBookingSubmitted) {
-            Log.w("BookAppointment", "Booking already submitted for payment ID: " + paymentId + ". Preventing duplicate execution.");
-            return;
-        }
-        isBookingSubmitted = true;
-        ToastUtils.showSuccess(this, "Payment Verified!");
-        binding.btnConfirmBooking.setEnabled(false);
-        binding.btnConfirmBooking.setText("Booking Appointment...");
-        if (pendingUserId != null && pendingSlotId != null) {
-            sendBookingRpcRequest(pendingUserId, pendingSlotId);
-        } else {
-            String userId = PreferenceManager.getInstance(this).getUserId();
-            sendBookingRpcRequest(userId, selectedSlotId);
-        }
-    }
-
-    @Override
-    public void onPaymentError(int code, String response, PaymentData paymentData) {
-        isBookingSubmitted = false;
-        Log.e("BookAppointment", "Razorpay Payment Error code=" + code + ", response=" + response);
-        binding.btnConfirmBooking.setEnabled(true);
-        binding.btnConfirmBooking.setText("Confirm Booking");
-        if (code == Checkout.PAYMENT_CANCELED) {
-            ToastUtils.showInfo(this, "Payment cancelled by user");
-        } else {
-            ToastUtils.showError(this, "Payment failed. Please try again.");
-        }
+            @Override
+            public void onError(String error) {
+                isBookingInProgress = false;
+                binding.btnConfirmBooking.setEnabled(true);
+                updateConsultationFeeUI();
+                ToastUtils.showError(BookAppointmentActivity.this, "Payment Error: " + error);
+            }
+        });
     }
 
     private void showToast(String message) {
@@ -1644,8 +1685,8 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
         if (userAvatarUrl != null && !userAvatarUrl.isEmpty()) {
             payload.put("patient_image", userAvatarUrl);
         }
-        if (lastRazorpayPaymentId != null && !lastRazorpayPaymentId.isEmpty()) {
-            payload.put("payment_id", lastRazorpayPaymentId);
+        if (lastPaymentId != null && !lastPaymentId.isEmpty()) {
+            payload.put("payment_id", lastPaymentId);
             payload.put("payment_status", "Paid");
         } else {
             payload.put("payment_status", "Paid Online");
@@ -2037,6 +2078,11 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
     }
 
     private boolean isValidPreviousAppointment(Appointment appt, String targetDoctorId) {
+        String userId = PreferenceManager.getInstance(this).getUserId();
+        return isValidPreviousAppointment(appt, targetDoctorId, userId);
+    }
+
+    private boolean isValidPreviousAppointment(Appointment appt, String targetDoctorId, String currentUserId) {
         if (appt == null || targetDoctorId == null || targetDoctorId.trim().isEmpty()) {
             return false;
         }
@@ -2047,16 +2093,34 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
             return false;
         }
 
-        // 2. Check appointment status (Exclude Cancelled, Rejected, Failed, No-Show)
+        // 2. Must match current patient ID if provided
+        if (currentUserId != null && !currentUserId.trim().isEmpty()) {
+            String apptPatId = appt.getPatientId();
+            if (apptPatId == null || apptPatId.trim().isEmpty()) {
+                return false;
+            }
+            String cleanUser = currentUserId.trim();
+            String uuidUser = formatUuidOrNull(cleanUser);
+            String cleanApptPat = apptPatId.trim();
+
+            boolean matches = cleanApptPat.equalsIgnoreCase(cleanUser) 
+                    || (uuidUser != null && cleanApptPat.equalsIgnoreCase(uuidUser));
+            if (!matches) {
+                return false;
+            }
+        }
+
+        // 3. Check appointment status (Exclude Cancelled, Rejected, Failed, No-Show, Refunded)
         String status = appt.getStatus();
         if (status == null || status.trim().isEmpty()) return false;
         String st = status.trim().toLowerCase(Locale.US);
 
-        if (st.contains("cancel") || st.contains("reject") || st.contains("failed") || st.contains("no_show") || st.contains("noshow")) {
+        if (st.contains("cancel") || st.contains("reject") || st.contains("failed") 
+                || st.contains("no_show") || st.contains("noshow") || st.contains("refund")) {
             return false;
         }
 
-        // 3. Check payment status
+        // 4. Check payment status
         String payStatus = appt.getPaymentStatus();
         if (payStatus != null) {
             String ps = payStatus.trim().toLowerCase(Locale.US);
@@ -2065,8 +2129,9 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
             }
         }
 
+        // Must be a confirmed/completed/active appointment (not pending, cancelled or refunded)
         return "completed".equals(st) || "confirmed".equals(st) || "checked_in".equals(st)
-                || "waiting".equals(st) || "in_consultation".equals(st) || "pending".equals(st);
+                || "waiting".equals(st) || "in_consultation".equals(st);
     }
 
     private void updateConsultationFeeUI() {
@@ -2220,7 +2285,7 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
         intent.putExtra("booking_fee_type", feeTypeLabel);
         intent.putExtra("booking_fee_amount", activeFee);
         intent.putExtra("is_followup", isReturningPatientUser);
-        intent.putExtra("payment_id", lastRazorpayPaymentId);
+        intent.putExtra("payment_id", lastPaymentId);
         intent.putExtra("patient_name", patientNameVal);
         if (rpcResp != null && rpcResp.getTokenNumber() > 0) {
             intent.putExtra("token_number", rpcResp.getTokenNumber());
@@ -2259,53 +2324,26 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
         isReturningPatientUser = hasLocalHistory;
         updateConsultationFeeUI();
 
-        if (userId == null || userId.trim().isEmpty() || doctor.getId() == null) return;
+        if (userId == null || userId.trim().isEmpty() || doctor == null || doctor.getId() == null) return;
 
-        // 2. Query Supabase appointments table
-        SupabaseClient.getAppointmentService().getAppointmentsForPatient("eq." + userId)
-                .enqueue(new Callback<List<Appointment>>() {
-                    @Override
-                    public void onResponse(Call<List<Appointment>> call, Response<List<Appointment>> response) {
-                        boolean isReturning = false;
-                        if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                            for (Appointment appt : response.body()) {
-                                if (isValidPreviousAppointment(appt, doctor.getId())) {
-                                    isReturning = true;
-                                    break;
-                                }
-                            }
-                        } else {
-                            isReturning = hasLocalHistory;
-                        }
+        String cleanUserId = userId.trim();
+        String uuidUserId = formatUuidOrNull(cleanUserId);
+        String queryParam;
+        if (uuidUserId != null && !uuidUserId.equalsIgnoreCase(cleanUserId)) {
+            queryParam = "in.(" + cleanUserId + "," + uuidUserId + ")";
+        } else {
+            queryParam = "eq." + cleanUserId;
+        }
 
-                        if (!isReturning && (response.body() == null || response.body().isEmpty())) {
-                            fetchGlobalAppointmentsForReturningCheck(hasLocalHistory);
-                            return;
-                        }
-
-                        isReturningPatientUser = isReturning;
-                        if (isReturning && doctor != null && doctor.getId() != null) {
-                            PreferenceManager.getInstance(BookAppointmentActivity.this).recordDoctorBooking(doctor.getId());
-                        }
-                        updateConsultationFeeUI();
-                    }
-
-                    @Override
-                    public void onFailure(Call<List<Appointment>> call, Throwable t) {
-                        fetchGlobalAppointmentsForReturningCheck(hasLocalHistory);
-                    }
-                });
-    }
-
-    private void fetchGlobalAppointmentsForReturningCheck(boolean hasLocalHistory) {
-        SupabaseClient.getAppointmentService().getAllAppointments()
+        // 2. Query Supabase appointments table for current patient
+        SupabaseClient.getAppointmentService().getAppointmentsForPatient(queryParam)
                 .enqueue(new Callback<List<Appointment>>() {
                     @Override
                     public void onResponse(Call<List<Appointment>> call, Response<List<Appointment>> response) {
                         boolean isReturning = false;
                         if (response.isSuccessful() && response.body() != null) {
                             for (Appointment appt : response.body()) {
-                                if (isValidPreviousAppointment(appt, doctor != null ? doctor.getId() : null)) {
+                                if (isValidPreviousAppointment(appt, doctor.getId(), cleanUserId)) {
                                     isReturning = true;
                                     break;
                                 }
@@ -2315,9 +2353,6 @@ public class BookAppointmentActivity extends AppCompatActivity implements Paymen
                         }
 
                         isReturningPatientUser = isReturning;
-                        if (isReturning && doctor != null && doctor.getId() != null) {
-                            PreferenceManager.getInstance(BookAppointmentActivity.this).recordDoctorBooking(doctor.getId());
-                        }
                         updateConsultationFeeUI();
                     }
 
