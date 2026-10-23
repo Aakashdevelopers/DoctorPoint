@@ -52,16 +52,9 @@ public class JoinAsDoctorActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-        binding.swipeRefreshLayout.setOnChildScrollUpCallback((parent, child) ->
-                binding.webView.getScrollY() > 0 || binding.webView.canScrollVertically(-1));
+        // Disable SwipeRefreshLayout to prevent accidental refreshes when scrolling the WebView form
+        binding.swipeRefreshLayout.setEnabled(false);
 
-        binding.swipeRefreshLayout.setOnRefreshListener(() -> {
-            if (!TextUtils.isEmpty(currentTargetUrl)) {
-                loadWebPage(currentTargetUrl);
-            } else {
-                fetchUrlFromFirebase();
-            }
-        });
         binding.btnRetry.setOnClickListener(v -> fetchUrlFromFirebase());
     }
 

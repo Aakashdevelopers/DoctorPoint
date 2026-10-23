@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Doctor Panel - Manage Patient Appointments &amp; Data</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
@@ -1406,6 +1406,139 @@
                 padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
             }
         }
+
+        /* ==================================================== */
+        /* MOBILE WEBVIEW RESPONSIVE & SAFE AREA OPTIMIZATIONS */
+        /* ==================================================== */
+        html, body {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-text-size-adjust: 100%;
+            touch-action: manipulation;
+        }
+
+        /* Sidebar Backdrop Overlay for Mobile WebView */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+            z-index: 1040;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease-in-out;
+        }
+
+        .sidebar-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                z-index: 1050 !important;
+                box-shadow: 16px 0 40px rgba(0, 0, 0, 0.25) !important;
+            }
+
+            .top-header {
+                padding-top: max(0rem, env(safe-area-inset-top));
+            }
+
+            /* Prevent auto-zoom on input focus in WebView */
+            input[type="text"],
+            input[type="number"],
+            input[type="email"],
+            input[type="password"],
+            input[type="date"],
+            input[type="time"],
+            select,
+            textarea {
+                font-size: 16px !important;
+            }
+
+            .mobile-queue-card {
+                padding: 0.875rem !important;
+            }
+
+            /* Ensure tables scroll smoothly horizontally inside webview */
+            .table-container {
+                -webkit-overflow-scrolling: touch;
+                margin-left: -0.25rem;
+                margin-right: -0.25rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .content-area {
+                padding: 0.75rem !important;
+                padding-bottom: max(1.5rem, env(safe-area-inset-bottom)) !important;
+            }
+
+            .card {
+                padding: 0.875rem !important;
+                border-radius: 10px !important;
+                margin-bottom: 0.875rem !important;
+            }
+
+            .grid-stats {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: 0.6rem !important;
+                margin-bottom: 0.875rem !important;
+            }
+
+            .stat-card {
+                padding: 0.75rem 0.85rem !important;
+                border-radius: 8px !important;
+            }
+
+            .stat-title {
+                font-size: 0.75rem !important;
+            }
+
+            .stat-value {
+                font-size: 1.35rem !important;
+            }
+
+            #header-doctor-name {
+                max-width: 110px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            /* Live Consultation Card Mobile Adjustments */
+            #live-consultation-card {
+                padding: 0.875rem !important;
+            }
+
+            #live-consultation-card h3 {
+                font-size: 1.1rem !important;
+            }
+
+            #live-token-badge {
+                width: 46px !important;
+                height: 44px !important;
+                font-size: 1.2rem !important;
+            }
+
+            .analytics-grid {
+                grid-template-columns: 1fr !important;
+                gap: 0.75rem !important;
+            }
+
+            .chart-span-full {
+                grid-column: span 1 !important;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .grid-stats {
+                grid-template-columns: 1fr !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1632,6 +1765,9 @@
                 <a href="#" class="nav-item" onclick="window.logout()"><i class='bx bx-log-out'></i> Logout</a>
             </nav>
         </aside>
+
+        <!-- Sidebar Overlay for Mobile WebView -->
+        <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
         <!-- Main Wrapper -->
         <div class="main-wrapper">
@@ -2486,10 +2622,34 @@
 
             const toggle = document.getElementById('mobile-menu-toggle');
             const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+            window.openSidebar = function() {
+                if (sidebar) sidebar.classList.add('open');
+                if (sidebarOverlay) sidebarOverlay.classList.add('show');
+            };
+
+            window.closeSidebar = function() {
+                if (sidebar) sidebar.classList.remove('open');
+                if (sidebarOverlay) sidebarOverlay.classList.remove('show');
+            };
+
             if (toggle && !toggle.dataset.bound) {
                 toggle.dataset.bound = "true";
                 toggle.style.display = window.innerWidth <= 768 ? 'block' : 'none';
-                toggle.addEventListener('click', () => sidebar.classList.toggle('open'));
+                toggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (sidebar && sidebar.classList.contains('open')) {
+                        window.closeSidebar();
+                    } else {
+                        window.openSidebar();
+                    }
+                });
+            }
+
+            if (sidebarOverlay && !sidebarOverlay.dataset.bound) {
+                sidebarOverlay.dataset.bound = "true";
+                sidebarOverlay.addEventListener('click', window.closeSidebar);
             }
         }
 
@@ -2919,8 +3079,8 @@
                 }
             });
 
-            if (window.innerWidth <= 768) {
-                document.getElementById('sidebar').classList.remove('open');
+            if (window.innerWidth <= 768 && window.closeSidebar) {
+                window.closeSidebar();
             }
 
             const template = document.getElementById(`tpl-${hash}`);
