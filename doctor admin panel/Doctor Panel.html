@@ -621,26 +621,36 @@
             margin: 12px auto 4px auto;
         }
 
-        /* Responsive Mobile Queue View */
-        .mobile-queue-container {
+        /* Responsive Mobile Queue & Card Views */
+        .mobile-queue-container,
+        .mobile-card-container {
             display: none;
             flex-direction: column;
             gap: 0.875rem;
         }
 
-        .mobile-queue-card {
+        .mobile-queue-card,
+        .mobile-item-card {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: var(--radius-lg);
             padding: 1rem;
             box-shadow: var(--shadow-sm);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .mobile-queue-card:active,
+        .mobile-item-card:active {
+            transform: scale(0.985);
         }
 
         @media (max-width: 768px) {
-            .desktop-queue-table {
+            .desktop-queue-table,
+            .desktop-only-table {
                 display: none !important;
             }
-            .mobile-queue-container {
+            .mobile-queue-container,
+            .mobile-card-container {
                 display: flex !important;
             }
             .sidebar {
@@ -1441,10 +1451,14 @@
             .sidebar {
                 z-index: 1050 !important;
                 box-shadow: 16px 0 40px rgba(0, 0, 0, 0.25) !important;
+                padding-top: max(0rem, env(safe-area-inset-top));
+                padding-bottom: max(1rem, env(safe-area-inset-bottom));
             }
 
             .top-header {
                 padding-top: max(0rem, env(safe-area-inset-top));
+                padding-left: max(1rem, env(safe-area-inset-left));
+                padding-right: max(1rem, env(safe-area-inset-right));
             }
 
             /* Prevent auto-zoom on input focus in WebView */
@@ -1459,7 +1473,8 @@
                 font-size: 16px !important;
             }
 
-            .mobile-queue-card {
+            .mobile-queue-card,
+            .mobile-item-card {
                 padding: 0.875rem !important;
             }
 
@@ -1469,11 +1484,44 @@
                 margin-left: -0.25rem;
                 margin-right: -0.25rem;
             }
+
+            /* Responsive Toast Position on Mobile */
+            .toast-container {
+                top: auto !important;
+                bottom: max(1rem, env(safe-area-inset-bottom)) !important;
+                right: 12px !important;
+                left: 12px !important;
+                width: auto !important;
+                max-width: calc(100vw - 24px) !important;
+            }
+
+            /* Mobile Bottom Sheet Modals */
+            .modal-overlay {
+                align-items: flex-end !important;
+                padding: 0 !important;
+                background: rgba(15, 23, 42, 0.6) !important;
+                backdrop-filter: blur(4px) !important;
+                -webkit-backdrop-filter: blur(4px) !important;
+            }
+
+            .modal-content {
+                width: 100% !important;
+                max-width: 100% !important;
+                max-height: 90vh !important;
+                max-height: 90dvh !important;
+                border-radius: 20px 20px 0 0 !important;
+                padding: 1.25rem !important;
+                padding-bottom: max(1.25rem, env(safe-area-inset-bottom)) !important;
+                animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+                box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2) !important;
+            }
         }
 
         @media (max-width: 480px) {
             .content-area {
                 padding: 0.75rem !important;
+                padding-left: max(0.75rem, env(safe-area-inset-left)) !important;
+                padding-right: max(0.75rem, env(safe-area-inset-right)) !important;
                 padding-bottom: max(1.5rem, env(safe-area-inset-bottom)) !important;
             }
 
@@ -2083,12 +2131,13 @@
                     <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--primary);">👥 My Patients Directory (<span id="stat-patients-count">0</span>)</h3>
                     <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">Real-time patient demographic profiles &amp; consultation records</p>
                 </div>
-                <div style="position: relative; width: 240px;">
+                <div style="position: relative; width: 240px; max-width: 100%;">
                     <input type="text" id="patient-search-input" class="form-control" style="height: 38px; font-size: 0.85rem;" placeholder="🔍 Search patient name or phone..." onkeyup="window.filterPatientsDirectory(this.value)">
                 </div>
             </div>
 
-            <div class="table-container">
+            <!-- Desktop Patients Table -->
+            <div class="table-container desktop-only-table">
                 <table>
                     <thead>
                         <tr>
@@ -2105,13 +2154,18 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Mobile Patients Cards -->
+            <div class="mobile-card-container" id="patients-mobile-container">
+                <!-- Dynamically populated on mobile -->
+            </div>
         </div>
     </template>
 
     <!-- Prescriptions Template -->
     <template id="tpl-prescriptions">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header" style="flex-wrap: wrap; gap: 0.75rem;">
                 <div>
                     <h3>Prescription Management</h3>
                     <p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 2px;">Issue prescriptions and view patient medical history.</p>
@@ -2119,7 +2173,8 @@
                 <button class="btn btn-primary btn-sm" onclick="window.openNewPrescriptionModal()">+ New Prescription</button>
             </div>
 
-            <div class="table-container">
+            <!-- Desktop Prescriptions Table -->
+            <div class="table-container desktop-only-table">
                 <table>
                     <thead>
                         <tr>
@@ -2134,6 +2189,11 @@
                         <tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading prescription records...</td></tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Mobile Prescriptions Cards -->
+            <div class="mobile-card-container" id="prescriptions-mobile-container">
+                <!-- Dynamically populated on mobile -->
             </div>
         </div>
     </template>
@@ -2256,7 +2316,7 @@
                     </div>
                 </div>
 
-                <div class="table-container">
+                <div class="table-container desktop-only-table">
                     <table>
                         <thead>
                             <tr>
@@ -2273,6 +2333,11 @@
                             <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading doctor schedule...</td></tr>
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Mobile Slots Cards -->
+                <div class="mobile-card-container" id="slots-mobile-container">
+                    <!-- Dynamically populated on mobile -->
                 </div>
             </div>
         </div>
@@ -2506,7 +2571,7 @@
                 </div>
                 <span class="badge badge-info" id="wallet-req-count">0 Requests</span>
             </div>
-            <div class="table-container">
+            <div class="table-container desktop-only-table">
                 <table>
                     <thead>
                         <tr>
@@ -2522,6 +2587,11 @@
                         <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading withdrawal transactions...</td></tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Mobile Wallet Cards -->
+            <div class="mobile-card-container" id="wallet-mobile-container">
+                <!-- Dynamically populated on mobile -->
             </div>
         </div>
     </template>
@@ -2634,9 +2704,17 @@
                 if (sidebarOverlay) sidebarOverlay.classList.remove('show');
             };
 
+            const updateToggleVisibility = () => {
+                if (toggle) {
+                    toggle.style.display = window.innerWidth <= 768 ? 'block' : 'none';
+                }
+            };
+
+            updateToggleVisibility();
+            window.addEventListener('resize', updateToggleVisibility);
+
             if (toggle && !toggle.dataset.bound) {
                 toggle.dataset.bound = "true";
-                toggle.style.display = window.innerWidth <= 768 ? 'block' : 'none';
                 toggle.addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (sidebar && sidebar.classList.contains('open')) {
@@ -2651,6 +2729,18 @@
                 sidebarOverlay.dataset.bound = "true";
                 sidebarOverlay.addEventListener('click', window.closeSidebar);
             }
+
+            // Auto-close sidebar on mobile when any navigation item is clicked
+            document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {
+                if (!item.dataset.closeBound) {
+                    item.dataset.closeBound = "true";
+                    item.addEventListener('click', () => {
+                        if (window.innerWidth <= 768 && window.closeSidebar) {
+                            window.closeSidebar();
+                        }
+                    });
+                }
+            });
         }
 
         // Run binding immediately & on DOMContentLoaded
@@ -5531,16 +5621,20 @@
 
         function renderPatientsTable(list) {
             const tbody = document.getElementById('patients-body');
+            const mobileContainer = document.getElementById('patients-mobile-container');
             const totalCountEl = document.getElementById('stat-patients-count');
 
             if (totalCountEl) totalCountEl.textContent = list.length;
 
             if (!list || list.length === 0) {
                 if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">No patients found in directory.</td></tr>`;
+                if (mobileContainer) mobileContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem;">No patients found in directory.</div>`;
                 return;
             }
 
             let html = '';
+            let mobileHtml = '';
+
             list.forEach(item => {
                 html += `
                     <tr>
@@ -5571,9 +5665,29 @@
                         </td>
                     </tr>
                 `;
+
+                mobileHtml += `
+                    <div class="mobile-item-card">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <img src="${item.avatarUrl}" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary);" alt="Patient Photo">
+                                <div>
+                                    <h4 style="font-size: 1rem; font-weight: 800; color: var(--primary); margin: 0;">${item.fullName}</h4>
+                                    <span style="font-size: 0.75rem; color: var(--text-secondary);">📞 ${item.phone}</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-outline btn-sm" style="font-weight: 600; padding: 4px 10px;" onclick="window.inspectPatientFullProfile('${item.id}')">📋 Profile</button>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; background: #f8fafc; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
+                            <span>👤 ${item.gender}, ${item.age} &bull; 🩸 ${item.bloodGroup}</span>
+                            <span style="font-weight: 700; color: var(--success);">${item.totalVisits} Visits</span>
+                        </div>
+                    </div>
+                `;
             });
 
             if (tbody) tbody.innerHTML = html;
+            if (mobileContainer) mobileContainer.innerHTML = mobileHtml;
         }
 
         window.filterPatientsDirectory = (query) => {
@@ -5681,12 +5795,16 @@
                     .order('created_at', { ascending: false });
 
                 const tbody = document.getElementById('prescriptions-body');
+                const mobileContainer = document.getElementById('prescriptions-mobile-container');
                 if (!list || list.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 2rem;">No prescriptions issued yet.</td></tr>`;
+                    if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 2rem;">No prescriptions issued yet.</td></tr>`;
+                    if (mobileContainer) mobileContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem;">No prescriptions issued yet.</div>`;
                     return;
                 }
 
                 let html = '';
+                let mobileHtml = '';
+
                 list.forEach(rec => {
                     html += `
                         <tr>
@@ -5694,11 +5812,29 @@
                             <td style="font-weight: 600;">${rec.patient_id ? rec.patient_id.substring(0, 8) : 'Patient'}</td>
                             <td>${rec.diagnosis || 'Clinical Prescription'}</td>
                             <td>${rec.medicines || 'Medication supplements'}</td>
-                            <td><button class="btn btn-outline btn-sm" onclick="alert('${rec.medicines || 'Prescription Details'}')">View Details</button></td>
+                            <td><button class="btn btn-outline btn-sm" onclick="alert('${(rec.medicines || 'Prescription Details').replace(/'/g, "\\'")}')">View Details</button></td>
                         </tr>
                     `;
+
+                    mobileHtml += `
+                        <div class="mobile-item-card">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <span style="font-size: 0.85rem; font-weight: 700; color: var(--primary);">📅 ${rec.record_date || 'Recent'}</span>
+                                <span class="badge badge-info">PRESCRIPTION</span>
+                            </div>
+                            <div style="font-size: 0.9rem; font-weight: 800; color: var(--text-primary); margin-bottom: 4px;">
+                                🩺 ${rec.diagnosis || 'Clinical Prescription'}
+                            </div>
+                            <div style="font-size: 0.825rem; color: var(--text-secondary); background: #f8fafc; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 0.5rem;">
+                                💊 ${rec.medicines || 'Medication supplements'}
+                            </div>
+                            ${rec.advice ? `<div style="font-size: 0.775rem; color: var(--text-muted);">💡 ${rec.advice}</div>` : ''}
+                        </div>
+                    `;
                 });
-                tbody.innerHTML = html;
+
+                if (tbody) tbody.innerHTML = html;
+                if (mobileContainer) mobileContainer.innerHTML = mobileHtml;
 
             } catch (err) {
                 console.error("Prescriptions load error:", err);
@@ -5938,14 +6074,18 @@
                 }
 
                 const tbody = document.getElementById('slots-body');
+                const mobileContainer = document.getElementById('slots-mobile-container');
                 if (!tbody) return;
 
                 if (!schedules || schedules.length === 0) {
                     tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No slots found for selected date(s). Set Morning, Evening or Night session times above and click save!</td></tr>`;
+                    if (mobileContainer) mobileContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem;">No slots found for selected date(s).</div>`;
                     return;
                 }
 
                 let html = '';
+                let mobileHtml = '';
+
                 schedules.forEach(sched => {
                     const morningText = `${sched.morning_start} - ${sched.morning_end}`;
                     const eveningText = (sched.evening_start && sched.evening_end) ? `${sched.evening_start} - ${sched.evening_end}` : 'Off / Closed';
@@ -5965,8 +6105,28 @@
                             </td>
                         </tr>
                     `;
+
+                    mobileHtml += `
+                        <div class="mobile-item-card">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <span style="font-size: 1rem; font-weight: 800; color: var(--primary);">📅 ${sched.slot_date}</span>
+                                <span class="badge badge-success">ACTIVE</span>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; margin-bottom: 0.75rem;">
+                                <span style="color: #152C69;">☀️ Morning: ${morningText}</span>
+                                <span style="color: #D97706;">🌆 Evening: ${eveningText}</span>
+                                ${sched.night_start ? `<span style="color: #6B21A8;">🌙 Night: ${nightText}</span>` : ''}
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span class="badge badge-info" style="font-size: 0.75rem;">${slotCountText}</span>
+                                <button class="btn btn-outline btn-sm" style="color: var(--error); border-color: var(--error); padding: 4px 10px;" onclick="window.deleteSchedule('${sched.slot_date}')">Delete</button>
+                            </div>
+                        </div>
+                    `;
                 });
-                tbody.innerHTML = html;
+
+                if (tbody) tbody.innerHTML = html;
+                if (mobileContainer) mobileContainer.innerHTML = mobileHtml;
 
             } catch (err) {
                 console.error("Slots load error:", err);
@@ -6261,16 +6421,20 @@
                 if (document.getElementById('wallet-completed')) document.getElementById('wallet-completed').textContent = `₹${Math.round(completedSum).toLocaleString('en-IN')}`;
                 if (document.getElementById('wallet-req-count')) document.getElementById('wallet-req-count').textContent = `${(reqs || []).length} Requests`;
 
-                // Render history table
+                // Render history table & mobile cards
                 const tbody = document.getElementById('wallet-history-body');
+                const mobileContainer = document.getElementById('wallet-mobile-container');
                 if (!tbody) return;
 
                 if (!reqs || reqs.length === 0) {
                     tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No withdrawal requests submitted yet. Minimum withdrawal limit is ₹1,000.</td></tr>`;
+                    if (mobileContainer) mobileContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem;">No withdrawal requests submitted yet.</div>`;
                     return;
                 }
 
                 let html = '';
+                let mobileHtml = '';
+
                 reqs.forEach(r => {
                     const st = (r.status || 'Pending').toLowerCase();
                     let badgeClass = 'badge-warning';
@@ -6299,8 +6463,26 @@
                             <td style="font-size: 0.85rem; color: var(--text-secondary);">${r.admin_note || 'Awaiting Payout Processing'}</td>
                         </tr>
                     `;
+
+                    mobileHtml += `
+                        <div class="mobile-item-card">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <div>
+                                    <span style="font-size: 1.15rem; font-weight: 800; color: var(--primary);">₹${parseFloat(r.amount || 0).toLocaleString('en-IN')}</span>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">📅 ${reqDate} &bull; ${r.payment_method || 'UPI'}</div>
+                                </div>
+                                <span class="badge ${badgeClass}">${r.status || 'Pending'}</span>
+                            </div>
+                            <div style="font-size: 0.8rem; background: #f8fafc; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
+                                ${details}
+                            </div>
+                            ${r.admin_note ? `<div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 6px;">💬 Admin: ${r.admin_note}</div>` : ''}
+                        </div>
+                    `;
                 });
-                tbody.innerHTML = html;
+
+                if (tbody) tbody.innerHTML = html;
+                if (mobileContainer) mobileContainer.innerHTML = mobileHtml;
 
             } catch (err) {
                 console.error("Wallet load error:", err);

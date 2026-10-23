@@ -8,6 +8,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.View;
+import android.webkit.GeolocationPermissions;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
@@ -79,6 +80,7 @@ public class JoinAsDoctorActivity extends AppCompatActivity {
 
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
+        settings.setGeolocationEnabled(true);
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
         settings.setDisplayZoomControls(false);
@@ -110,16 +112,12 @@ public class JoinAsDoctorActivity extends AppCompatActivity {
                 binding.progressBar.setVisibility(View.GONE);
                 binding.swipeRefreshLayout.setRefreshing(false);
 
-                // Security: Disable text selection, touch callouts & context menus without breaking page layout
+                // Security: Disable text selection & touch callouts without breaking form input fields
                 view.loadUrl("javascript:(function() { " +
                         "var style = document.createElement('style'); " +
                         "style.type = 'text/css'; " +
-                        "style.innerHTML = '* { -webkit-user-select: none !important; -webkit-touch-callout: none !important; user-select: none !important; }';" +
+                        "style.innerHTML = 'body { -webkit-user-select: none !important; -webkit-touch-callout: none !important; user-select: none !important; } input, select, textarea { -webkit-user-select: text !important; user-select: text !important; }';" +
                         "if (document.head) document.head.appendChild(style); " +
-                        "if (document.body) { " +
-                        "document.body.style.webkitUserSelect='none'; " +
-                        "document.body.style.userSelect='none'; " +
-                        "} " +
                         "document.oncontextmenu = function() { return false; }; " +
                         "})()");
             }
@@ -154,6 +152,11 @@ public class JoinAsDoctorActivity extends AppCompatActivity {
         });
 
         webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
+                callback.invoke(origin, true, false);
+            }
+
             @Override
             public void onProgressChanged(WebView view, int newProgress) {
                 if (newProgress < 100) {
