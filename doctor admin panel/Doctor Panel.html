@@ -848,8 +848,10 @@
         }
 
         .app-layout {
-            min-height: 100vh;
+            display: flex;
             height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
             background: var(--bg-light);
         }
 
@@ -906,17 +908,24 @@
         }
 
         .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
             min-width: 0;
+            overflow: hidden;
         }
 
         .top-header {
-            position: relative;
-            z-index: 2;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
             height: 72px;
             flex: 0 0 72px;
             padding: 0 2rem;
             background: #fff;
-            border-bottom-color: #e4ece8;
+            border-bottom: 1px solid #e4ece8;
         }
 
         #page-title {
@@ -939,6 +948,10 @@
         }
 
         .content-area {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
             padding: 1.75rem 2rem 2.5rem;
             scrollbar-color: #c4d8d0 transparent;
             scrollbar-width: thin;
@@ -1289,8 +1302,31 @@
 
         @media (max-width: 768px) {
             .app-layout {
-                min-height: 100vh;
-                min-height: 100dvh;
+                height: 100vh;
+                height: 100dvh;
+                overflow: hidden;
+            }
+
+            .main-wrapper {
+                height: 100vh;
+                height: 100dvh;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+
+            .top-header {
+                position: sticky;
+                top: 0;
+                z-index: 1000;
+                flex-shrink: 0;
+            }
+
+            .content-area {
+                flex: 1;
+                min-height: 0;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
             }
 
             .sidebar {
@@ -1312,8 +1348,7 @@
             }
 
             #doctor-status-banner {
-                margin-right: 1rem !important;
-                margin-left: 1rem !important;
+                margin-bottom: 0.75rem !important;
             }
 
             .content-area {
@@ -1612,10 +1647,9 @@
                 </div>
             </header>
 
-            <!-- Dynamic Doctor Review Status Alert Banner -->
-            <div id="doctor-status-banner" style="margin: 1.25rem 1.5rem 0 1.5rem; display: none;"></div>
-
             <main class="content-area" id="app-content">
+                <!-- Dynamic Doctor Review Status Alert Banner -->
+                <div id="doctor-status-banner" style="margin-bottom: 1.25rem; display: none;"></div>
                 <!-- Dynamic HTML Templates Loaded Here -->
             </main>
         </div>
@@ -2866,8 +2900,9 @@
                 pageTitle.textContent = 'Account Verification Status';
                 const template = document.getElementById('tpl-unverified-view');
                 if (template) {
-                    appContent.innerHTML = '';
+                    appContent.innerHTML = '<div id="doctor-status-banner" style="margin-bottom: 1.25rem; display: none;"></div>';
                     appContent.appendChild(template.content.cloneNode(true));
+                    if (window.doctorContext) updateDoctorStatusBanner(window.doctorContext);
                     window.initUnverifiedView();
                 }
                 return;
@@ -2890,8 +2925,9 @@
 
             const template = document.getElementById(`tpl-${hash}`);
             if (template) {
-                appContent.innerHTML = '';
+                appContent.innerHTML = '<div id="doctor-status-banner" style="margin-bottom: 1.25rem; display: none;"></div>';
                 appContent.appendChild(template.content.cloneNode(true));
+                if (window.doctorContext) updateDoctorStatusBanner(window.doctorContext);
 
                 if (hash === 'dashboard') initDashboard();
                 if (hash === 'appointments') initAppointments();

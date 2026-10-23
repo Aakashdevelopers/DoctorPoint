@@ -306,6 +306,7 @@ public class AvailabilityHelper {
 
         for (DoctorSlot slot : slots) {
             if (slot == null || slot.getSlotDate() == null) continue;
+            if (!isSlotValidAndBookable(slot)) continue;
             String cleanDate = cleanDateString(slot.getSlotDate());
             if (isDateInPast(cleanDate)) continue;
 

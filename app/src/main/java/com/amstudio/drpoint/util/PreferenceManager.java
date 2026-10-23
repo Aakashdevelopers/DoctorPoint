@@ -28,6 +28,9 @@ public class PreferenceManager {
     private static final String KEY_USER_DOB = "user_dob";
     private static final String KEY_USER_EMERGENCY_CONTACT = "user_emergency_contact";
     private static final String KEY_SELECTED_STATE = "selected_state";
+    private static final String KEY_CC_EMAIL = "cc_email";
+    private static final String KEY_CC_PHONE_1 = "cc_phone_1";
+    private static final String KEY_CC_PHONE_2 = "cc_phone_2";
 
     private static PreferenceManager instance;
     private final SharedPreferences prefs;
@@ -231,7 +234,6 @@ public class PreferenceManager {
         if (userId != null && !userId.trim().isEmpty()) {
             prefs.edit().putBoolean("booked_doc_" + userId.trim() + "_" + doctorId.trim(), true).apply();
         }
-        prefs.edit().putBoolean("booked_doc_" + doctorId.trim(), true).apply();
     }
 
     public boolean hasBookedWithDoctor(String doctorId) {
@@ -241,6 +243,34 @@ public class PreferenceManager {
             return prefs.getBoolean("booked_doc_" + userId.trim() + "_" + doctorId.trim(), false);
         }
         return false;
+    }
+
+    public String getCustomerCareEmail() {
+        return prefs.getString(KEY_CC_EMAIL, "support@doctorpoint.com");
+    }
+
+    public String getCustomerCarePhone1() {
+        return prefs.getString(KEY_CC_PHONE_1, "+91 9876543210");
+    }
+
+    public String getCustomerCarePhone2() {
+        return prefs.getString(KEY_CC_PHONE_2, "+91 9123456789");
+    }
+
+    public void saveCustomerCareSettings(String email, String phone1, String phone2) {
+        SharedPreferences.Editor editor = prefs.edit();
+        if (email != null && !email.trim().isEmpty()) editor.putString(KEY_CC_EMAIL, email.trim());
+        if (phone1 != null && !phone1.trim().isEmpty()) editor.putString(KEY_CC_PHONE_1, phone1.trim());
+        if (phone2 != null && !phone2.trim().isEmpty()) editor.putString(KEY_CC_PHONE_2, phone2.trim());
+        editor.apply();
+    }
+
+    public String getString(String key, String defaultValue) {
+        return prefs.getString(key, defaultValue);
+    }
+
+    public void putString(String key, String value) {
+        prefs.edit().putString(key, value).apply();
     }
 
     public void clearSession() {

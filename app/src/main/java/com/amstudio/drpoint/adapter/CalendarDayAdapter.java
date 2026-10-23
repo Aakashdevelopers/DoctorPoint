@@ -157,8 +157,15 @@ public class CalendarDayAdapter extends RecyclerView.Adapter<CalendarDayAdapter.
                 binding.llDayContainer.setBackgroundResource(R.drawable.bg_calendar_day_selected);
                 binding.tvDayNumber.setTextColor(ContextCompat.getColor(context, R.color.white));
                 binding.tvDayName.setTextColor(ContextCompat.getColor(context, R.color.white));
-                binding.viewStatusDot.setVisibility(View.VISIBLE);
-                binding.viewStatusDot.setBackgroundResource(R.drawable.bg_dot_green);
+                if (day.isPast()) {
+                    binding.viewStatusDot.setVisibility(View.GONE);
+                } else if (day.isAvailable()) {
+                    binding.viewStatusDot.setVisibility(View.VISIBLE);
+                    binding.viewStatusDot.setBackgroundResource(R.drawable.bg_dot_green);
+                } else {
+                    binding.viewStatusDot.setVisibility(View.VISIBLE);
+                    binding.viewStatusDot.setBackgroundResource(R.drawable.bg_dot_red);
+                }
             } else if (day.isPast()) {
                 binding.llDayContainer.setBackgroundResource(R.drawable.bg_calendar_day_unavailable);
                 binding.tvDayNumber.setTextColor(ContextCompat.getColor(context, R.color.text_muted));

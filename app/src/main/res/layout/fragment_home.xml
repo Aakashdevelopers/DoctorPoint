@@ -29,8 +29,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingHorizontal="20dp"
-                android:paddingTop="18dp"
-                android:paddingBottom="18dp">
+                android:paddingTop="12dp"
+                android:paddingBottom="14dp">
 
                 <!-- Avatar Container with Active Status Indicator -->
                 <FrameLayout

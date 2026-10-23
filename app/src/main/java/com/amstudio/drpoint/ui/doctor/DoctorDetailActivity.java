@@ -223,11 +223,7 @@ public class DoctorDetailActivity extends AppCompatActivity {
         }
         if (binding.tvAboutGender != null) {
             String gender = doctor.getGender();
-            if (gender == null || gender.isEmpty() || "Doctor".equalsIgnoreCase(gender.trim())) {
-                binding.tvAboutGender.setText("Medical Practitioner");
-            } else {
-                binding.tvAboutGender.setText(gender + " Doctor");
-            }
+            binding.tvAboutGender.setText(gender + " Doctor");
         }
         if (binding.tvAboutVerified != null) {
             binding.tvAboutVerified.setText(doctor.isVerified() ? "Verified Practitioner" : "Registered Practitioner");
@@ -721,10 +717,7 @@ public class DoctorDetailActivity extends AppCompatActivity {
                         }
                     } catch (Exception ignored) {}
 
-                    boolean isBookable = slot.getStatus() == null ||
-                            slot.getStatus().isEmpty() ||
-                            "available".equalsIgnoreCase(slot.getStatus()) ||
-                            !"booked".equalsIgnoreCase(slot.getStatus());
+                    boolean isBookable = AvailabilityHelper.isSlotValidAndBookable(slot);
 
                     if (isBookable && !AvailabilityHelper.isDateInPast(cleanDate)) {
                         availableDates.add(cleanDate);

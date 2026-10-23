@@ -503,16 +503,19 @@ public class DummyDataProvider {
                 .enqueue(new Callback<List<DoctorSlot>>() {
                     @Override
                     public void onResponse(Call<List<DoctorSlot>> c, Response<List<DoctorSlot>> r) {
-                        Set<String> activeSlotDoctorIds = new HashSet<>();
+                        Set<String> activeTodayDoctorIds = new HashSet<>();
                         if (r.isSuccessful() && r.body() != null) {
                             for (DoctorSlot slot : r.body()) {
-                                if (slot.getDoctorId() != null) {
-                                    activeSlotDoctorIds.add(slot.getDoctorId());
+                                if (slot != null && slot.getDoctorId() != null && slot.getSlotDate() != null) {
+                                    String cleanDate = AvailabilityHelper.cleanDateString(slot.getSlotDate());
+                                    if (todayDate.equals(cleanDate) && AvailabilityHelper.isSlotValidAndBookable(slot)) {
+                                        activeTodayDoctorIds.add(slot.getDoctorId());
+                                    }
                                 }
                             }
                         }
                         for (Doctor d : fetchedDocs) {
-                            d.setAvailableToday(activeSlotDoctorIds.contains(d.getId()));
+                            d.setAvailableToday(activeTodayDoctorIds.contains(d.getId()));
                         }
                         synchronized (DummyDataProvider.class) {
                             doctors = new ArrayList<>(fetchedDocs);

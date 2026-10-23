@@ -112,7 +112,7 @@ CREATE TABLE public.doctors (
     followup_commission NUMERIC(5,2),
     commission_type TEXT DEFAULT 'percentage', -- 'percentage' or 'flat'
     is_verified BOOLEAN DEFAULT TRUE,
-    gender TEXT DEFAULT 'Female',
+    gender TEXT DEFAULT 'Male',
     is_available_today BOOLEAN DEFAULT TRUE,
     is_nearby BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -1251,6 +1251,9 @@ INSERT INTO public.clinics (
     ('c1000000-0000-0000-0000-000000000005', 'doc_5', 'Kids Health Clinic', '4th Block, Jayanagar', 'Bangalore', 'Karnataka', '560011', '080-45678901', true),
     ('c1000000-0000-0000-0000-000000000006', 'doc_6', 'Patna Care Clinic', 'Boring Road Crossing', 'Patna', 'Bihar', '800001', '0612-123456', true)
 ON CONFLICT (id) DO UPDATE SET clinic_name = EXCLUDED.clinic_name;
+
+-- Fix any legacy doctor rows where gender was mistakenly set to 'Doctor'
+UPDATE public.doctors SET gender = 'Male' WHERE gender IS NULL OR LOWER(gender) = 'doctor';
 
 -- ============================================================================
 -- SETUP COMPLETE!

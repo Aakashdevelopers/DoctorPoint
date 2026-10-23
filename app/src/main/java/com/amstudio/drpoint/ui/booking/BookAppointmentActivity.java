@@ -12,6 +12,7 @@ import android.view.View;
 import android.net.Uri;
 import android.text.TextUtils;
 import android.widget.ArrayAdapter;
+import android.widget.FrameLayout;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -26,6 +27,7 @@ import com.amstudio.drpoint.adapter.TimeSlotAdapter;
 import com.amstudio.drpoint.util.WindowInsetsUtil;
 import com.amstudio.drpoint.databinding.ActivityBookAppointmentBinding;
 import com.amstudio.drpoint.databinding.BottomSheetEditProfileBinding;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.amstudio.drpoint.model.Appointment;
 import com.amstudio.drpoint.model.Clinic;
@@ -834,6 +836,15 @@ public class BookAppointmentActivity extends AppCompatActivity {
         activeSheetBinding = sheetBinding;
         dialog.setContentView(sheetBinding.getRoot());
         dialog.setCancelable(true);
+        dialog.setOnShowListener(dialogInterface -> {
+            BottomSheetDialog bsd = (BottomSheetDialog) dialogInterface;
+            FrameLayout bottomSheet = bsd.findViewById(com.google.android.material.R.id.design_bottom_sheet);
+            if (bottomSheet != null) {
+                BottomSheetBehavior<FrameLayout> behavior = BottomSheetBehavior.from(bottomSheet);
+                behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+                behavior.setSkipCollapsed(true);
+            }
+        });
 
         PreferenceManager pref = PreferenceManager.getInstance(this);
 
@@ -2077,13 +2088,12 @@ public class BookAppointmentActivity extends AppCompatActivity {
         return "10:00:00";
     }
 
-    private boolean isValidPreviousAppointment(Appointment appt, String targetDoctorId) {
-        String userId = PreferenceManager.getInstance(this).getUserId();
-        return isValidPreviousAppointment(appt, targetDoctorId, userId);
-    }
-
     private boolean isValidPreviousAppointment(Appointment appt, String targetDoctorId, String currentUserId) {
         if (appt == null || targetDoctorId == null || targetDoctorId.trim().isEmpty()) {
+            return false;
+        }
+
+        if (currentUserId == null || currentUserId.trim().isEmpty()) {
             return false;
         }
 
@@ -2093,21 +2103,19 @@ public class BookAppointmentActivity extends AppCompatActivity {
             return false;
         }
 
-        // 2. Must match current patient ID if provided
-        if (currentUserId != null && !currentUserId.trim().isEmpty()) {
-            String apptPatId = appt.getPatientId();
-            if (apptPatId == null || apptPatId.trim().isEmpty()) {
-                return false;
-            }
-            String cleanUser = currentUserId.trim();
-            String uuidUser = formatUuidOrNull(cleanUser);
-            String cleanApptPat = apptPatId.trim();
+        // 2. Must match current patient ID
+        String apptPatId = appt.getPatientId();
+        if (apptPatId == null || apptPatId.trim().isEmpty()) {
+            return false;
+        }
+        String cleanUser = currentUserId.trim();
+        String uuidUser = formatUuidOrNull(cleanUser);
+        String cleanApptPat = apptPatId.trim();
 
-            boolean matches = cleanApptPat.equalsIgnoreCase(cleanUser) 
-                    || (uuidUser != null && cleanApptPat.equalsIgnoreCase(uuidUser));
-            if (!matches) {
-                return false;
-            }
+        boolean matches = cleanApptPat.equalsIgnoreCase(cleanUser) 
+                || (uuidUser != null && cleanApptPat.equalsIgnoreCase(uuidUser));
+        if (!matches) {
+            return false;
         }
 
         // 3. Check appointment status (Exclude Cancelled, Rejected, Failed, No-Show, Refunded)
@@ -2319,14 +2327,19 @@ public class BookAppointmentActivity extends AppCompatActivity {
     private void checkPatientAppointmentHistoryAndUpdateFee() {
         String userId = PreferenceManager.getInstance(this).getUserId();
 
-        // 1. Initial check using local PreferenceManager history
-        boolean hasLocalHistory = doctor != null && doctor.getId() != null && PreferenceManager.getInstance(this).hasBookedWithDoctor(doctor.getId());
+        if (userId == null || userId.trim().isEmpty() || doctor == null || doctor.getId() == null) {
+            isReturningPatientUser = false;
+            updateConsultationFeeUI();
+            return;
+        }
+
+        String cleanUserId = userId.trim();
+
+        // 1. Initial check using local PreferenceManager history for current user
+        boolean hasLocalHistory = PreferenceManager.getInstance(this).hasBookedWithDoctor(doctor.getId());
         isReturningPatientUser = hasLocalHistory;
         updateConsultationFeeUI();
 
-        if (userId == null || userId.trim().isEmpty() || doctor == null || doctor.getId() == null) return;
-
-        String cleanUserId = userId.trim();
         String uuidUserId = formatUuidOrNull(cleanUserId);
         String queryParam;
         if (uuidUserId != null && !uuidUserId.equalsIgnoreCase(cleanUserId)) {

@@ -48,10 +48,9 @@ public class LoginActivity extends AppCompatActivity {
 
         binding.btnGoogleLogin.setOnClickListener(v -> {
             PreferenceManager prefManager = PreferenceManager.getInstance(LoginActivity.this);
+            prefManager.clearSession();
             prefManager.setLoggedIn(true);
-            if (prefManager.getUserId() == null || prefManager.getUserId().trim().isEmpty()) {
-                prefManager.setUserId("google_user_" + System.currentTimeMillis());
-            }
+            prefManager.setUserId("google_user_" + System.currentTimeMillis());
             prefManager.setUserName("Aakash Mishra");
             prefManager.setUserEmail("aakash.mishra@example.com");
 
@@ -146,6 +145,7 @@ public class LoginActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     AuthResponse authResponse = response.body();
                     PreferenceManager prefManager = PreferenceManager.getInstance(LoginActivity.this);
+                    prefManager.clearSession();
                     prefManager.setLoggedIn(true);
                     prefManager.setAccessToken(authResponse.getAccessToken());
                     prefManager.setRefreshToken(authResponse.getRefreshToken());

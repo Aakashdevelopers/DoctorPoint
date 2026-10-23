@@ -13,7 +13,7 @@ import retrofit2.http.POST;
 
 public interface SupabaseSettingsService {
 
-    @GET("rest/v1/customer_care_settings?select=*&limit=1")
+    @GET("rest/v1/customer_care_settings?select=*&order=id.desc&limit=1")
     Call<List<CustomerCareSettings>> getCustomerCareSettings();
 
     @POST("rest/v1/customer_care_settings")

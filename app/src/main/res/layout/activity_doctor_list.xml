@@ -4,7 +4,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background_light"
-    android:fitsSystemWindows="true"
     android:orientation="vertical">
 
     <!-- Top App Bar Card -->
@@ -96,7 +95,8 @@
         android:layout_height="wrap_content"
         android:clipToPadding="false"
         android:paddingHorizontal="16dp"
-        android:paddingVertical="8dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="4dp"
         android:scrollbars="none">
 
         <LinearLayout
@@ -111,7 +111,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingHorizontal="16dp"
-        android:paddingVertical="12dp">
+        android:paddingTop="10dp"
+        android:paddingBottom="8dp">
 
         <TextView
             android:id="@+id/tv_result_count"
@@ -119,6 +120,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
             android:layout_centerVertical="true"
+            android:includeFontPadding="false"
             android:text="0 Doctors found"
             android:textColor="@color/text_secondary"
             android:textSize="13sp"
@@ -129,7 +131,8 @@
     <!-- Main Content Area with SwipeRefreshLayout and Empty State -->
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
         <!-- Shimmer Placeholder for Doctor List -->
         <com.facebook.shimmer.ShimmerFrameLayout

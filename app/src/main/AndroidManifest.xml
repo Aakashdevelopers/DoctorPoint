@@ -110,6 +110,11 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
+            android:name=".ui.profile.JoinAsDoctorActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
             android:name="com.yalantis.ucrop.UCropActivity"
             android:exported="false"
             android:screenOrientation="portrait"

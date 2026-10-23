@@ -8,6 +8,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 
+    <!-- Firebase JS SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
     <style>
         :root {
             --primary: #087f79;
@@ -93,6 +97,18 @@
             display: flex;
             flex-direction: column;
             gap: 6px;
+            flex: 1;
+            overflow-y: auto;
+            max-height: calc(100vh - 80px);
+        }
+
+        .sidebar-menu::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .sidebar-menu::-webkit-scrollbar-thumb {
+            background: rgba(8, 127, 121, 0.2);
+            border-radius: 4px;
         }
 
         .sidebar-menu li a {
@@ -727,8 +743,10 @@
         }
 
         .sidebar-menu {
-            padding: 22px 12px;
+            padding: 22px 12px 30px 12px;
             gap: 4px;
+            overflow-y: auto;
+            flex: 1;
         }
 
         .sidebar-menu li a {
@@ -1138,6 +1156,9 @@
             </li>
             <li data-tab="customer-care">
                 <a href="#"><i class='bx bx-headphone'></i> Customer Care</a>
+            </li>
+            <li data-tab="join-doctor">
+                <a href="#"><i class='bx bx-user-plus'></i> Join Doctor URL</a>
             </li>
         </ul>
     </aside>
@@ -1626,6 +1647,47 @@
                 </div>
             </div>
 
+            <!-- TAB 10: JOIN AS A DOCTOR WEB REGISTRATION SETTINGS -->
+            <div id="tab-join-doctor" class="tab-content">
+                <div class="content-card" style="max-width: 800px; margin: 0 auto;">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3><i class='bx bx-user-plus'></i> Join as a Doctor Web Registration Settings</h3>
+                        <span class="badge badge-verified" id="jd-status-badge"><i class='bx bx-check-shield'></i> Live Firebase Database</span>
+                    </div>
+                    <div style="padding: 24px;">
+                        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">
+                            Configure the URL loaded when doctors tap "Join as a Doctor" in the DoctorPoint Android App. Changes are updated in Firebase Realtime Database.
+                        </p>
+
+                        <form id="form-join-doctor" onsubmit="event.preventDefault(); saveJoinDoctorSettings(event);">
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-primary, #0f172a);">
+                                    Doctor Registration Web URL <span style="color: red;">*</span>
+                                </label>
+                                <div style="position: relative;">
+                                    <i class='bx bx-link-external' style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 18px;"></i>
+                                    <input type="url" id="jd-url" required placeholder="https://doctors.doctorpoint.com/register"
+                                        style="width: 100%; padding: 12px 14px 12px 42px; border: 1.5px solid var(--border-color); border-radius: 8px; font-size: 14px; background: var(--bg-surface, #ffffff); color: var(--text-primary, #0f172a); transition: all 0.2s ease;">
+                                </div>
+                                <small style="color: var(--text-muted); font-size: 12px; margin-top: 6px; display: block;">
+                                    The Android App opens this URL securely in a standard WebView without showing address bars or copy options.
+                                </small>
+                            </div>
+
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+                                <span id="jd-last-updated-text" style="color: var(--text-muted); font-size: 13px;">
+                                    <i class='bx bx-time-five'></i> Connecting to Firebase...
+                                </span>
+
+                                <button type="submit" class="btn btn-primary" id="btn-save-join-doctor" style="padding: 10px 24px;">
+                                    <i class='bx bx-save'></i> Save Join Doctor URL
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </main>
 
@@ -1917,6 +1979,7 @@
         // INITIALIZATION
         document.addEventListener('DOMContentLoaded', async () => {
             setupSidebarNav();
+            initJoinDoctorFirebase();
             await fetchAllFromSupabase();
 
             document.getElementById('btn-sync-reset').addEventListener('click', async () => {
@@ -2138,9 +2201,24 @@
                 'commissions': 'Commission & Pricing Settings',
                 'withdrawals': 'Doctor Payouts & Withdrawal Requests',
                 'refunds': 'Patient Refund Requests & Anti-Fraud Control',
-                'customer-care': 'Customer Care Contact Settings'
+                'customer-care': 'Customer Care Contact Settings',
+                'join-doctor': 'Join as a Doctor Web Registration Settings'
+            };
+            const subTitles = {
+                'dashboard': 'System metrics, doctors overview & pending actions',
+                'categories': 'Control categories for Home & Explore fragments',
+                'doctors': 'Review and verify new doctor account submissions',
+                'users': 'View registered patient accounts and history',
+                'appointments': 'Manage doctor slots and patient bookings',
+                'commissions': 'Set platform fees and commission structure',
+                'withdrawals': 'Process earnings payout requests for doctors',
+                'refunds': 'Review and approve patient refund requests',
+                'customer-care': 'Configure support email and helpline numbers',
+                'join-doctor': 'Configure doctor registration web link loaded in Android app'
             };
             document.getElementById('page-heading').innerText = titles[tabName] || 'Super Panel';
+            const subElem = document.getElementById('page-subheading');
+            if (subElem) subElem.innerText = subTitles[tabName] || 'Doctor Point System Control';
         }
 
         function renderCustomerCare() {
@@ -2784,7 +2862,11 @@
             document.getElementById('doc-qual-input').value = doc ? doc.qualification : '';
             document.getElementById('doc-exp-input').value = doc ? doc.experience : '';
             document.getElementById('doc-fee-input').value = doc ? doc.fee : 500;
-            if (document.getElementById('doc-gender-input')) document.getElementById('doc-gender-input').value = doc ? (doc.gender && doc.gender !== 'Doctor' ? doc.gender : 'Male') : 'Male';
+            if (document.getElementById('doc-gender-input')) {
+                const rawG = doc ? doc.gender : 'Male';
+                const g = (rawG && rawG.toLowerCase() !== 'doctor') ? rawG : 'Male';
+                document.getElementById('doc-gender-input').value = g;
+            }
             document.getElementById('doc-new-comm-input').value = doc && doc.new_patient_commission !== undefined ? doc.new_patient_commission : (globalCommission.new_patient_commission || 100);
             document.getElementById('doc-followup-comm-input').value = doc && doc.followup_commission !== undefined ? doc.followup_commission : (globalCommission.followup_commission || 50);
             document.getElementById('doc-comm-type-input').value = doc ? (doc.commission_type || 'FLAT') : 'FLAT';
@@ -2801,7 +2883,8 @@
             const qualification = document.getElementById('doc-qual-input').value.trim() || 'MBBS';
             const experience = document.getElementById('doc-exp-input').value.toString() || '5';
             const fee = parseInt(document.getElementById('doc-fee-input').value) || 500;
-            const gender = document.getElementById('doc-gender-input')?.value || 'Male';
+            const rawGender = document.getElementById('doc-gender-input')?.value || 'Male';
+            const gender = (rawGender && rawGender.toLowerCase() !== 'doctor') ? rawGender : 'Male';
             const new_patient_commission = parseFloat(document.getElementById('doc-new-comm-input').value) || 0;
             const followup_commission = parseFloat(document.getElementById('doc-followup-comm-input').value) || 0;
             const commission_type = document.getElementById('doc-comm-type-input').value || 'FLAT';
@@ -3672,6 +3755,70 @@
                 await fetchAllFromSupabase();
             } catch (err) {
                 showToast('Error rejecting refund: ' + err.message, 'danger');
+            }
+        };
+
+        // FIREBASE RTDB FOR JOIN DOCTOR URL
+        const firebaseConfig = {
+            apiKey: "AIzaSyDASuaqdVuOIUCqyB_i_ECvhQazweEajN0",
+            databaseURL: "https://presets-store-default-rtdb.firebaseio.com",
+            projectId: "presets-store"
+        };
+        if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        function initJoinDoctorFirebase() {
+            if (typeof firebase === 'undefined') return;
+            try {
+                const dbRef = firebase.database().ref('settings/join_doctor_url');
+                dbRef.on('value', (snapshot) => {
+                    const urlVal = snapshot.val();
+                    const urlInput = document.getElementById('jd-url');
+                    const lastUpdatedElem = document.getElementById('jd-last-updated-text');
+                    if (urlInput && urlVal && document.activeElement !== urlInput) {
+                        urlInput.value = urlVal;
+                    }
+                    if (lastUpdatedElem) {
+                        const now = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+                        lastUpdatedElem.innerHTML = `<i class='bx bx-check-circle' style='color:#10b981;'></i> Connected &amp; Live on Firebase (${now})`;
+                    }
+                });
+            } catch(e) {
+                console.warn("Firebase RTDB init notice:", e);
+            }
+        }
+
+        window.saveJoinDoctorSettings = async function(e) {
+            if (e) e.preventDefault();
+            const urlInput = document.getElementById('jd-url');
+            const btn = document.getElementById('btn-save-join-doctor');
+            if (!urlInput || !urlInput.value.trim()) {
+                showToast('Please enter a valid Registration URL.', 'danger');
+                return;
+            }
+
+            const newUrl = urlInput.value.trim();
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<i class='bx bx-loader-alt bx-spin'></i> Saving...`;
+            }
+
+            try {
+                if (typeof firebase !== 'undefined') {
+                    await firebase.database().ref('settings/join_doctor_url').set(newUrl);
+                    showToast('Join Doctor URL saved successfully to Firebase!', 'success');
+                } else {
+                    showToast('Firebase SDK not available.', 'danger');
+                }
+            } catch (err) {
+                console.error("Error saving Join Doctor URL:", err);
+                showToast('Error saving URL: ' + (err.message || err), 'danger');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class='bx bx-save'></i> Save Join Doctor URL`;
+                }
             }
         };
 

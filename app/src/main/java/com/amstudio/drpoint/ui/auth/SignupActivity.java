@@ -257,6 +257,7 @@ public class SignupActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     AuthResponse authResponse = response.body();
                     PreferenceManager prefManager = PreferenceManager.getInstance(SignupActivity.this);
+                    prefManager.clearSession();
 
                     User user = authResponse.getUser();
                     String userId = (user != null && user.getId() != null) ? user.getId() : "user_" + System.currentTimeMillis();

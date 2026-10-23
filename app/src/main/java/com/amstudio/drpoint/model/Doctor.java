@@ -259,7 +259,12 @@ public class Doctor implements Serializable {
     public boolean isVerified() { return isVerified; }
     public void setVerified(boolean verified) { isVerified = verified; }
 
-    public String getGender() { return gender; }
+    public String getGender() {
+        if (gender == null || gender.trim().isEmpty() || "Doctor".equalsIgnoreCase(gender.trim())) {
+            return "Male";
+        }
+        return gender;
+    }
     public void setGender(String gender) { this.gender = gender; }
 
     public boolean isAvailableToday() { return isAvailableToday; }

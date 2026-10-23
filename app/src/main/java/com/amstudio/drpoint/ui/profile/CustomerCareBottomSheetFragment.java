@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,6 +16,7 @@ import androidx.annotation.Nullable;
 import com.amstudio.drpoint.databinding.BottomSheetCustomerCareBinding;
 import com.amstudio.drpoint.model.CustomerCareSettings;
 import com.amstudio.drpoint.network.SupabaseClient;
+import com.amstudio.drpoint.util.PreferenceManager;
 import com.amstudio.drpoint.util.ToastUtils;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
@@ -62,6 +64,8 @@ public class CustomerCareBottomSheetFragment extends BottomSheetDialogFragment {
         binding.llCcEmpty.setVisibility(View.GONE);
         binding.llCcContent.setVisibility(View.GONE);
 
+        Context context = getContext();
+
         SupabaseClient.getSettingsService().getCustomerCareSettings().enqueue(new Callback<List<CustomerCareSettings>>() {
             @Override
             public void onResponse(@NonNull Call<List<CustomerCareSettings>> call, @NonNull Response<List<CustomerCareSettings>> response) {
@@ -71,9 +75,17 @@ public class CustomerCareBottomSheetFragment extends BottomSheetDialogFragment {
 
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                     CustomerCareSettings settings = response.body().get(0);
+                    if (context != null) {
+                        PreferenceManager.getInstance(context).saveCustomerCareSettings(
+                                settings.getEmail(),
+                                settings.getPhone1(),
+                                settings.getPhone2()
+                        );
+                    }
                     displaySettings(settings);
                 } else {
-                    showErrorState("Unable to load customer care details.");
+                    Log.w(TAG, "Customer care API unsuccessfull or empty response. Code: " + response.code());
+                    useFallbackSettings();
                 }
             }
 
@@ -82,9 +94,25 @@ public class CustomerCareBottomSheetFragment extends BottomSheetDialogFragment {
                 if (binding == null || !isAdded()) return;
 
                 binding.llCcLoading.setVisibility(View.GONE);
-                showErrorState("Unable to load customer care details.");
+                Log.e(TAG, "Customer care API failure", t);
+                useFallbackSettings();
             }
         });
+    }
+
+    private void useFallbackSettings() {
+        Context context = getContext();
+        if (context != null) {
+            PreferenceManager pref = PreferenceManager.getInstance(context);
+            String email = pref.getCustomerCareEmail();
+            String phone1 = pref.getCustomerCarePhone1();
+            String phone2 = pref.getCustomerCarePhone2();
+
+            CustomerCareSettings fallback = new CustomerCareSettings(email, phone1, phone2);
+            displaySettings(fallback);
+        } else {
+            showErrorState("Unable to load customer care details.");
+        }
     }
 
     private void showErrorState(String message) {
@@ -113,10 +141,15 @@ public class CustomerCareBottomSheetFragment extends BottomSheetDialogFragment {
         if (!hasEmail && !hasPhone1 && !hasPhone2) {
             binding.llCcEmpty.setVisibility(View.VISIBLE);
             binding.llCcContent.setVisibility(View.GONE);
+            binding.llCcError.setVisibility(View.GONE);
+            binding.llCcLoading.setVisibility(View.GONE);
             return;
         }
 
         binding.llCcContent.setVisibility(View.VISIBLE);
+        binding.llCcError.setVisibility(View.GONE);
+        binding.llCcLoading.setVisibility(View.GONE);
+        binding.llCcEmpty.setVisibility(View.GONE);
 
         // WhatsApp Support Card (uses phone1 or phone2)
         String whatsappPhone = hasPhone1 ? phone1 : phone2;

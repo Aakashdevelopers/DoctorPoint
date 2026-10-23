@@ -15,6 +15,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
 import android.widget.ArrayAdapter;
+import android.widget.FrameLayout;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -42,6 +43,7 @@ import com.amstudio.drpoint.util.DummyDataProvider;
 import com.amstudio.drpoint.util.PreferenceManager;
 import com.amstudio.drpoint.util.ToastUtils;
 import com.bumptech.glide.Glide;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.yalantis.ucrop.UCrop;
@@ -243,8 +245,8 @@ public class ProfileFragment extends Fragment {
         binding.flEditProfileTop.setOnClickListener(v -> openEditProfileBottomSheet());
         binding.tvEditProfile.setOnClickListener(v -> openEditProfileBottomSheet());
 
-        binding.cardJoinAsDoctor.setOnClickListener(v -> openJoinAsDoctorBottomSheet());
-        binding.btnJoinDoctorBanner.setOnClickListener(v -> openJoinAsDoctorBottomSheet());
+        binding.cardJoinAsDoctor.setOnClickListener(v -> openJoinAsDoctorActivity());
+        binding.btnJoinDoctorBanner.setOnClickListener(v -> openJoinAsDoctorActivity());
 
         View.OnClickListener customerCareListener = v -> openCustomerCareBottomSheet();
         if (binding.cardCustomerCareSupport != null) {
@@ -319,7 +321,7 @@ public class ProfileFragment extends Fragment {
             Intent intent = new Intent(context, NotificationsActivity.class);
             startActivity(intent);
         } else if (title.toLowerCase().contains("doctor") || title.toLowerCase().contains("join") || title.toLowerCase().contains("apply")) {
-            openJoinAsDoctorBottomSheet();
+            openJoinAsDoctorActivity();
         } else if (title.toLowerCase().contains("customer") || title.toLowerCase().contains("care") || title.toLowerCase().contains("help") || title.toLowerCase().contains("support")) {
             openCustomerCareBottomSheet();
         } else if (title.toLowerCase().contains("privacy")) {
@@ -333,10 +335,11 @@ public class ProfileFragment extends Fragment {
         }
     }
 
-    private void openJoinAsDoctorBottomSheet() {
+    private void openJoinAsDoctorActivity() {
         Context context = getContext();
         if (context == null) return;
-        ToastUtils.showInfo(context, "Join as a Doctor feature is coming soon!");
+        Intent intent = new Intent(context, JoinAsDoctorActivity.class);
+        startActivity(intent);
     }
 
     private void openCustomerCareBottomSheet() {
@@ -487,6 +490,15 @@ public class ProfileFragment extends Fragment {
         activeSheetBinding = sheetBinding;
         pendingAvatarUrl = "";
         dialog.setContentView(sheetBinding.getRoot());
+        dialog.setOnShowListener(dialogInterface -> {
+            BottomSheetDialog bsd = (BottomSheetDialog) dialogInterface;
+            FrameLayout bottomSheet = bsd.findViewById(com.google.android.material.R.id.design_bottom_sheet);
+            if (bottomSheet != null) {
+                BottomSheetBehavior<FrameLayout> behavior = BottomSheetBehavior.from(bottomSheet);
+                behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+                behavior.setSkipCollapsed(true);
+            }
+        });
 
         PreferenceManager prefManager = PreferenceManager.getInstance(context);
         String userId = prefManager.getUserId();
