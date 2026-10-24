@@ -13,13 +13,21 @@ public class CancelAppointmentRpcRequest {
     @SerializedName("p_cancellation_reason")
     private String cancellationReason;
 
+    @SerializedName(value = "p_cancelled_at", alternate = {"cancelled_at"})
+    private String cancelledAt;
+
     public CancelAppointmentRpcRequest() {
     }
 
     public CancelAppointmentRpcRequest(String appointmentId, String cancellerId, String cancellationReason) {
+        this(appointmentId, cancellerId, cancellationReason, null);
+    }
+
+    public CancelAppointmentRpcRequest(String appointmentId, String cancellerId, String cancellationReason, String cancelledAt) {
         this.appointmentId = appointmentId;
         this.cancellerId = cancellerId;
         this.cancellationReason = cancellationReason != null ? cancellationReason : "Cancelled by patient";
+        this.cancelledAt = cancelledAt;
     }
 
     public String getAppointmentId() { return appointmentId; }
@@ -30,4 +38,7 @@ public class CancelAppointmentRpcRequest {
 
     public String getCancellationReason() { return cancellationReason; }
     public void setCancellationReason(String cancellationReason) { this.cancellationReason = cancellationReason; }
+
+    public String getCancelledAt() { return cancelledAt; }
+    public void setCancelledAt(String cancelledAt) { this.cancelledAt = cancelledAt; }
 }

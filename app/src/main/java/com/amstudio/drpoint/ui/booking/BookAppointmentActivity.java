@@ -7,6 +7,7 @@ import android.graphics.Paint;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 
 import android.net.Uri;
@@ -120,7 +121,7 @@ public class BookAppointmentActivity extends AppCompatActivity {
         }
 
         binding.ivBack.setOnClickListener(v -> finish());
-        binding.ivConsultationInfo.setOnClickListener(v -> showFollowUpInfoDialog());
+
 
         String existingUserName = PreferenceManager.getInstance(this).getUserName();
         if (existingUserName != null && !existingUserName.trim().isEmpty() && binding.etPatientName != null) {
@@ -620,7 +621,28 @@ public class BookAppointmentActivity extends AppCompatActivity {
         hideShimmerLoaders();
     }
 
+    private String formatFullDateLabel(String rawDate) {
+        if (rawDate == null || rawDate.trim().isEmpty()) return "";
+        try {
+            SimpleDateFormat sdfInput = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+            sdfInput.setTimeZone(AvailabilityHelper.getAppTimeZone());
+            Date date = sdfInput.parse(rawDate);
+            if (date != null) {
+                SimpleDateFormat sdfOutput = new SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.US);
+                sdfOutput.setTimeZone(AvailabilityHelper.getAppTimeZone());
+                return sdfOutput.format(date);
+            }
+        } catch (Exception e) {
+            // Fallback
+        }
+        return rawDate;
+    }
+
     private void updateSlotsForSelectedDate(String rawDate) {
+        if (binding.tvSelectedDateLabel != null && rawDate != null) {
+            binding.tvSelectedDateLabel.setText(formatFullDateLabel(rawDate));
+        }
+
         if (rawDate == null) {
             binding.rvMorningSlots.setAdapter(null);
             binding.rvEveningSlots.setAdapter(null);
@@ -1671,6 +1693,8 @@ public class BookAppointmentActivity extends AppCompatActivity {
         payload.put("patient_id", targetPatientId);
         payload.put("appointment_date", targetDateVal);
         payload.put("start_time", startTimeVal);
+        payload.put("original_appointment_date", targetDateVal);
+        payload.put("original_appointment_time", startTimeVal);
         payload.put("end_time", endTimeVal);
         payload.put("appointment_type", "clinic");
         payload.put("status", "Confirmed");
@@ -1855,6 +1879,8 @@ public class BookAppointmentActivity extends AppCompatActivity {
         safePayload.put("patient_id", patIdVal);
         safePayload.put("appointment_date", originalPayload.get("appointment_date"));
         safePayload.put("start_time", originalPayload.get("start_time"));
+        safePayload.put("original_appointment_date", originalPayload.get("appointment_date"));
+        safePayload.put("original_appointment_time", originalPayload.get("start_time"));
         safePayload.put("end_time", originalPayload.get("end_time"));
         safePayload.put("token_number", assignedToken);
         safePayload.put("slot_number", assignedToken);
@@ -1972,6 +1998,8 @@ public class BookAppointmentActivity extends AppCompatActivity {
         uuidPayload.put("patient_id", formatUuidOrNull(patIdVal));
         uuidPayload.put("appointment_date", originalPayload.get("appointment_date"));
         uuidPayload.put("start_time", originalPayload.get("start_time"));
+        uuidPayload.put("original_appointment_date", originalPayload.get("appointment_date"));
+        uuidPayload.put("original_appointment_time", originalPayload.get("start_time"));
         uuidPayload.put("end_time", originalPayload.get("end_time"));
         uuidPayload.put("token_number", assignedToken);
         uuidPayload.put("slot_number", assignedToken);
@@ -2182,14 +2210,16 @@ public class BookAppointmentActivity extends AppCompatActivity {
             // --- FOLLOW-UP CONSULTATION ---
             binding.tvFee.setText("Follow-up Fee: ₹" + followUpFee);
 
-            binding.tvConsultationBadge.setText("🔄 Follow-up Consultation");
-            binding.tvConsultationBadge.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.primary)));
+            binding.tvConsultationBadge.setText("Follow-up Consultation");
+            binding.tvConsultationBadge.setGravity(Gravity.CENTER_VERTICAL);
+            binding.tvConsultationBadge.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.primary_blue)));
             binding.tvConsultationBadge.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_check_circle, 0, 0, 0);
+            binding.tvConsultationBadge.setCompoundDrawablePadding(16);
 
             binding.cardConsultationTypeBreakdown.setCardBackgroundColor(getResources().getColor(R.color.bg_indigo_light));
             binding.cardConsultationTypeBreakdown.setStrokeColor(getResources().getColor(R.color.secondary_light));
 
-            binding.ivConsultationInfo.setVisibility(View.VISIBLE);
+
 
             binding.tvConsultationExplanation.setText("You are booking a follow-up appointment with " + docName + ". You've previously consulted this doctor, so the follow-up consultation fee applies.");
 
@@ -2215,7 +2245,6 @@ public class BookAppointmentActivity extends AppCompatActivity {
             binding.cardConsultationTypeBreakdown.setCardBackgroundColor(getResources().getColor(R.color.surface_white));
             binding.cardConsultationTypeBreakdown.setStrokeColor(getResources().getColor(R.color.card_stroke));
 
-            binding.ivConsultationInfo.setVisibility(View.GONE);
 
             binding.tvConsultationExplanation.setText("You are booking your first consultation with " + docName + ".");
 
@@ -2382,6 +2411,9 @@ public class BookAppointmentActivity extends AppCompatActivity {
         dateChipAdapter = new DateChipAdapter((dateItem, position) -> {
             selectedDateFormatted = dateItem.getDay() + ", " + dateItem.getDate();
             selectedDateRaw = dateItem.getRawDate();
+            if (binding.tvSelectedDateLabel != null && selectedDateRaw != null) {
+                binding.tvSelectedDateLabel.setText(formatFullDateLabel(selectedDateRaw));
+            }
             updateSlotsForSelectedDate(selectedDateRaw);
         });
         binding.rvDates.setAdapter(dateChipAdapter);

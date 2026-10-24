@@ -12,6 +12,12 @@
 
     <!-- Backgrounds & Surfaces -->
     <color name="background_light">#F8FAFC</color>
+    <color name="bg_screen_blue">#EBF4FC</color>
+    <color name="primary_blue">#1877F2</color>
+    <color name="primary_blue_dark">#1360C4</color>
+    <color name="slot_border_blue">#2B80EC</color>
+    <color name="slot_disabled_stroke">#CBD5E1</color>
+    <color name="slot_disabled_bg">#F8FAFC</color>
     <color name="surface_white">#FFFFFF</color>
     <color name="card_stroke">#E2E8F0</color>
     <color name="divider">#F1F5F9</color>

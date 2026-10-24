@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Categories — Admin Panel</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <link rel="stylesheet" href="assets/css/admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand-logo">
+        <i class="fa-solid fa-cube" style="color:var(--primary);"></i>
+        <span>NovaStore</span>
+        <span class="brand-badge" style="background:#0f172a;">Admin</span>
+      </a>
+      <div style="display: flex; gap: 1rem; align-items: center;">
+        <a href="../user/index.html" class="btn btn-outline" style="padding: 0.4rem 0.9rem; font-size: 0.85rem;"><i class="fa-solid fa-store"></i> View Store</a>
+        <button onclick="Auth.logout()" class="btn btn-outline" style="padding: 0.4rem 0.9rem; font-size: 0.85rem;">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="sidebar-heading">Navigation</div>
+      <a href="index.html#stats-section" class="sidebar-nav-item"><i class="fa-solid fa-chart-pie"></i> Overview Dashboard</a>
+      <a href="index.html#products-section" class="sidebar-nav-item"><i class="fa-solid fa-boxes-stacked"></i> Manage Products</a>
+      <a href="categories.html" class="sidebar-nav-item active"><i class="fa-solid fa-tags"></i> Manage Categories</a>
+      <a href="index.html#purchases-section" class="sidebar-nav-item"><i class="fa-solid fa-receipt"></i> Demo Purchase Audit</a>
+
+      <div class="sidebar-heading" style="margin-top: auto;">Quick Actions</div>
+      <a href="add-product.html" class="btn btn-primary" style="margin-top: 0.5rem; font-size: 0.88rem; width: 100%;">
+        <i class="fa-solid fa-plus"></i> Add New Product
+      </a>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+      <div style="max-width: 800px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+          <div>
+            <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--text-main);">Manage Product Categories</h1>
+            <p style="color: var(--text-muted);">Create new store categories to organize products in MySQL database.</p>
+          </div>
+        </div>
+
+        <!-- Add Category Form -->
+        <div class="admin-form-card" style="margin-bottom: 2rem;">
+          <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1rem;">Add New Category</h3>
+          <div id="alert-box" style="display: none; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.9rem;"></div>
+
+          <form id="add-category-form" style="display: flex; gap: 1rem;">
+            <input type="text" id="category-name" aria-label="New category name" placeholder="e.g. Software, Audio, Presets, Graphics" required style="flex:1; padding: 0.75rem 1rem; border: 1.5px solid var(--border-color); border-radius: 8px; font-size: 0.95rem; outline: none;">
+            <button type="submit" id="add-cat-btn" class="btn btn-primary" style="padding: 0.75rem 1.5rem;">
+              <i class="fa-solid fa-plus"></i> Create Category
+            </button>
+          </form>
+        </div>
+
+        <!-- Category List Table -->
+        <div class="data-table-container">
+          <div class="data-table-header">
+            <h2 style="font-size: 1.15rem; font-weight: 800;">Existing Categories</h2>
+          </div>
+
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Category Name</th>
+                <th>Slug</th>
+                <th style="width: 160px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="categories-table-body">
+              <tr><td colspan="3" style="text-align:center;padding:2rem;">Loading categories from database...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="assets/js/firebase-config.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/admin.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (await Admin.verifyAdminAccess()) {
+        loadCategoryTable();
+      }
+    });
+
+    async function loadCategoryTable() {
+      const tableBody = document.getElementById('categories-table-body');
+      const headers = await Admin.getAuthHeaders();
+
+      try {
+        const res = await fetch('/api/admin/categories', { headers });
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data)) {
+          if (data.data.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:2rem;color:var(--text-muted);">No categories found in database. Add your first category above.</td></tr>`;
+            return;
+          }
+
+          tableBody.innerHTML = data.data.map(c => `
+            <tr>
+              <td><strong style="font-size:1rem; color:var(--text-main);">${Admin.escapeHtml(c.name)}</strong></td>
+              <td><code style="background:#f1f5f9; padding:0.2rem 0.5rem; border-radius:4px; font-size:0.85rem;">${Admin.escapeHtml(c.slug || c.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'))}</code></td>
+              <td>
+                <div style="display:flex; gap:0.4rem;">
+                  <button onclick="editCategory('${c._id}', '${Admin.escapeHtml(c.name)}')" class="btn btn-outline" style="padding:0.35rem 0.7rem;font-size:0.8rem;">
+                    <i class="fa-solid fa-pen"></i> Edit
+                  </button>
+                  <button onclick="deleteCategory('${c._id}', '${Admin.escapeHtml(c.name)}')" class="btn btn-outline" style="padding:0.35rem 0.7rem;font-size:0.8rem;color:#ef4444;border-color:#fca5a5;">
+                    <i class="fa-solid fa-trash"></i> Delete
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `).join('');
+          return;
+        }
+      } catch (err) {
+        console.error('Error loading categories:', err);
+      }
+
+      tableBody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:2rem;color:var(--text-muted);">Could not load categories from database.</td></tr>`;
+    }
+
+    const form = document.getElementById('add-category-form');
+    const alertBox = document.getElementById('alert-box');
+
+    function showAlert(msg, isError = true) {
+      alertBox.style.display = 'block';
+      alertBox.style.background = isError ? '#fee2e2' : '#dcfce7';
+      alertBox.style.color = isError ? '#991b1b' : '#166534';
+      alertBox.textContent = msg;
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      alertBox.style.display = 'none';
+
+      const name = document.getElementById('category-name').value.trim();
+      if (!name) return;
+
+      const token = await Auth.getToken();
+      const btn = document.getElementById('add-cat-btn');
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/admin/categories', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ name })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showAlert('Category created successfully in database!', false);
+          document.getElementById('category-name').value = '';
+          btn.disabled = false;
+          loadCategoryTable();
+          return;
+        } else {
+          showAlert(data.error || 'Failed to create category');
+        }
+      } catch (err) {
+        showAlert('Network error connecting to database');
+      }
+
+      btn.disabled = false;
+    });
+
+    async function editCategory(id, currentName) {
+      const newName = prompt('Enter new category name:', currentName);
+      if (!newName || newName.trim() === '' || newName.trim() === currentName) return;
+
+      const token = await Auth.getToken();
+      try {
+        const res = await fetch(`/api/admin/categories/${id}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ name: newName.trim() })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showAlert('Category updated successfully!', false);
+          loadCategoryTable();
+          return;
+        } else {
+          alert(data.error || 'Failed to update category');
+        }
+      } catch (e) {
+        alert('Network error updating category');
+      }
+    }
+
+    async function deleteCategory(id, name) {
+      if (!confirm(`Are you sure you want to delete category "${name}"?`)) return;
+
+      const token = await Auth.getToken();
+      try {
+        const res = await fetch(`/api/admin/categories/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success) {
+          loadCategoryTable();
+          return;
+        } else {
+          alert(data.error || 'Failed to delete category');
+        }
+      } catch (e) {
+        alert('Failed to delete category');
+      }
+    }
+  </script>
+
+</body>
+</html>

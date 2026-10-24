@@ -1,424 +1,306 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.swiperefreshlayout.widget.SwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/swipe_refresh_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background_light"
-    android:fillViewport="true"
-    android:overScrollMode="never">
+    android:background="@color/background_light">
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingBottom="36dp">
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:overScrollMode="never">
 
-        <!-- Top Header Card -->
-        <com.google.android.material.card.MaterialCardView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardBackgroundColor="@color/surface_white"
-            app:cardCornerRadius="0dp"
-            app:cardElevation="3dp"
-            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.HeaderCard"
-            app:strokeColor="@color/card_stroke"
-            app:strokeWidth="1dp">
+            android:orientation="vertical"
+            android:paddingBottom="36dp">
 
-            <RelativeLayout
-                android:id="@+id/toolbar_card"
+            <!-- Top Header Layout (Scrolls with page) -->
+            <LinearLayout
+                android:id="@+id/ll_fixed_header"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingHorizontal="20dp"
-                android:paddingTop="12dp"
-                android:paddingBottom="14dp">
+                android:orientation="vertical">
 
-                <!-- Avatar Container with Active Status Indicator -->
-                <FrameLayout
-                    android:id="@+id/fl_avatar_container"
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
-                    android:layout_alignParentStart="true"
-                    android:layout_centerVertical="true">
-
-                    <com.google.android.material.imageview.ShapeableImageView
-                        android:id="@+id/iv_avatar"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:contentDescription="User Avatar"
-                        android:scaleType="centerCrop"
-                        android:src="@drawable/ic_user"
-                        app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.Circle"
-                        app:strokeColor="@color/primary_light"
-                        app:strokeWidth="2dp" />
-
-                    <!-- Active Online Dot on Avatar -->
-                    <View
-                        android:layout_width="12dp"
-                        android:layout_height="12dp"
-                        android:layout_gravity="bottom|end"
-                        android:layout_marginEnd="1dp"
-                        android:layout_marginBottom="1dp"
-                        android:background="@drawable/bg_dot_online" />
-                </FrameLayout>
-
-                <!-- Action Container on Far Right -->
-                <LinearLayout
-                    android:id="@+id/ll_right_actions"
-                    android:layout_width="wrap_content"
+                <RelativeLayout
+                    android:id="@+id/toolbar_card"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:background="@color/surface_white"
+                    android:paddingHorizontal="20dp"
+                    android:paddingTop="16dp"
+                    android:paddingBottom="12dp">
 
-                    <!-- Location Chip -->
+                    <!-- Avatar Container with Active Status Indicator -->
+                    <FrameLayout
+                        android:id="@+id/fl_avatar_container"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true">
+
+                        <com.google.android.material.imageview.ShapeableImageView
+                            android:id="@+id/iv_avatar"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:contentDescription="User Avatar"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/ic_user"
+                            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.Circle" />
+
+                        <!-- Active Online Dot on Avatar -->
+                        <View
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:layout_gravity="bottom|end"
+                            android:layout_marginEnd="1dp"
+                            android:layout_marginBottom="1dp"
+                            android:background="@drawable/bg_dot_online" />
+                    </FrameLayout>
+
+                    <!-- Action Container on Far Right (Location Chip + Bell) -->
                     <LinearLayout
-                        android:id="@+id/ll_location_container"
+                        android:id="@+id/ll_right_actions"
                         android:layout_width="wrap_content"
-                        android:layout_height="38dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="@drawable/bg_location_pill"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:foreground="?attr/selectableItemBackgroundBorderless"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
                         android:gravity="center_vertical"
-                        android:paddingHorizontal="10dp">
+                        android:orientation="horizontal">
 
-                        <ImageView
-                            android:layout_width="14dp"
-                            android:layout_height="14dp"
-                            android:contentDescription="Location Icon"
-                            android:src="@drawable/ic_location"
-                            app:tint="@color/primary" />
+                        <!-- Location Chip -->
+                        <LinearLayout
+                            android:id="@+id/ll_location_container"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:layout_marginEnd="10dp"
+                            android:background="@drawable/bg_location_pill"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?attr/selectableItemBackgroundBorderless"
+                            android:gravity="center_vertical"
+                            android:paddingHorizontal="10dp">
+
+                            <ImageView
+                                android:layout_width="14dp"
+                                android:layout_height="14dp"
+                                android:contentDescription="Location Icon"
+                                android:src="@drawable/ic_location"
+                                app:tint="@color/primary" />
+
+                            <TextView
+                                android:id="@+id/tv_location_chip"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="4dp"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                android:text="Karnataka ▾"
+                                android:textColor="@color/primary"
+                                android:textSize="11.5sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <!-- Bell Button Card -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/fl_bell"
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?attr/selectableItemBackground"
+                            app:cardBackgroundColor="@color/surface_white"
+                            app:cardCornerRadius="22dp"
+                            app:cardElevation="1dp"
+                            app:strokeWidth="0dp">
+
+                            <FrameLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent">
+
+                                <ImageView
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:layout_gravity="center"
+                                    android:contentDescription="Notification bell"
+                                    android:src="@drawable/ic_bell"
+                                    app:tint="#1E293B" />
+
+                                <!-- Notification badge -->
+                                <View
+                                    android:id="@+id/v_unread_badge"
+                                    android:layout_width="10dp"
+                                    android:layout_height="10dp"
+                                    android:layout_gravity="top|end"
+                                    android:layout_marginTop="8dp"
+                                    android:layout_marginEnd="8dp"
+                                    android:background="@drawable/bg_unread_dot" />
+                            </FrameLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                    </LinearLayout>
+
+                    <!-- User Greeting Info in Middle -->
+                    <LinearLayout
+                        android:id="@+id/ll_user_info"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_toEndOf="@id/fl_avatar_container"
+                        android:layout_toStartOf="@id/ll_right_actions"
+                        android:orientation="vertical">
 
                         <TextView
-                            android:id="@+id/tv_location_chip"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="4dp"
+                            android:text="Hello 👋"
+                            android:textColor="#64748B"
+                            android:textSize="13.5sp" />
+
+                        <TextView
+                            android:id="@+id/tv_username"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
                             android:ellipsize="end"
                             android:maxLines="1"
-                            android:text="Karnataka ▾"
-                            android:textColor="@color/primary"
-                            android:textSize="11.5sp"
+                            android:text="Ronald Richards"
+                            android:textColor="#0F172A"
+                            android:textSize="18sp"
                             android:textStyle="bold" />
                     </LinearLayout>
 
-                    <!-- Customer Care Button -->
+                </RelativeLayout>
 
-                    <!-- Bell Button -->
-                    <FrameLayout
-                        android:id="@+id/fl_bell"
-                        android:layout_width="38dp"
-                        android:layout_height="38dp"
-                        android:background="@drawable/bg_squircle_icon"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:foreground="?attr/selectableItemBackgroundBorderless">
+                <!-- Bottom Fog / Shadow Overlay -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="12dp"
+                    android:background="@drawable/bg_toolbar_shadow" />
+
+            </LinearLayout>
+
+            <!-- Search Bar & Filter Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <!-- Search Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/layout_search"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="52dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    app:cardBackgroundColor="#F1F5F9"
+                    app:cardCornerRadius="26dp"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="0dp">
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:paddingHorizontal="16dp">
 
                         <ImageView
+                            android:id="@+id/iv_search_icon"
                             android:layout_width="20dp"
                             android:layout_height="20dp"
-                            android:layout_gravity="center"
-                            android:contentDescription="Notification bell"
-                            android:src="@drawable/ic_bell"
-                            app:tint="@color/text_primary" />
+                            android:layout_alignParentStart="true"
+                            android:layout_centerVertical="true"
+                            android:contentDescription="Search icon"
+                            android:src="@drawable/ic_search"
+                            app:tint="#94A3B8" />
 
-                        <!-- Notification badge -->
-                        <View
-                            android:id="@+id/v_unread_badge"
-                            android:layout_width="10dp"
-                            android:layout_height="10dp"
-                            android:layout_gravity="top|end"
-                            android:layout_marginTop="4dp"
-                            android:layout_marginEnd="4dp"
-                            android:background="@drawable/bg_unread_dot" />
-                    </FrameLayout>
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:layout_marginStart="12dp"
+                            android:layout_toEndOf="@id/iv_search_icon"
+                            android:ellipsize="end"
+                            android:singleLine="true"
+                            android:text="Search doctors, symptoms, specialities..."
+                            android:textColor="#94A3B8"
+                            android:textSize="13.5sp" />
 
-                </LinearLayout>
+                    </RelativeLayout>
 
-                <!-- User Greeting Info in Middle -->
-                <LinearLayout
-                    android:id="@+id/ll_user_info"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_centerVertical="true"
-                    android:layout_marginStart="12dp"
-                    android:layout_marginEnd="8dp"
-                    android:layout_toEndOf="@id/fl_avatar_container"
-                    android:layout_toStartOf="@id/ll_right_actions"
-                    android:orientation="vertical">
+                </com.google.android.material.card.MaterialCardView>
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Welcome back 👋"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/tv_username"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="1dp"
-                        android:ellipsize="end"
-                        android:maxLines="1"
-                        android:text="Aakash Mishra"
-                        android:textColor="@color/text_primary"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="3dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"/>
-                </LinearLayout>
-
-            </RelativeLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Search Bar -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/layout_search"
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="16dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:foreground="?attr/selectableItemBackground"
-            app:cardBackgroundColor="@color/surface_white"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="2dp"
-            app:strokeColor="@color/card_stroke"
-            app:strokeWidth="1dp">
-
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:paddingHorizontal="12dp">
-
-                <ImageView
-                    android:id="@+id/iv_search_icon"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_alignParentStart="true"
-                    android:layout_centerVertical="true"
-                    android:layout_marginStart="4dp"
-                    android:contentDescription="Search icon"
-                    android:src="@drawable/ic_search"
-                    app:tint="@color/text_muted" />
-
-                <FrameLayout
+                <!-- Filter Button Card -->
+                <com.google.android.material.card.MaterialCardView
                     android:id="@+id/fl_filter"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:background="@drawable/bg_squircle_icon"
-                    android:backgroundTint="@color/primary"
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:layout_marginStart="12dp"
                     android:clickable="true"
-                    android:focusable="true">
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    app:cardBackgroundColor="@color/secondary"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="2dp"
+                    app:strokeWidth="0dp">
 
                     <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
                         android:layout_gravity="center"
                         android:contentDescription="Filter icon"
                         android:src="@drawable/ic_filter"
                         app:tint="@color/white" />
-                </FrameLayout>
 
-                <TextView
-                    android:layout_width="0dp"
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+
+            <!-- Image Slideshow Banner Card -->
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="160dp"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="16dp"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="3dp"
+                app:strokeColor="@color/card_stroke"
+                app:strokeWidth="1dp">
+
+                <com.denzcoskun.imageslider.ImageSlider
+                    android:id="@+id/image_slider"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    app:iss_auto_cycle="true"
+                    app:iss_corner_radius="18"
+                    app:iss_delay="3000"
+                    app:iss_period="3000"
+                    app:iss_text_align="CENTER" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Top Specialities Section Header -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="22dp">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
                     android:layout_centerVertical="true"
-                    android:layout_marginStart="12dp"
-                    android:layout_marginEnd="10dp"
-                    android:layout_toEndOf="@id/iv_search_icon"
-                    android:layout_toStartOf="@id/fl_filter"
-                    android:ellipsize="end"
-                    android:maxLines="1"
-                    android:text="Search doctors, symptoms, specialities..."
-                    android:textColor="@color/text_muted"
-                    android:textSize="13.5sp" />
-
-            </RelativeLayout>
-
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Quick Access Services Section Header -->
-
-        <!-- Quick Access 4-Grid RecyclerView -->
-
-        <!-- Image Slideshow Banner Card -->
-
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="160dp"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="16dp"
-            app:cardCornerRadius="18dp"
-            app:cardElevation="3dp"
-            app:strokeColor="@color/card_stroke"
-            app:strokeWidth="1dp">
-
-            <com.denzcoskun.imageslider.ImageSlider
-                android:id="@+id/image_slider"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                app:iss_auto_cycle="true"
-                app:iss_corner_radius="18"
-                app:iss_delay="3000"
-                app:iss_period="3000"
-                app:iss_text_align="CENTER" />
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Top Specialities Section Header -->
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="20dp"
-            android:layout_marginTop="22dp">
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_centerVertical="true"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <View
-                    android:layout_width="4dp"
-                    android:layout_height="18dp"
-                    android:background="@drawable/bg_section_indicator" />
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Explore Specialities"
-                        android:textColor="@color/text_primary"
-                        android:textSize="17sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="1dp"
-                        android:text="Find doctors by specialization"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="11sp" />
-                </LinearLayout>
-
-            </LinearLayout>
-
-            <TextView
-                android:id="@+id/tv_see_all_specialities"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:clickable="true"
-                android:focusable="true"
-                android:padding="4dp"
-                android:text="See All"
-                android:textColor="@color/secondary"
-                android:textSize="13sp"
-                android:textStyle="bold" />
-        </RelativeLayout>
-
-        <!-- Shimmer Placeholder for Specialities Carousel -->
-        <com.facebook.shimmer.ShimmerFrameLayout
-            android:id="@+id/shimmer_specialities"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="10dp"
-            android:layout_marginTop="10dp"
-            app:shimmer_auto_start="true">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <include
-                    layout="@layout/shimmer_speciality_item"
-                    android:layout_width="88dp"
-                    android:layout_height="114dp" />
-
-                <include
-                    layout="@layout/shimmer_speciality_item"
-                    android:layout_width="88dp"
-                    android:layout_height="114dp" />
-
-                <include
-                    layout="@layout/shimmer_speciality_item"
-                    android:layout_width="88dp"
-                    android:layout_height="114dp" />
-
-                <include
-                    layout="@layout/shimmer_speciality_item"
-                    android:layout_width="88dp"
-                    android:layout_height="114dp" />
-
-                <include
-                    layout="@layout/shimmer_speciality_item"
-                    android:layout_width="88dp"
-                    android:layout_height="114dp" />
-            </LinearLayout>
-        </com.facebook.shimmer.ShimmerFrameLayout>
-
-        <!-- Top Specialities Horizontal RecyclerView -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rv_specialities"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="10dp"
-            android:layout_marginTop="10dp"
-            android:clipToPadding="false"
-            android:nestedScrollingEnabled="false"
-            android:orientation="horizontal"
-            android:visibility="gone"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
-
-        <!-- Care Plan Promo VIP Membership Banner Card -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/card_care_plan"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="22dp"
-            app:cardCornerRadius="18dp"
-            app:cardElevation="3dp"
-            app:strokeWidth="0dp"/>
-
-        <!-- Available Today Section Header -->
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="20dp"
-            android:layout_marginTop="24dp">
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_centerVertical="true"
-                android:orientation="vertical">
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
@@ -427,190 +309,420 @@
                         android:layout_height="18dp"
                         android:background="@drawable/bg_section_indicator" />
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
-                        android:text="Available Today"
-                        android:textColor="@color/text_primary"
-                        android:textSize="17sp"
-                        android:textStyle="bold" />
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Explore Specialities"
+                            android:textColor="@color/text_primary"
+                            android:textSize="17sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="1dp"
+                            android:text="Find doctors by specialization"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
                 </LinearLayout>
 
                 <TextView
+                    android:id="@+id/tv_see_all_specialities"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="1dp"
-                    android:text="Instant consultation with ready doctors"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="11sp" />
-            </LinearLayout>
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="4dp"
+                    android:text="See All"
+                    android:textColor="@color/secondary"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </RelativeLayout>
 
-            <TextView
-                android:id="@+id/tv_see_all_available"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:clickable="true"
-                android:focusable="true"
-                android:padding="4dp"
-                android:text="See All"
-                android:textColor="@color/secondary"
-                android:textSize="13sp"
-                android:textStyle="bold" />
-        </RelativeLayout>
-
-        <!-- Shimmer Placeholder for Available Today Doctors Carousel -->
-        <com.facebook.shimmer.ShimmerFrameLayout
-            android:id="@+id/shimmer_available_today"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="10dp"
-            android:layout_marginTop="10dp"
-            app:shimmer_auto_start="true">
-
-            <LinearLayout
+            <!-- Shimmer Placeholder for Specialities Carousel -->
+            <com.facebook.shimmer.ShimmerFrameLayout
+                android:id="@+id/shimmer_specialities"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:layout_marginHorizontal="10dp"
+                android:layout_marginTop="10dp"
+                app:shimmer_auto_start="true">
 
-                <include
-                    layout="@layout/shimmer_doctor_preview"
-                    android:layout_width="160dp"
-                    android:layout_height="wrap_content" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
 
-                <include
-                    layout="@layout/shimmer_doctor_preview"
-                    android:layout_width="160dp"
-                    android:layout_height="wrap_content" />
+                    <include
+                        layout="@layout/shimmer_speciality_item"
+                        android:layout_width="96dp"
+                        android:layout_height="122dp" />
 
-                <include
-                    layout="@layout/shimmer_doctor_preview"
-                    android:layout_width="160dp"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
-        </com.facebook.shimmer.ShimmerFrameLayout>
+                    <include
+                        layout="@layout/shimmer_speciality_item"
+                        android:layout_width="96dp"
+                        android:layout_height="122dp" />
 
-        <!-- Available Today Horizontal RecyclerView -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rv_available_today"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="10dp"
-            android:layout_marginTop="10dp"
-            android:clipToPadding="false"
-            android:nestedScrollingEnabled="false"
-            android:orientation="horizontal"
-            android:visibility="gone"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+                    <include
+                        layout="@layout/shimmer_speciality_item"
+                        android:layout_width="96dp"
+                        android:layout_height="122dp" />
 
-        <!-- Top Doctors Section Header -->
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="20dp"
-            android:layout_marginTop="24dp">
+                    <include
+                        layout="@layout/shimmer_speciality_item"
+                        android:layout_width="96dp"
+                        android:layout_height="122dp" />
 
-            <LinearLayout
-                android:layout_width="wrap_content"
+                    <include
+                        layout="@layout/shimmer_speciality_item"
+                        android:layout_width="96dp"
+                        android:layout_height="122dp" />
+                </LinearLayout>
+            </com.facebook.shimmer.ShimmerFrameLayout>
+
+            <!-- Top Specialities Horizontal RecyclerView -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_specialities"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_centerVertical="true"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:layout_marginHorizontal="10dp"
+                android:layout_marginTop="10dp"
+                android:clipToPadding="false"
+                android:nestedScrollingEnabled="false"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:listitem="@layout/item_speciality" />
 
-                <View
-                    android:layout_width="4dp"
-                    android:layout_height="18dp"
-                    android:background="@drawable/bg_section_indicator" />
+            <!-- Care Plan Promo VIP Membership Banner Card -->
+
+            <!-- Available Today Section Header -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="24dp">
 
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
                     android:orientation="vertical">
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Top Rated Doctors"
-                        android:textColor="@color/text_primary"
-                        android:textSize="17sp"
-                        android:textStyle="bold" />
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <View
+                            android:layout_width="4dp"
+                            android:layout_height="18dp"
+                            android:background="@drawable/bg_section_indicator" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="Available Today"
+                            android:textColor="@color/text_primary"
+                            android:textSize="17sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="1dp"
-                        android:text="Trusted specialists, instant booking"
+                        android:text="Instant consultation with ready doctors"
                         android:textColor="@color/text_secondary"
                         android:textSize="11sp" />
                 </LinearLayout>
 
-            </LinearLayout>
+                <TextView
+                    android:id="@+id/tv_see_all_available"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="4dp"
+                    android:text="See All"
+                    android:textColor="@color/secondary"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </RelativeLayout>
 
-            <TextView
-                android:id="@+id/tv_see_all_doctors"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:clickable="true"
-                android:focusable="true"
-                android:padding="4dp"
-                android:text="See All →"
-                android:textColor="@color/secondary"
-                android:textSize="13sp"
-                android:textStyle="bold" />
-        </RelativeLayout>
-
-        <!-- Shimmer Placeholder for Top Doctors Carousel -->
-        <com.facebook.shimmer.ShimmerFrameLayout
-            android:id="@+id/shimmer_top_doctors"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="10dp"
-            android:layout_marginTop="10dp"
-            app:shimmer_auto_start="true">
-
-            <LinearLayout
+            <!-- Shimmer Placeholder for Available Today Doctors Carousel -->
+            <com.facebook.shimmer.ShimmerFrameLayout
+                android:id="@+id/shimmer_available_today"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:layout_marginHorizontal="10dp"
+                android:layout_marginTop="10dp"
+                app:shimmer_auto_start="true">
 
-                <include
-                    layout="@layout/shimmer_doctor_preview"
-                    android:layout_width="160dp"
-                    android:layout_height="wrap_content" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
 
-                <include
-                    layout="@layout/shimmer_doctor_preview"
-                    android:layout_width="160dp"
-                    android:layout_height="wrap_content" />
+                    <include
+                        layout="@layout/shimmer_doctor_preview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
 
-                <include
-                    layout="@layout/shimmer_doctor_preview"
-                    android:layout_width="160dp"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
-        </com.facebook.shimmer.ShimmerFrameLayout>
+                    <include
+                        layout="@layout/shimmer_doctor_preview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
 
-        <!-- Horizontal Top Doctors RecyclerView -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rv_top_doctors"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="10dp"
-            android:layout_marginTop="10dp"
-            android:clipToPadding="false"
-            android:nestedScrollingEnabled="false"
-            android:orientation="horizontal"
-            android:visibility="gone"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+                    <include
+                        layout="@layout/shimmer_doctor_preview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+            </com.facebook.shimmer.ShimmerFrameLayout>
 
-    </LinearLayout>
+            <!-- Available Today Horizontal RecyclerView -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_available_today"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="10dp"
+                android:layout_marginTop="10dp"
+                android:clipToPadding="false"
+                android:nestedScrollingEnabled="false"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
-</ScrollView>
+            <!-- Top Doctors Section Header -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="24dp">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="18dp"
+                        android:background="@drawable/bg_section_indicator" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Top Rated Doctors"
+                            android:textColor="@color/text_primary"
+                            android:textSize="17sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="1dp"
+                            android:text="Trusted specialists, instant booking"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_see_all_doctors"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="4dp"
+                    android:text="See All →"
+                    android:textColor="@color/secondary"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </RelativeLayout>
+
+            <!-- Shimmer Placeholder for Top Doctors Carousel -->
+            <com.facebook.shimmer.ShimmerFrameLayout
+                android:id="@+id/shimmer_top_doctors"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="10dp"
+                android:layout_marginTop="10dp"
+                app:shimmer_auto_start="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <include
+                        layout="@layout/shimmer_doctor_preview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <include
+                        layout="@layout/shimmer_doctor_preview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <include
+                        layout="@layout/shimmer_doctor_preview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+            </com.facebook.shimmer.ShimmerFrameLayout>
+
+            <!-- Horizontal Top Doctors RecyclerView -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_top_doctors"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="10dp"
+                android:layout_marginTop="10dp"
+                android:clipToPadding="false"
+                android:nestedScrollingEnabled="false"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+            <!-- All Doctors Section Header -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="24dp">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="18dp"
+                        android:background="@drawable/bg_section_indicator" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="All Doctors"
+                            android:textColor="@color/text_primary"
+                            android:textSize="17sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="1dp"
+                            android:text="Consult top specialists across all departments"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_see_all_all_doctors"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="4dp"
+                    android:text="See All →"
+                    android:textColor="@color/secondary"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </RelativeLayout>
+
+            <!-- Shimmer Placeholder for All Doctors Carousel -->
+            <com.facebook.shimmer.ShimmerFrameLayout
+                android:id="@+id/shimmer_all_doctors"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="10dp"
+                android:layout_marginTop="10dp"
+                app:shimmer_auto_start="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <include
+                        layout="@layout/shimmer_doctor_preview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <include
+                        layout="@layout/shimmer_doctor_preview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <include
+                        layout="@layout/shimmer_doctor_preview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+            </com.facebook.shimmer.ShimmerFrameLayout>
+
+            <!-- Horizontal All Doctors RecyclerView -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_all_doctors"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="10dp"
+                android:layout_marginTop="10dp"
+                android:clipToPadding="false"
+                android:nestedScrollingEnabled="false"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

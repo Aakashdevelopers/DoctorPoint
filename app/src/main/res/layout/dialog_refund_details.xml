@@ -226,10 +226,11 @@
                     android:textStyle="bold" />
 
                 <TextView
+                    android:id="@+id/tv_refund_policy_note"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Note: If your appointment was uncompleted or cancelled, Doctor's Point automatically refunds 100% of your consultation amount within 3-5 business days."
+                    android:text="Refund Terms &amp; Conditions Policy:\n• 1 hour before cancellation: 100% Refund Approved\n• Otherwise (Within 1 hour): 50% Refund Approved"
                     android:textColor="@color/text_secondary"
                     android:textSize="11.5sp" />
             </LinearLayout>

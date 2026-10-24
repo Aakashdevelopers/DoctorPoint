@@ -54,7 +54,7 @@ public class SpecialitiesAdapter extends ListAdapter<Speciality, SpecialitiesAda
             ViewGroup.LayoutParams lp = binding.getRoot().getLayoutParams();
             if (lp != null && rv.getLayoutManager() != null) {
                 if (isHorizontalLayoutManager(rv.getLayoutManager())) {
-                    lp.width = dpToPx(parent.getContext(), 88);
+                    lp.width = dpToPx(parent.getContext(), 96);
                 } else {
                     lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
                 }
@@ -90,7 +90,10 @@ public class SpecialitiesAdapter extends ListAdapter<Speciality, SpecialitiesAda
 
         void bind(Speciality speciality, OnSpecialityClickListener listener) {
             Context context = itemView.getContext();
-            binding.tvSpecialityName.setText(speciality != null ? speciality.getName() : "Specialist");
+            String name = speciality != null ? speciality.getName() : "Specialist";
+            binding.tvSpecialityName.setText(name);
+
+
 
             String imageUrl = getPhotoUrlForSpeciality(speciality);
 

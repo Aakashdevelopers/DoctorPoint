@@ -3,13 +3,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background_light"
+    android:background="@color/bg_screen_blue"
     android:fitsSystemWindows="true">
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@+id/bottom_confirm_bar"
+        android:clipToPadding="false"
         android:fillViewport="true">
 
         <LinearLayout
@@ -18,61 +19,51 @@
             android:orientation="vertical"
             android:paddingBottom="24dp">
 
-            <!-- Top App Bar Card -->
-            <com.google.android.material.card.MaterialCardView
+            <!-- Top Header Bar -->
+            <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/surface_white"
-                app:cardCornerRadius="0dp"
-                app:cardElevation="2dp"
-                app:strokeWidth="0dp">
+                android:paddingHorizontal="16dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp">
 
-                <RelativeLayout
-                    android:layout_width="match_parent"
+                <FrameLayout
+                    android:id="@+id/fl_back_bg"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:background="?attr/selectableItemBackgroundBorderless">
+
+                    <ImageView
+                        android:id="@+id/iv_back"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="Back"
+                        android:src="@drawable/ic_back"
+                        app:tint="@color/text_primary" />
+                </FrameLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:paddingHorizontal="16dp"
-                    android:paddingVertical="14dp">
-
-                    <FrameLayout
-                        android:id="@+id/fl_back_bg"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:layout_alignParentStart="true"
-                        android:layout_centerVertical="true"
-                        android:background="@drawable/bg_squircle_icon">
-
-                        <ImageView
-                            android:id="@+id/iv_back"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:padding="9dp"
-                            android:contentDescription="Back"
-                            android:src="@drawable/ic_back"
-                            app:tint="@color/text_primary" />
-                    </FrameLayout>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:layout_marginStart="12dp"
-                        android:layout_toEndOf="@id/fl_back_bg"
-                        android:text="Book Appointment"
-                        android:textColor="@color/text_primary"
-                        android:textSize="20sp"
-                        android:textStyle="bold" />
-                </RelativeLayout>
-            </com.google.android.material.card.MaterialCardView>
+                    android:layout_centerInParent="true"
+                    android:text="Select Date and Time"
+                    android:textColor="@color/text_primary"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+            </RelativeLayout>
 
             <!-- Doctor Summary Card -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="16dp"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="8dp"
                 app:cardBackgroundColor="@color/surface_white"
                 app:cardCornerRadius="16dp"
-                app:cardElevation="2dp"
+                app:cardElevation="0dp"
                 app:strokeColor="@color/card_stroke"
                 app:strokeWidth="1dp">
 
@@ -80,24 +71,23 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:padding="16dp">
+                    android:padding="14dp">
 
                     <com.google.android.material.imageview.ShapeableImageView
                         android:id="@+id/iv_doctor"
-                        android:layout_width="60dp"
-                        android:layout_height="60dp"
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
                         android:contentDescription="Doctor image"
-                        android:padding="2dp"
                         android:scaleType="centerCrop"
                         android:src="@drawable/ic_user"
                         app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.Circle"
-                        app:strokeColor="@color/primary"
+                        app:strokeColor="@color/primary_blue"
                         app:strokeWidth="2dp" />
 
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
+                        android:layout_marginStart="12dp"
                         android:layout_weight="1"
                         android:orientation="vertical">
 
@@ -139,24 +129,24 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
                             android:text="Consultation Fee: ₹900"
-                            android:textColor="@color/primary"
+                            android:textColor="@color/primary_blue"
                             android:textSize="13sp"
                             android:textStyle="bold" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Consultation Type & Price Breakdown Card -->
+            <!-- Professional Follow-up Consultation Card -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/card_consultation_type_breakdown"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="16dp"
                 android:layout_marginTop="12dp"
-                app:cardBackgroundColor="@color/bg_indigo_light"
+                app:cardBackgroundColor="@color/surface_white"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="0dp"
-                app:strokeColor="@color/secondary_light"
+                app:strokeColor="#BDE0FE"
                 app:strokeWidth="1.5dp">
 
                 <LinearLayout
@@ -168,8 +158,7 @@
                     <!-- Top Header: Badge + Info Icon -->
                     <RelativeLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_horizontal">
+                        android:layout_height="wrap_content">
 
                         <TextView
                             android:id="@+id/tv_consultation_badge"
@@ -178,27 +167,17 @@
                             android:layout_alignParentStart="true"
                             android:layout_centerVertical="true"
                             android:background="@drawable/bg_badge_pill"
-                            android:backgroundTint="@color/primary"
+                            android:backgroundTint="@color/primary_blue"
                             android:drawableStart="@drawable/ic_check_circle"
-                            android:drawablePadding="6dp"
-                            android:paddingHorizontal="12dp"
-                            android:paddingVertical="6dp"
+                            android:drawablePadding="8dp"
+                            android:gravity="center_vertical"
+                            android:paddingHorizontal="14dp"
+                            android:paddingVertical="7dp"
                             android:text="Follow-up Consultation"
                             android:textColor="@color/white"
                             android:textSize="13sp"
                             android:textStyle="bold" />
 
-                        <ImageView
-                            android:id="@+id/iv_consultation_info"
-                            android:layout_width="28dp"
-                            android:layout_height="28dp"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="Info"
-                            android:padding="4dp"
-                            android:src="@drawable/ic_help"
-                            app:tint="@color/secondary" />
                     </RelativeLayout>
 
                     <!-- Informational Explanation Text -->
@@ -208,7 +187,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
                         android:lineSpacingExtra="2dp"
-                        android:text="You are booking a follow-up appointment. You've previously consulted this doctor, so the follow-up consultation fee applies."
+                        android:text="You are booking a follow-up appointment. You've previously consulted this doctor, so a discounted follow-up consultation fee applies."
                         android:textColor="@color/text_secondary"
                         android:textSize="12.5sp" />
 
@@ -216,7 +195,7 @@
                         android:id="@+id/v_breakdown_divider"
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:layout_marginVertical="12dp"
+                        android:layout_marginVertical="10dp"
                         android:background="@color/card_stroke" />
 
                     <!-- Price Breakdown Section -->
@@ -246,7 +225,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_alignParentEnd="true"
-                                android:text="₹500"
+                                android:text="₹900"
                                 android:textColor="@color/text_secondary"
                                 android:textSize="13sp" />
                         </RelativeLayout>
@@ -273,7 +252,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_alignParentEnd="true"
-                                android:text="₹300"
+                                android:text="₹500"
                                 android:textColor="@color/success_green"
                                 android:textSize="13sp"
                                 android:textStyle="bold" />
@@ -306,8 +285,8 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_alignParentEnd="true"
-                                android:text="₹300"
-                                android:textColor="@color/primary"
+                                android:text="₹500"
+                                android:textColor="@color/primary_blue"
                                 android:textSize="16sp"
                                 android:textStyle="bold" />
                         </RelativeLayout>
@@ -323,15 +302,16 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <!-- Date Selection Section -->
+                <!-- Date Selection Section Header -->
                 <TextView
+                    android:id="@+id/tv_select_date_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginHorizontal="20dp"
-                    android:layout_marginTop="22dp"
+                    android:layout_marginTop="20dp"
                     android:text="Select Date"
                     android:textColor="@color/text_primary"
-                    android:textSize="16sp"
+                    android:textSize="18sp"
                     android:textStyle="bold" />
 
                 <!-- Shimmer Placeholder for Dates -->
@@ -339,7 +319,7 @@
                     android:id="@+id/shimmer_dates"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="12dp"
                     android:paddingHorizontal="16dp"
                     app:shimmer_auto_start="true">
 
@@ -364,64 +344,51 @@
                     android:id="@+id/rv_dates"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="12dp"
                     android:clipToPadding="false"
                     android:paddingHorizontal="16dp"
                     android:visibility="gone" />
 
-                <!-- Time Slots Section Header -->
+                <!-- Subtitle Selected Date Label e.g. Thursday, June 23, 2026 -->
+                <TextView
+                    android:id="@+id/tv_selected_date_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="12dp"
+                    android:text="Thursday, June 23, 2026"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14.5sp"
+                    android:textStyle="bold" />
+
+                <!-- Morning Section Header -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginHorizontal="20dp"
-                    android:layout_marginTop="24dp"
-                    android:text="Select Time Slot"
+                    android:layout_marginTop="20dp"
+                    android:text="Morning"
                     android:textColor="@color/text_primary"
-                    android:textSize="16sp"
+                    android:textSize="18sp"
                     android:textStyle="bold" />
 
-                <!-- Morning Slots -->
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <TextView
+                    android:id="@+id/tv_morning_timing"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginHorizontal="20dp"
-                    android:layout_marginTop="12dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:contentDescription="Sun icon"
-                        android:src="@drawable/ic_sun"
-                        app:tint="@color/warning_yellow" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:text="Morning Slots"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/tv_morning_timing"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp"
-                        android:visibility="gone" />
-                </LinearLayout>
+                    android:layout_marginTop="2dp"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:visibility="gone" />
 
                 <!-- Shimmer Placeholder for Morning Slots -->
                 <com.facebook.shimmer.ShimmerFrameLayout
                     android:id="@+id/shimmer_morning_slots"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="12dp"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginHorizontal="16dp"
+                    android:layout_marginTop="10dp"
                     app:shimmer_auto_start="true">
 
                     <LinearLayout
@@ -483,53 +450,39 @@
                     android:id="@+id/rv_morning_slots"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="12dp"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginHorizontal="16dp"
+                    android:layout_marginTop="10dp"
                     android:nestedScrollingEnabled="false"
                     android:visibility="gone" />
 
-                <!-- Afternoon / Night Slots -->
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <!-- Afternoon / Evening Section Header -->
+                <TextView
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginHorizontal="20dp"
-                    android:layout_marginTop="16dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:layout_marginTop="20dp"
+                    android:text="Afternoon"
+                    android:textColor="@color/text_primary"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
 
-                    <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:contentDescription="Moon icon"
-                        android:src="@drawable/ic_moon"
-                        app:tint="@color/secondary" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:text="Afternoon &amp; Evening Slots"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/tv_evening_timing"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp"
-                        android:visibility="gone" />
-                </LinearLayout>
+                <TextView
+                    android:id="@+id/tv_evening_timing"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="20dp"
+                    android:layout_marginTop="2dp"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:visibility="gone" />
 
                 <!-- Shimmer Placeholder for Evening Slots -->
                 <com.facebook.shimmer.ShimmerFrameLayout
                     android:id="@+id/shimmer_evening_slots"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="12dp"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginHorizontal="16dp"
+                    android:layout_marginTop="10dp"
                     app:shimmer_auto_start="true">
 
                     <LinearLayout
@@ -591,8 +544,8 @@
                     android:id="@+id/rv_evening_slots"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="12dp"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginHorizontal="16dp"
+                    android:layout_marginTop="10dp"
                     android:nestedScrollingEnabled="false"
                     android:visibility="gone" />
 
@@ -614,6 +567,7 @@
                     android:layout_marginTop="8dp"
                     app:cardBackgroundColor="@color/surface_white"
                     app:cardCornerRadius="12dp"
+                    app:cardElevation="0dp"
                     app:strokeColor="@color/card_stroke"
                     app:strokeWidth="1dp">
 
@@ -648,6 +602,7 @@
                     android:layout_marginTop="8dp"
                     app:cardBackgroundColor="@color/surface_white"
                     app:cardCornerRadius="12dp"
+                    app:cardElevation="0dp"
                     app:strokeColor="@color/card_stroke"
                     app:strokeWidth="1dp">
 
@@ -674,10 +629,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="20dp"
                 android:layout_marginTop="28dp"
+                android:background="@color/surface_white"
                 android:gravity="center"
                 android:orientation="vertical"
                 android:padding="28dp"
-                android:background="@drawable/bg_date_chip_unselected"
                 android:visibility="gone">
 
                 <FrameLayout
@@ -691,7 +646,7 @@
                         android:layout_gravity="center"
                         android:contentDescription="Calendar icon"
                         android:src="@drawable/ic_calendar"
-                        app:tint="@color/primary" />
+                        app:tint="@color/primary_blue" />
                 </FrameLayout>
 
                 <TextView
@@ -727,7 +682,7 @@
                         android:id="@+id/btn_no_slots_go_back"
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
-                        android:backgroundTint="@color/primary"
+                        android:backgroundTint="@color/primary_blue"
                         android:text="Go Back to Doctors"
                         android:textColor="@color/white"
                         android:textSize="14sp"
@@ -741,11 +696,11 @@
                         android:layout_height="48dp"
                         android:layout_marginTop="10dp"
                         android:text="Refresh Availability"
-                        android:textColor="@color/primary"
+                        android:textColor="@color/primary_blue"
                         android:textSize="14sp"
                         android:textStyle="bold"
                         app:cornerRadius="14dp"
-                        app:strokeColor="@color/primary" />
+                        app:strokeColor="@color/primary_blue" />
                 </LinearLayout>
 
             </LinearLayout>
@@ -759,21 +714,21 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:background="@color/surface_white"
-        android:elevation="12dp"
+        android:background="@color/bg_screen_blue"
+        android:elevation="8dp"
         android:padding="16dp">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_confirm_booking"
             android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:backgroundTint="@color/primary"
+            android:layout_height="54dp"
+            android:backgroundTint="@color/primary_blue"
             android:elevation="2dp"
-            android:text="Confirm Booking"
+            android:text="Book Appointment"
             android:textColor="@color/white"
             android:textSize="16sp"
             android:textStyle="bold"
-            app:cornerRadius="14dp" />
+            app:cornerRadius="16dp" />
     </LinearLayout>
 
 </RelativeLayout>

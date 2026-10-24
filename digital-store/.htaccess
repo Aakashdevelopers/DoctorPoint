@@ -1,0 +1,45 @@
+# ==============================================================================
+# NovaStore Digital Product Store - Apache Rewrite Rules & Security Config
+# ==============================================================================
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Prevent directory indexing
+    Options -Indexes
+
+    # Serve static files directly if they exist
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Auth API Endpoints
+    RewriteRule ^api/auth/sync/?$ api/auth/sync.php [L,QSA]
+    RewriteRule ^api/auth/me/?$ api/auth/me.php [L,QSA]
+
+    # Public Product API Endpoints
+    RewriteRule ^api/products/categories/?$ api/products/categories.php [L,QSA]
+    RewriteRule ^api/products/([a-zA-Z0-9\-_]+)/?$ api/products/detail.php?slug=$1 [L,QSA]
+    RewriteRule ^api/products/?$ api/products/index.php [L,QSA]
+
+    # Purchase & Download API Endpoints
+    RewriteRule ^api/purchases/demo-buy/?$ api/purchases/demo-buy.php [L,QSA]
+    RewriteRule ^api/purchases/my-purchases/?$ api/purchases/my-purchases.php [L,QSA]
+    RewriteRule ^api/purchases/([a-zA-Z0-9\-_]+)/download/?$ api/purchases/download.php?id=$1 [L,QSA]
+
+    # Admin Control Panel API Endpoints
+    RewriteRule ^api/admin/stats/?$ api/admin/stats.php [L,QSA]
+    RewriteRule ^api/admin/products/([0-9]+)/status/?$ api/admin/product-status.php?id=$1 [L,QSA]
+    RewriteRule ^api/admin/products/([0-9]+)/?$ api/admin/product-detail.php?id=$1 [L,QSA]
+    RewriteRule ^api/admin/products/?$ api/admin/products.php [L,QSA]
+    RewriteRule ^api/admin/purchases/?$ api/admin/purchases.php [L,QSA]
+    RewriteRule ^api/admin/categories/([0-9]+)/?$ api/admin/category-detail.php?id=$1 [L,QSA]
+    RewriteRule ^api/admin/categories/?$ api/admin/categories.php [L,QSA]
+</IfModule>
+
+# Protect Private Uploads from Direct Web Downloads
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>

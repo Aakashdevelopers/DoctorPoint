@@ -19,7 +19,7 @@ import retrofit2.http.Query;
 
 public interface SupabaseDoctorService {
 
-    @GET("rest/v1/doctors?select=*&is_verified=eq.true")
+    @GET("rest/v1/doctors?select=*&order=created_at.desc")
     Call<List<Doctor>> getDoctors();
 
     @GET("rest/v1/doctors?select=*")
@@ -28,7 +28,7 @@ public interface SupabaseDoctorService {
     @GET("rest/v1/specialities?select=*")
     Call<List<Speciality>> getSpecialities();
 
-    @GET("rest/v1/clinics?select=*&is_active=eq.true")
+    @GET("rest/v1/clinics?select=*")
     Call<List<Clinic>> getDoctorClinics(@Query("doctor_id") String doctorIdQuery);
 
     @GET("rest/v1/commission_settings?select=*")

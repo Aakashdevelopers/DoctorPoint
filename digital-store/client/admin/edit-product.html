@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Product — Admin Panel</title>
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <link rel="stylesheet" href="../assets/css/admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+    @media (max-width: 640px) {
+      .form-row { grid-template-columns: 1fr; }
+    }
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 0.4rem;
+    }
+    .form-group input, .form-group textarea, .form-group select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1.5px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      outline: none;
+    }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand-logo">
+        <i class="fa-solid fa-cube" style="color:var(--primary);"></i>
+        <span>NovaStore</span>
+        <span class="brand-badge" style="background:#0f172a;">Admin</span>
+      </a>
+      <a href="index.html" class="btn btn-outline" style="padding: 0.4rem 0.9rem; font-size: 0.85rem;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+    </div>
+  </header>
+
+  <main class="main-container">
+    <div style="max-width: 800px; margin: 0 auto;">
+      <h1 style="font-size: 1.8rem; font-weight: 800; margin-bottom: 0.5rem;">Edit Digital Product</h1>
+      <p style="color: var(--text-muted); margin-bottom: 2rem;">Update information, pricing, support contacts, or replace digital files.</p>
+
+      <div class="admin-form-card">
+        <div id="alert-box" style="display: none; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1.25rem; font-size: 0.9rem;"></div>
+
+        <form id="edit-product-form" enctype="multipart/form-data">
+
+          <div class="form-group">
+            <label for="title">Product Title *</label>
+            <input type="text" id="title" name="title" required maxlength="120">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="category">Category *</label>
+              <input type="text" id="category" name="category" required>
+            </div>
+            <div class="form-group">
+              <label for="status">Publishing Status *</label>
+              <select id="status" name="status" required>
+                <option value="draft">Draft (Hidden from Storefront)</option>
+                <option value="published">Published (Live on Storefront)</option>
+                <option value="archived">Archived (Safely Retained)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="priceInINR">Discounted Price in INR (₹) *</label>
+              <input type="number" id="priceInINR" name="priceInINR" step="1" min="0" required>
+            </div>
+            <div class="form-group">
+              <label for="compareAtPriceInINR">Original / Compare-At Price (₹)</label>
+              <input type="number" id="compareAtPriceInINR" name="compareAtPriceInINR" step="1" min="0">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="shortDescription">Short Tagline / Summary *</label>
+            <input type="text" id="shortDescription" name="shortDescription" required maxlength="250">
+          </div>
+
+          <div class="form-group">
+            <label for="description">Full Description ("ABOUT THE PAGE") *</label>
+            <textarea id="description" name="description" rows="5" required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="features">Key Features / Highlights (One per line)</label>
+            <textarea id="features" name="features" rows="4" placeholder="Cinematic Prompts&#10;Viral Reel Prompts&#10;Anime & Fantasy Styles&#10;Lifetime Access"></textarea>
+            <small style="color:var(--text-muted); font-size:0.8rem;">Each line will be displayed with a checkmark (✓) on the SuperProfile product page.</small>
+          </div>
+
+          <!-- Customer Testimonials / Reviews Management Section -->
+          <div class="form-group" style="margin-top: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+              <label style="margin-bottom:0; font-size:1rem; color:var(--primary);"><i class="fa-solid fa-star"></i> Customer Testimonials / Reviews</label>
+              <button type="button" onclick="addReviewItem()" class="btn btn-outline" style="font-size:0.8rem; padding:0.35rem 0.75rem;">
+                <i class="fa-solid fa-plus"></i> Add Testimonial
+              </button>
+            </div>
+            <small style="color:var(--text-muted); display:block; margin-bottom: 0.8rem;">
+              These reviews will be showcased under the <strong>TESTIMONIALS</strong> section on the SuperProfile product page.
+            </small>
+
+            <div id="testimonials-container" class="admin-reviews-wrap">
+              <!-- Dynamic Review Cards will be injected here -->
+            </div>
+          </div>
+
+          <!-- Frequently Asked Questions (FAQs) Management Section -->
+          <div class="form-group" style="margin-top: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+              <label style="margin-bottom:0; font-size:1rem; color:var(--primary);"><i class="fa-solid fa-circle-question"></i> Frequently Asked Questions (FAQs)</label>
+              <button type="button" onclick="addFaqItem()" class="btn btn-outline" style="font-size:0.8rem; padding:0.35rem 0.75rem;">
+                <i class="fa-solid fa-plus"></i> Add FAQ
+              </button>
+            </div>
+            <small style="color:var(--text-muted); display:block; margin-bottom: 0.8rem;">
+              These Q&As will be displayed in an expandable accordion under <strong>FREQUENTLY ASKED QUESTIONS</strong> on the SuperProfile page.
+            </small>
+
+            <div id="faqs-container" class="admin-reviews-wrap">
+              <!-- Dynamic FAQ Items will be injected here -->
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="resourceCount">Number of Resources</label>
+              <input type="number" id="resourceCount" name="resourceCount" min="1">
+            </div>
+            <div class="form-group">
+              <label for="resourceType">Resource Content Type</label>
+              <input type="text" id="resourceType" name="resourceType" placeholder="e.g. File, Folder, E-Book">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="supportEmail">Support / Contact Email *</label>
+              <input type="email" id="supportEmail" name="supportEmail" required>
+            </div>
+            <div class="form-group">
+              <label for="supportPhone">Support / Contact Phone *</label>
+              <input type="text" id="supportPhone" name="supportPhone" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="coverImage">Replace Cover Banner Image (Optional)</label>
+              <input type="file" id="coverImage" name="coverImage" accept="image/*">
+            </div>
+            <div class="form-group">
+              <label for="digitalFile">Replace Digital Product File (Optional)</label>
+              <input type="file" id="digitalFile" name="digitalFile" accept=".pdf,.zip,.rar,.epub,.mp3,.mp4,.png,.jpg,.doc,.docx,.txt">
+            </div>
+          </div>
+
+          <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: flex-end;">
+            <a href="index.html" class="btn btn-outline">Cancel</a>
+            <button type="submit" id="submit-btn" class="btn btn-primary" style="padding: 0.75rem 1.8rem;">
+              <i class="fa-solid fa-floppy-disk"></i> Save Changes
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="../assets/js/firebase-config.js"></script>
+  <script src="../assets/js/auth.js"></script>
+
+  <script>
+    let productId = new URLSearchParams(window.location.search).get('id');
+    let currentTestimonials = [
+      {
+        authorName: 'Dr. Akshay Gawande (MBBS)',
+        authorRole: 'Resident Doctor',
+        rating: 5,
+        comment: 'Frankly speaking, I was doubting before buying. Par andar ka content dekh kar I was blown away. just go for it guys!',
+        avatarUrl: ''
+      },
+      {
+        authorName: 'Dr. SHREYA TRIPATHI (BNYS)',
+        authorRole: 'Paramedical Doctor',
+        rating: 5,
+        comment: 'Thank you for sharing this best pdf for my knowledge I am paramedical doctor I will surely learn and give a time to pdf for knowledge..thank you!',
+        avatarUrl: ''
+      },
+      {
+        authorName: 'Shruti bhoyar (BAMS 2nd proff)',
+        authorRole: 'BAMS Student',
+        rating: 5,
+        comment: 'this book solves everything! Thankyou Utkarsh for making this. Very nice actually 👍',
+        avatarUrl: ''
+      },
+      {
+        authorName: 'Pranjali (MBBS)',
+        authorRole: 'Medical Student',
+        rating: 5,
+        comment: 'Too much worth it!',
+        avatarUrl: ''
+      }
+    ];
+
+    let currentFaqs = [
+      {
+        question: 'Who is this guide for?',
+        answer: 'This guide is specially created for medical students, interns, resident doctors, BAMS, BHMS, BNYS, and paramedical practitioners looking for quick, practical clinical reference.'
+      },
+      {
+        question: "What if I'm in 1st year — is this too advanced?",
+        answer: 'Not at all! The guide starts from fundamental clinical diagnosis, symptom analysis, and prescription protocols, making it very easy to understand for beginners.'
+      },
+      {
+        question: 'Will I get a PDF or physical book?',
+        answer: 'This is an instant digital download. You will get immediate access to the high-resolution, searchable PDF file that you can read on phone, tablet, laptop, or print.'
+      },
+      {
+        question: 'Are pediatric doses included?',
+        answer: 'Yes, standard adult and pediatric dosage calculations and emergency drug protocols are included.'
+      }
+    ];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const token = await Auth.getToken();
+      if (!token) {
+        window.location.href = '../login.html?redirect=admin/edit-product.html';
+        return;
+      }
+      if (!productId) {
+        window.location.href = 'index.html';
+        return;
+      }
+      loadProductDetails(token);
+    });
+
+    function renderAdminFaqs() {
+      const container = document.getElementById('faqs-container');
+      if (!container) return;
+
+      if (currentFaqs.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; color: var(--text-muted); padding: 1rem; font-size: 0.88rem;">
+            No custom FAQs added yet. Click <strong>+ Add FAQ</strong> to add product-specific Q&As.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = currentFaqs.map((f, idx) => `
+        <div class="admin-review-item">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+            <strong style="font-size:0.9rem; color:var(--primary);"><i class="fa-solid fa-circle-question"></i> FAQ #${idx + 1}</strong>
+            <button type="button" onclick="removeFaqItem(${idx})" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:0.9rem;" title="Remove FAQ">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+          <div style="margin-bottom:0.6rem;">
+            <label style="font-size:0.8rem;">Question *</label>
+            <input type="text" value="${f.question || ''}" placeholder="e.g. Who is this guide for?" onchange="updateFaqItem(${idx}, 'question', this.value)" style="padding:0.5rem; font-size:0.88rem; width:100%;">
+          </div>
+          <div>
+            <label style="font-size:0.8rem;">Answer *</label>
+            <textarea rows="2" placeholder="Write answer text here..." onchange="updateFaqItem(${idx}, 'answer', this.value)" style="padding:0.5rem; font-size:0.88rem; width:100%;">${f.answer || ''}</textarea>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function addFaqItem() {
+      currentFaqs.push({
+        question: 'New Question?',
+        answer: 'Clear and detailed answer here.'
+      });
+      renderAdminFaqs();
+    }
+
+    function removeFaqItem(idx) {
+      currentFaqs.splice(idx, 1);
+      renderAdminFaqs();
+    }
+
+    function updateFaqItem(idx, key, val) {
+      if (currentFaqs[idx]) {
+        currentFaqs[idx][key] = val;
+      }
+    }
+
+    function renderAdminTestimonials() {
+      const container = document.getElementById('testimonials-container');
+      if (!container) return;
+
+      if (currentTestimonials.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; color: var(--text-muted); padding: 1rem; font-size: 0.88rem;">
+            No custom testimonials added yet. Click <strong>+ Add Testimonial</strong> to add product-specific reviews.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = currentTestimonials.map((t, idx) => `
+        <div class="admin-review-item">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+            <strong style="font-size:0.9rem; color:var(--primary);"><i class="fa-solid fa-comment-dots"></i> Review #${idx + 1}</strong>
+            <button type="button" onclick="removeReviewItem(${idx})" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:0.9rem;" title="Remove Review">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+          <div class="form-row" style="margin-bottom:0.6rem;">
+            <div>
+              <label style="font-size:0.8rem;">Author Name & Qualifications *</label>
+              <input type="text" value="${t.authorName || ''}" placeholder="e.g. Dr. Akshay Gawande (MBBS)" onchange="updateReviewItem(${idx}, 'authorName', this.value)" style="padding:0.5rem; font-size:0.88rem;">
+            </div>
+            <div>
+              <label style="font-size:0.8rem;">Designation / Role</label>
+              <input type="text" value="${t.authorRole || ''}" placeholder="e.g. Resident Doctor" onchange="updateReviewItem(${idx}, 'authorRole', this.value)" style="padding:0.5rem; font-size:0.88rem;">
+            </div>
+          </div>
+          <div class="form-row" style="margin-bottom:0.6rem;">
+            <div>
+              <label style="font-size:0.8rem;">Star Rating (1 to 5 Stars)</label>
+              <select onchange="updateReviewItem(${idx}, 'rating', this.value)" style="padding:0.5rem; font-size:0.88rem;">
+                <option value="5" ${t.rating == 5 ? 'selected' : ''}>★★★★★ (5 Stars)</option>
+                <option value="4" ${t.rating == 4 ? 'selected' : ''}>★★★★☆ (4 Stars)</option>
+                <option value="3" ${t.rating == 3 ? 'selected' : ''}>★★★☆☆ (3 Stars)</option>
+                <option value="2" ${t.rating == 2 ? 'selected' : ''}>★★☆☆☆ (2 Stars)</option>
+                <option value="1" ${t.rating == 1 ? 'selected' : ''}>★☆☆☆☆ (1 Star)</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:0.8rem;">Avatar Emoji or Image URL (Optional)</label>
+              <input type="text" value="${t.avatarUrl || ''}" placeholder="😀 or https://..." onchange="updateReviewItem(${idx}, 'avatarUrl', this.value)" style="padding:0.5rem; font-size:0.88rem;">
+            </div>
+          </div>
+          <div>
+            <label style="font-size:0.8rem;">Review Comment / Feedback *</label>
+            <textarea rows="2" placeholder="Write feedback/review text here..." onchange="updateReviewItem(${idx}, 'comment', this.value)" style="padding:0.5rem; font-size:0.88rem; width:100%;">${t.comment || ''}</textarea>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function addReviewItem() {
+      currentTestimonials.push({
+        authorName: 'Dr. New Reviewer',
+        authorRole: 'Medical Practitioner',
+        rating: 5,
+        comment: 'Very informative and valuable content for medical professionals!',
+        avatarUrl: ''
+      });
+      renderAdminTestimonials();
+    }
+
+    function removeReviewItem(idx) {
+      currentTestimonials.splice(idx, 1);
+      renderAdminTestimonials();
+    }
+
+    function updateReviewItem(idx, key, val) {
+      if (currentTestimonials[idx]) {
+        currentTestimonials[idx][key] = val;
+      }
+    }
+
+    async function loadProductDetails(token) {
+      const customProducts = JSON.parse(localStorage.getItem('novastore_custom_products') || '[]');
+      const localProduct = customProducts.find(p => p._id === productId);
+
+      try {
+        const res = await fetch(`/api/admin/products?search=`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success) {
+          const product = data.data.find(p => p._id === productId) || localProduct;
+          if (product) {
+            document.getElementById('title').value = product.title || '';
+            document.getElementById('category').value = product.category || '';
+            document.getElementById('status').value = product.status || 'published';
+            document.getElementById('priceInINR').value = product.priceInINR || '0';
+            document.getElementById('compareAtPriceInINR').value = product.compareAtPriceInINR || '';
+            document.getElementById('shortDescription').value = product.shortDescription || '';
+            document.getElementById('description').value = product.description || product.shortDescription || '';
+            document.getElementById('supportEmail').value = product.supportEmail || 'ravivadhiya46@gmail.com';
+            document.getElementById('supportPhone').value = product.supportPhone || '+91 9574055968';
+            document.getElementById('resourceCount').value = product.resourceCount || 1;
+            document.getElementById('resourceType').value = product.resourceType || 'File';
+            if (product.features && product.features.length) {
+              document.getElementById('features').value = product.features.join('\n');
+            }
+            if (product.testimonials && product.testimonials.length) {
+              currentTestimonials = product.testimonials;
+            }
+            if (product.faqs && product.faqs.length) {
+              currentFaqs = product.faqs;
+            }
+            renderAdminTestimonials();
+            renderAdminFaqs();
+            return;
+          }
+        }
+      } catch (err) {
+        console.error('Error loading product details:', err);
+      }
+
+      if (localProduct) {
+        document.getElementById('title').value = localProduct.title || '';
+        document.getElementById('category').value = localProduct.category || '';
+        document.getElementById('status').value = localProduct.status || 'published';
+        document.getElementById('priceInINR').value = localProduct.priceInINR || '0';
+        document.getElementById('compareAtPriceInINR').value = localProduct.compareAtPriceInINR || '';
+        document.getElementById('shortDescription').value = localProduct.shortDescription || '';
+        document.getElementById('description').value = localProduct.description || localProduct.shortDescription || '';
+        document.getElementById('supportEmail').value = localProduct.supportEmail || 'ravivadhiya46@gmail.com';
+        document.getElementById('supportPhone').value = localProduct.supportPhone || '+91 9574055968';
+        document.getElementById('resourceCount').value = localProduct.resourceCount || 1;
+        document.getElementById('resourceType').value = localProduct.resourceType || 'File';
+        if (localProduct.features && localProduct.features.length) {
+          document.getElementById('features').value = localProduct.features.join('\n');
+        }
+        if (localProduct.testimonials && localProduct.testimonials.length) {
+          currentTestimonials = localProduct.testimonials;
+        }
+        if (localProduct.faqs && localProduct.faqs.length) {
+          currentFaqs = localProduct.faqs;
+        }
+      }
+      renderAdminTestimonials();
+      renderAdminFaqs();
+    }
+
+    const form = document.getElementById('edit-product-form');
+    const alertBox = document.getElementById('alert-box');
+
+    function showAlert(msg, isError = true) {
+      alertBox.style.display = 'block';
+      alertBox.style.background = isError ? '#fee2e2' : '#dcfce7';
+      alertBox.style.color = isError ? '#991b1b' : '#166534';
+      alertBox.textContent = msg;
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      alertBox.style.display = 'none';
+
+      const token = await Auth.getToken();
+      const formData = new FormData(form);
+      formData.append('testimonials', JSON.stringify(currentTestimonials));
+      formData.append('faqs', JSON.stringify(currentFaqs));
+
+      const submitBtn = document.getElementById('submit-btn');
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving Changes...';
+
+      try {
+        const res = await fetch(`/api/admin/products/${productId}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          showAlert('Product updated successfully!', false);
+          setTimeout(() => {
+            window.location.href = 'index.html';
+          }, 800);
+          return;
+        }
+      } catch (err) {
+        console.warn('Error updating product on server - Updating locally');
+      }
+
+      // Local storage edit fallback
+      const customProducts = JSON.parse(localStorage.getItem('novastore_custom_products') || '[]');
+      const item = customProducts.find(p => p._id === productId);
+      if (item) {
+        item.title = document.getElementById('title').value.trim();
+        item.category = document.getElementById('category').value;
+        item.priceInINR = document.getElementById('priceInINR').value.trim();
+        item.compareAtPriceInINR = document.getElementById('compareAtPriceInINR').value.trim();
+        item.shortDescription = document.getElementById('shortDescription').value.trim();
+        item.description = document.getElementById('description').value.trim();
+        item.resourceUrl = document.getElementById('resourceUrl').value.trim();
+        item.supportEmail = document.getElementById('supportEmail').value.trim();
+        item.supportPhone = document.getElementById('supportPhone').value.trim();
+        item.status = document.getElementById('status').value;
+        const featuresRaw = document.getElementById('features').value.trim();
+        item.features = featuresRaw ? featuresRaw.split('\n').map(f => f.trim()).filter(f => f) : [];
+        item.testimonials = currentTestimonials;
+        item.faqs = currentFaqs;
+        localStorage.setItem('novastore_custom_products', JSON.stringify(customProducts));
+      }
+
+      showAlert('Product updated locally! Redirecting...', false);
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 800);
+    });
+  </script>
+
+</body>
+</html>

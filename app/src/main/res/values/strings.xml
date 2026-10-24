@@ -8,4 +8,6 @@
     <string name="are_you_a_doctor">Are you a Doctor?</string>
     <string name="join_doctor_subtitle">Join Doctor\'s Point &amp; consult patients</string>
     <string name="join_now">Join Now</string>
+
+    <string name="desc_specialization_image">Specialization Image</string>
 </resources>

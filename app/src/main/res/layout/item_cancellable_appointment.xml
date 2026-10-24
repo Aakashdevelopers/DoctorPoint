@@ -136,6 +136,15 @@
                     android:textColor="@color/text_primary"
                     android:textSize="12.5sp"
                     android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_original_datetime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textColor="@color/text_muted"
+                    android:textSize="11sp"
+                    android:visibility="gone" />
             </LinearLayout>
 
             <LinearLayout

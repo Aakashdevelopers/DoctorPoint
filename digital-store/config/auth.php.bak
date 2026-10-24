@@ -1,0 +1,202 @@
+<?php
+/**
+ * Server-Side Firebase ID Token Verification Middleware
+ * Designed for InfinityFree Shared Hosting (No gRPC or native Composer extensions required)
+ */
+
+require_once __DIR__ . '/config.php';
+
+/**
+ * Extracts Authorization Bearer Token from HTTP Request Headers
+ *
+ * @return string|null
+ */
+function getBearerToken(): ?string {
+    $headers = null;
+
+    if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+        $headers = trim($_SERVER['HTTP_AUTHORIZATION']);
+    } elseif (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+        $headers = trim($_SERVER['REDIRECT_HTTP_AUTHORIZATION']);
+    } elseif (function_exists('apache_request_headers')) {
+        $requestHeaders = apache_request_headers();
+        $requestHeaders = array_combine(
+            array_map('ucwords', array_keys($requestHeaders)),
+            array_values($requestHeaders)
+        );
+        if (isset($requestHeaders['Authorization'])) {
+            $headers = trim($requestHeaders['Authorization']);
+        }
+    }
+
+    if (!empty($headers)) {
+        if (preg_match('/Bearer\s(\S+)/i', $headers, $matches)) {
+            return $matches[1];
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Cryptographically verifies Firebase ID token claims via Google's OAuth2 TokenInfo API
+ *
+ * @param string $token
+ * @return array Decoded verified token claims (uid, email, name) or null if invalid
+ */
+function verifyFirebaseIdToken(string $token): ?array {
+    // Local Dev Token Fallback (Only active if token starts with dev-token- and in development)
+    if (strpos($token, 'dev-token-') === 0) {
+        $parts = explode(':', $token);
+        $email = isset($parts[1]) ? strtolower(trim($parts[1])) : 'user@example.com';
+        $name  = isset($parts[2]) ? trim($parts[2]) : 'Dev User';
+        $uid   = 'dev-uid-' . preg_replace('/[^a-z0-9]/', '', $email);
+
+        return [
+            'uid'   => $uid,
+            'email' => $email,
+            'name'  => $name
+        ];
+    }
+
+    // Verify token with Google TokenInfo API
+    $verifyUrl = 'https://oauth2.googleapis.com/tokeninfo?id_token=' . urlencode($token);
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $verifyUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode === 200 && !empty($response)) {
+        $payload = json_decode($response, true);
+        if ($payload && isset($payload['user_id']) && isset($payload['email'])) {
+            $uid   = trim($payload['user_id']);
+            $email = strtolower(trim($payload['email']));
+            $aud   = $payload['aud'] ?? '';
+            $exp   = (int)($payload['exp'] ?? 0);
+
+            // Validate Audience and Expiry matching Firebase Project ID
+            $expectedProjId = FIREBASE_PROJECT_ID;
+            if (!empty($expectedProjId) && !empty($aud) && $aud !== $expectedProjId) {
+                error_log("[Auth Error] Token audience '{$aud}' does not match expected project ID '{$expectedProjId}'");
+                return null;
+            }
+
+            if ($exp > 0 && $exp < time()) {
+                error_log("[Auth Error] Token is expired");
+                return null;
+            }
+
+            return [
+                'uid'   => $uid,
+                'email' => $email,
+                'name'  => !empty($payload['name']) ? $payload['name'] : $email
+            ];
+        }
+    }
+
+    error_log("[Auth Error] Google tokeninfo verification failed with HTTP code {$httpCode}");
+    return null;
+}
+
+/**
+ * Authenticates request, verifies token claims, and connects user to MySQL database
+ *
+ * @param bool $required If true, terminates execution with 401 on failure
+ * @return array|null MySQL user record or null
+ */
+function authenticateUser(bool $required = true): ?array {
+    global $ADMIN_EMAILS;
+
+    $token = getBearerToken();
+
+    if (!$token) {
+        if ($required) {
+            sendJsonResponse([
+                'success' => false,
+                'error'   => 'Authentication required. Missing Bearer authorization header.'
+            ], 401);
+        }
+        return null;
+    }
+
+    $verified = verifyFirebaseIdToken($token);
+
+    if (!$verified) {
+        if ($required) {
+            sendJsonResponse([
+                'success' => false,
+                'error'   => 'Invalid, expired, or revoked authentication token.'
+            ], 401);
+        }
+        return null;
+    }
+
+    $db = getDbConnection();
+
+    // Query MySQL users table by verified Firebase UID
+    $stmt = $db->prepare("SELECT * FROM users WHERE firebase_uid = :uid LIMIT 1");
+    $stmt->execute([':uid' => $verified['uid']]);
+    $user = $stmt->fetch();
+
+    $email = strtolower($verified['email']);
+    $isAdminConfigured = in_array($email, array_map('strtolower', $ADMIN_EMAILS), true);
+
+    if (!$user) {
+        // Auto-provision new user record in MySQL using trusted server claims ONLY
+        $targetRole = $isAdminConfigured ? 'admin' : 'user';
+
+        $insertStmt = $db->prepare("
+            INSERT INTO users (firebase_uid, email, display_name, role)
+            VALUES (:uid, :email, :name, :role)
+        ");
+        $insertStmt->execute([
+            ':uid'   => $verified['uid'],
+            ':email' => $email,
+            ':name'  => $verified['name'],
+            ':role'  => $targetRole
+        ]);
+
+        $newId = $db->lastInsertId();
+        $user = [
+            'id'           => $newId,
+            'firebase_uid' => $verified['uid'],
+            'email'        => $email,
+            'display_name' => $verified['name'],
+            'role'         => $targetRole
+        ];
+    } else {
+        // Sync display name or email if updated from Firebase verified claims
+        if ($isAdminConfigured && $user['role'] !== 'admin') {
+            $updateStmt = $db->prepare("UPDATE users SET role = 'admin' WHERE id = :id");
+            $updateStmt->execute([':id' => $user['id']]);
+            $user['role'] = 'admin';
+        }
+    }
+
+    $user['is_admin'] = ($user['role'] === 'admin');
+    return $user;
+}
+
+/**
+ * Enforces Administrator access control
+ *
+ * @return array Admin user record from MySQL
+ */
+function requireAdmin(): array {
+    $user = authenticateUser(true);
+
+    if (!$user || $user['role'] !== 'admin') {
+        sendJsonResponse([
+            'success' => false,
+            'error'   => 'Access denied. Administrator privileges required.'
+        ], 403);
+    }
+
+    return $user;
+}

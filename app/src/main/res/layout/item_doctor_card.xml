@@ -4,276 +4,122 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="16dp"
-    android:layout_marginVertical="8dp"
+    android:layout_marginVertical="6dp"
     android:clickable="true"
     android:focusable="true"
     android:foreground="?attr/selectableItemBackground"
     app:cardBackgroundColor="@color/surface_white"
     app:cardCornerRadius="18dp"
-    app:cardElevation="3dp"
+    app:cardElevation="2dp"
     app:strokeColor="@color/card_stroke"
     app:strokeWidth="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="12dp">
 
+        <!-- Doctor Image Container (Light Blue Tint Background) -->
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/iv_doctor"
+            android:layout_width="76dp"
+            android:layout_height="76dp"
+            android:background="#CFFAFE"
+            android:contentDescription="Doctor Image"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_user"
+            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.Corner16dp" />
+
+        <!-- Doctor Details Container -->
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:layout_marginStart="14dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
 
-            <FrameLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content">
-
-                <com.google.android.material.imageview.ShapeableImageView
-                    android:id="@+id/iv_doctor"
-                    android:layout_width="72dp"
-                    android:layout_height="72dp"
-                    android:contentDescription="Doctor Image"
-                    android:padding="2dp"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/ic_user"
-                    app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.Circle"
-                    app:strokeColor="@color/primary"
-                    app:strokeWidth="2dp" />
-
-                <!-- Online Dot Status -->
-                <View
-                    android:id="@+id/view_online_status"
-                    android:layout_width="14dp"
-                    android:layout_height="14dp"
-                    android:layout_gravity="bottom|end"
-                    android:layout_marginEnd="2dp"
-                    android:layout_marginBottom="2dp"
-                    android:background="@drawable/bg_dot_online" />
-            </FrameLayout>
-
+            <!-- Title Row: Doctor Name + Favorite Heart Icon -->
             <LinearLayout
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="14dp"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:id="@+id/tv_doctor_name"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:ellipsize="end"
-                        android:fontFamily="sans-serif-medium"
-                        android:maxLines="1"
-                        android:text="Dr. Akash Mishra"
-                        android:textColor="@color/text_primary"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-
-                    <ImageView
-                        android:id="@+id/iv_favorite"
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:clickable="true"
-                        android:contentDescription="Favorite icon"
-                        android:focusable="true"
-                        android:padding="5dp"
-                        android:src="@drawable/ic_heart"
-                        app:tint="@color/text_secondary" />
-                </LinearLayout>
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
                 <TextView
-                    android:id="@+id/tv_qualification"
-                    android:layout_width="wrap_content"
+                    android:id="@+id/tv_doctor_name"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
+                    android:layout_weight="1"
                     android:ellipsize="end"
+                    android:fontFamily="sans-serif-medium"
                     android:maxLines="1"
-                    android:text="Dermatologist • MBBS, MD"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12sp" />
+                    android:text="Dr. Kaniz Fatema Noor"
+                    android:textColor="@color/text_primary"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
 
-                <!-- Rating & Verification Row -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical">
-
-                        <ImageView
-                            android:layout_width="14dp"
-                            android:layout_height="14dp"
-                            android:contentDescription="Rating star"
-                            android:src="@drawable/ic_star"
-                            app:tint="@color/warning_yellow" />
-
-                        <TextView
-                            android:id="@+id/tv_rating"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="4dp"
-                            android:ellipsize="end"
-                            android:maxLines="1"
-                            android:singleLine="true"
-                            android:text="4.8 (120 reviews)"
-                            android:textColor="@color/text_primary"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/ll_verified"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="10dp"
-                        android:background="@drawable/bg_badge_verified"
-                        android:gravity="center_vertical"
-                        android:paddingHorizontal="6dp"
-                        android:paddingVertical="3dp">
-
-                        <ImageView
-                            android:layout_width="11dp"
-                            android:layout_height="11dp"
-                            android:contentDescription="Verified check"
-                            android:src="@drawable/ic_verified" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="3dp"
-                            android:text="Verified"
-                            android:textColor="@color/success_green"
-                            android:textSize="11sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- Experience & Availability Badges Row -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <!-- Experience Pill Badge -->
-                    <TextView
-                        android:id="@+id/tv_experience"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/bg_search_field_elevated"
-                        android:ellipsize="end"
-                        android:maxLines="1"
-                        android:paddingHorizontal="8dp"
-                        android:paddingVertical="3dp"
-                        android:singleLine="true"
-                        android:text="12 Yrs Exp"
-                        android:textColor="@color/primary"
-                        android:textSize="11sp"
-                        android:textStyle="bold" />
-
-                    <!-- Available Today Badge -->
-                    <TextView
-                        android:id="@+id/tv_available_today"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="6dp"
-                        android:background="@drawable/bg_available_today_chip"
-                        android:ellipsize="end"
-                        android:maxLines="1"
-                        android:paddingHorizontal="8dp"
-                        android:paddingVertical="3dp"
-                        android:singleLine="true"
-                        android:text="Available Today"
-                        android:textColor="#15803D"
-                        android:textSize="11sp"
-                        android:textStyle="bold"
-                        android:visibility="gone" />
-                </LinearLayout>
+                <ImageView
+                    android:id="@+id/iv_favorite"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Favorite"
+                    android:padding="4dp"
+                    android:src="@drawable/ic_heart"
+                    app:tint="@color/text_secondary" />
 
             </LinearLayout>
 
-        </LinearLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginVertical="12dp"
-            android:background="@color/divider" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:layout_width="15dp"
-                android:layout_height="15dp"
-                android:contentDescription="Location icon"
-                android:src="@drawable/ic_location"
-                app:tint="@color/primary" />
-
+            <!-- Subtitle Row: Specialization | Location -->
             <TextView
-                android:id="@+id/tv_clinic_location"
-                android:layout_width="0dp"
+                android:id="@+id/tv_qualification"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:layout_weight="1"
+                android:layout_marginTop="4dp"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:text="Skin Care Clinic • Indiranagar, Bangalore"
+                android:text="Medicine  |  ICDDR'B Mirpur, Dhaka"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
-        </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/tv_fee"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:fontFamily="sans-serif-medium"
-                android:text="₹500 Fee"
-                android:textColor="@color/primary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_book_now"
+            <!-- Rating Row: Star Icon + Rating Value + Reviews Count -->
+            <LinearLayout
                 android:layout_width="wrap_content"
-                android:layout_height="38dp"
-                android:backgroundTint="@color/primary"
-                android:fontFamily="sans-serif-medium"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:paddingHorizontal="16dp"
-                android:text="Book Now"
-                android:textColor="@color/white"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                app:cornerRadius="12dp" />
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:contentDescription="Rating star"
+                    android:src="@drawable/ic_star"
+                    app:tint="#F59E0B" />
+
+                <TextView
+                    android:id="@+id/tv_rating"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="5"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_review_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="(201 reviews)"
+                    android:textColor="#3B82F6"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
         </LinearLayout>
 
     </LinearLayout>

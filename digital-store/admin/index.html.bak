@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel — NovaStore</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <link rel="stylesheet" href="assets/css/admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand-logo">
+        <i class="fa-solid fa-cube" style="color:var(--primary);"></i>
+        <span>NovaStore</span>
+        <span class="brand-badge" style="background:#0f172a;">Admin</span>
+      </a>
+      <div style="display: flex; gap: 1rem; align-items: center;">
+        <a href="../user/index.html" class="btn btn-outline" style="padding: 0.4rem 0.9rem; font-size: 0.85rem;"><i class="fa-solid fa-store"></i> View Store</a>
+        <button onclick="Auth.logout()" class="btn btn-outline" style="padding: 0.4rem 0.9rem; font-size: 0.85rem;">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="sidebar-heading">Navigation</div>
+      <a href="#stats-section" class="sidebar-nav-item active"><i class="fa-solid fa-chart-pie"></i> Overview Dashboard</a>
+      <a href="#products-section" class="sidebar-nav-item"><i class="fa-solid fa-boxes-stacked"></i> Manage Products</a>
+      <a href="categories.html" class="sidebar-nav-item"><i class="fa-solid fa-tags"></i> Manage Categories</a>
+      <a href="#purchases-section" class="sidebar-nav-item"><i class="fa-solid fa-receipt"></i> Demo Purchase Audit</a>
+
+      <div class="sidebar-heading" style="margin-top: auto;">Quick Actions</div>
+      <a href="add-product.html" class="btn btn-primary" style="margin-top: 0.5rem; font-size: 0.88rem; width: 100%;">
+        <i class="fa-solid fa-plus"></i> Add New Product
+      </a>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+
+      <!-- Stats Grid -->
+      <section id="stats-section" class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#e0e7ff; color:var(--primary);"><i class="fa-solid fa-box"></i></div>
+          <div>
+            <div class="stat-value" id="stat-total-products">0</div>
+            <div class="stat-label">Total Products</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#dcfce7; color:#166534;"><i class="fa-solid fa-circle-check"></i></div>
+          <div>
+            <div class="stat-value" id="stat-published-products">0</div>
+            <div class="stat-label">Published Active</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#fef3c7; color:#92400e;"><i class="fa-solid fa-bolt"></i></div>
+          <div>
+            <div class="stat-value" id="stat-demo-purchases">0</div>
+            <div class="stat-label">Total Demo Purchases</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#f1f5f9; color:#475569;"><i class="fa-solid fa-file-pen"></i></div>
+          <div>
+            <div class="stat-value" id="stat-draft-products">0</div>
+            <div class="stat-label">Draft Products</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Manage Products Table -->
+      <section id="products-section" class="data-table-container">
+        <div class="data-table-header">
+          <div>
+            <h2 style="font-size: 1.25rem; font-weight: 800;">Digital Products Catalog</h2>
+            <p style="font-size: 0.88rem; color: var(--text-muted);">Manage publishing status, pricing, and files.</p>
+          </div>
+          <a href="add-product.html" class="btn btn-primary" style="padding: 0.6rem 1.2rem; font-size: 0.88rem;">
+            <i class="fa-solid fa-plus"></i> Add Product
+          </a>
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Price</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="products-table-body">
+            <tr><td colspan="5" style="text-align:center;padding:2rem;">Loading products...</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Demo Purchases Audit Table -->
+      <section id="purchases-section" class="data-table-container">
+        <div class="data-table-header">
+          <div>
+            <h2 style="font-size: 1.25rem; font-weight: 800;">Demo Purchase Audit Log</h2>
+            <p style="font-size: 0.88rem; color: var(--text-muted);">Real-time audit log of instant demo access grants (Non-revenue transactions).</p>
+          </div>
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Product Title</th>
+              <th>User Email / UID</th>
+              <th>Date & Time</th>
+              <th>Status</th>
+              <th>Type Notice</th>
+            </tr>
+          </thead>
+          <tbody id="purchases-audit-table-body">
+            <tr><td colspan="5" style="text-align:center;padding:2rem;">Loading audit log...</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="assets/js/firebase-config.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/admin.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      Admin.initDashboard();
+    });
+  </script>
+
+</body>
+</html>

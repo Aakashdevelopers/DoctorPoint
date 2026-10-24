@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Product — Admin Panel</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <link rel="stylesheet" href="assets/css/admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+    @media (max-width: 640px) {
+      .form-row { grid-template-columns: 1fr; }
+    }
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 0.4rem;
+    }
+    .form-group input, .form-group textarea, .form-group select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1.5px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      outline: none;
+    }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand-logo">
+        <i class="fa-solid fa-cube" style="color:var(--primary);"></i>
+        <span>NovaStore</span>
+        <span class="brand-badge" style="background:#0f172a;">Admin</span>
+      </a>
+      <a href="index.html" class="btn btn-outline" style="padding: 0.4rem 0.9rem; font-size: 0.85rem;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+    </div>
+  </header>
+
+  <main class="main-container">
+    <div style="max-width: 800px; margin: 0 auto;">
+      <h1 style="font-size: 1.8rem; font-weight: 800; margin-bottom: 0.5rem;">Add New Digital Product</h1>
+      <p style="color: var(--text-muted); margin-bottom: 2rem;">Upload cover media, set direct resource URL, specify pricing, support contact, and SuperProfile features.</p>
+
+      <div class="admin-form-card">
+        <div id="alert-box" style="display: none; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1.25rem; font-size: 0.9rem;"></div>
+
+        <form id="add-product-form" enctype="multipart/form-data">
+
+          <div class="form-group">
+            <label for="title">Product Title *</label>
+            <input type="text" id="title" name="title" placeholder="e.g. 5000+ AI Video Prompt Bundle | Cinematic, Viral Reels, Anime" required maxlength="120">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                <label for="category" style="margin-bottom:0;">Category *</label>
+                <a href="categories.html" style="font-size: 0.8rem; color: var(--primary); font-weight: 700; text-decoration: none;">+ Manage Categories</a>
+              </div>
+              <select id="category" name="category" required>
+                <option value="">Loading categories...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="status">Publishing Status *</label>
+              <select id="status" name="status" required>
+                <option value="draft">Draft (Hidden from Storefront)</option>
+                <option value="published" selected>Published (Live on Storefront)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="priceInINR">Discounted Price in INR (₹) *</label>
+              <input type="number" id="priceInINR" name="priceInINR" step="1" min="0" placeholder="e.g. 499" required>
+            </div>
+            <div class="form-group">
+              <label for="compareAtPriceInINR">Original / Compare-At Price (₹)</label>
+              <input type="number" id="compareAtPriceInINR" name="compareAtPriceInINR" step="1" min="0" placeholder="e.g. 1499">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="shortDescription">Short Tagline / Summary *</label>
+            <input type="text" id="shortDescription" name="shortDescription" placeholder="Create stunning AI videos in seconds using 5000+ ready-to-use premium prompts" required maxlength="250">
+          </div>
+
+          <div class="form-group">
+            <label for="description">Full Description ("ABOUT THE PAGE") *</label>
+            <textarea id="description" name="description" rows="5" placeholder="Detailed product description, AI tools supported (Runway, Kling AI, Pika), and usage instructions..." required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="features">Key Features / Highlights (One per line)</label>
+            <textarea id="features" name="features" rows="4" placeholder="Cinematic Prompts&#10;Viral Reel Prompts&#10;Anime & Fantasy Styles&#10;Horror & Sci-Fi Scenes&#10;Lifetime Access"></textarea>
+            <small style="color:var(--text-muted); font-size:0.8rem;">Each line will be displayed with a checkmark (✓) on the SuperProfile product page.</small>
+          </div>
+
+          <!-- Customer Testimonials / Reviews Management Section -->
+          <div class="form-group" style="margin-top: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+              <label style="margin-bottom:0; font-size:1rem; color:var(--primary);"><i class="fa-solid fa-star"></i> Customer Testimonials / Reviews</label>
+              <button type="button" onclick="addReviewItem()" class="btn btn-outline" style="font-size:0.8rem; padding:0.35rem 0.75rem;">
+                <i class="fa-solid fa-plus"></i> Add Testimonial
+              </button>
+            </div>
+            <small style="color:var(--text-muted); display:block; margin-bottom: 0.8rem;">
+              These reviews will be showcased under the <strong>TESTIMONIALS</strong> section on the SuperProfile product page.
+            </small>
+
+            <div id="testimonials-container" class="admin-reviews-wrap">
+              <!-- Dynamic Review Cards will be injected here -->
+            </div>
+          </div>
+
+          <!-- Frequently Asked Questions (FAQs) Management Section -->
+          <div class="form-group" style="margin-top: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+              <label style="margin-bottom:0; font-size:1rem; color:var(--primary);"><i class="fa-solid fa-circle-question"></i> Frequently Asked Questions (FAQs)</label>
+              <button type="button" onclick="addFaqItem()" class="btn btn-outline" style="font-size:0.8rem; padding:0.35rem 0.75rem;">
+                <i class="fa-solid fa-plus"></i> Add FAQ
+              </button>
+            </div>
+            <small style="color:var(--text-muted); display:block; margin-bottom: 0.8rem;">
+              These Q&As will be displayed in an expandable accordion under <strong>FREQUENTLY ASKED QUESTIONS</strong> on the SuperProfile page.
+            </small>
+
+            <div id="faqs-container" class="admin-reviews-wrap">
+              <!-- Dynamic FAQ Items will be injected here -->
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="resourceUrl">Digital Resource Access Link / URL *</label>
+            <input type="url" id="resourceUrl" name="resourceUrl" value="https://drive.google.com/file/d/12345/view" placeholder="https://drive.google.com/file/d/... or https://dropbox.com/..." required>
+            <small style="color:var(--text-muted); font-size: 0.8rem;">Direct Google Drive, Dropbox, YouTube, or Cloud resource link opened upon purchase.</small>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="resourceCount">Number of Resources</label>
+              <input type="number" id="resourceCount" name="resourceCount" value="1" min="1">
+            </div>
+            <div class="form-group">
+              <label for="resourceType">Resource Content Type</label>
+              <input type="text" id="resourceType" name="resourceType" value="File" placeholder="e.g. File, Folder, E-Book, Zip Archive">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="supportEmail">Support / Contact Email *</label>
+              <input type="email" id="supportEmail" name="supportEmail" value="ravivadhiya46@gmail.com" placeholder="support@example.com" required>
+            </div>
+            <div class="form-group">
+              <label for="supportPhone">Support / Contact Phone *</label>
+              <input type="text" id="supportPhone" name="supportPhone" value="+91 9574055968" placeholder="+91 9574055968" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="coverImage">Cover Banner Image Upload *</label>
+              <input type="file" id="coverImage" name="coverImage" accept="image/*">
+              <small style="color:var(--text-muted); font-size: 0.8rem;">Allowed: JPG, PNG, WEBP (Max 5MB)</small>
+            </div>
+            <div class="form-group">
+              <label for="digitalFile">Digital Product File Upload *</label>
+              <input type="file" id="digitalFile" name="digitalFile" accept=".pdf,.zip,.rar,.epub,.mp3,.mp4,.png,.jpg,.doc,.docx,.txt">
+              <small style="color:var(--text-muted); font-size: 0.8rem;">Private download file (PDF, ZIP, RAR, up to 50MB)</small>
+            </div>
+          </div>
+
+          <!-- Upload Progress -->
+          <div id="progress-container" class="progress-bar-wrap">
+            <div id="progress-fill" class="progress-bar-fill"></div>
+          </div>
+          <p id="progress-text" style="font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-top: 0.4rem; display: none;">Uploading files...</p>
+
+          <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: flex-end;">
+            <a href="index.html" class="btn btn-outline">Cancel</a>
+            <button type="submit" id="submit-btn" class="btn btn-primary" style="padding: 0.75rem 1.8rem;">
+              <i class="fa-solid fa-cloud-arrow-up"></i> Save & Create Product
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="assets/js/firebase-config.js"></script>
+  <script src="assets/js/auth.js"></script>
+
+  <script>
+    let currentTestimonials = [];
+    let currentFaqs = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const token = await Auth.getToken();
+      if (!token) {
+        window.location.href = 'index.html';
+        return;
+      }
+      loadCategoryDropdown();
+      renderAdminTestimonials();
+      renderAdminFaqs();
+    });
+
+    function renderAdminFaqs() {
+      const container = document.getElementById('faqs-container');
+      if (!container) return;
+
+      if (currentFaqs.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; color: var(--text-muted); padding: 1rem; font-size: 0.88rem;">
+            No custom FAQs added yet. Click <strong>+ Add FAQ</strong> to add product-specific Q&As.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = currentFaqs.map((f, idx) => `
+        <div class="admin-review-item">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+            <strong style="font-size:0.9rem; color:var(--primary);"><i class="fa-solid fa-circle-question"></i> FAQ #${idx + 1}</strong>
+            <button type="button" onclick="removeFaqItem(${idx})" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:0.9rem;" title="Remove FAQ">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+          <div style="margin-bottom:0.6rem;">
+            <label style="font-size:0.8rem;">Question *</label>
+            <input type="text" value="${f.question || ''}" placeholder="e.g. Who is this guide for?" onchange="updateFaqItem(${idx}, 'question', this.value)" style="padding:0.5rem; font-size:0.88rem; width:100%;">
+          </div>
+          <div>
+            <label style="font-size:0.8rem;">Answer *</label>
+            <textarea rows="2" placeholder="Write answer text here..." onchange="updateFaqItem(${idx}, 'answer', this.value)" style="padding:0.5rem; font-size:0.88rem; width:100%;">${f.answer || ''}</textarea>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function addFaqItem() {
+      currentFaqs.push({
+        question: 'New Question?',
+        answer: 'Clear and detailed answer here.'
+      });
+      renderAdminFaqs();
+    }
+
+    function removeFaqItem(idx) {
+      currentFaqs.splice(idx, 1);
+      renderAdminFaqs();
+    }
+
+    function updateFaqItem(idx, key, val) {
+      if (currentFaqs[idx]) {
+        currentFaqs[idx][key] = val;
+      }
+    }
+
+    function renderAdminTestimonials() {
+      const container = document.getElementById('testimonials-container');
+      if (!container) return;
+
+      if (currentTestimonials.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; color: var(--text-muted); padding: 1rem; font-size: 0.88rem;">
+            No custom testimonials added yet. Click <strong>+ Add Testimonial</strong> to add product-specific reviews.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = currentTestimonials.map((t, idx) => `
+        <div class="admin-review-item">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+            <strong style="font-size:0.9rem; color:var(--primary);"><i class="fa-solid fa-comment-dots"></i> Review #${idx + 1}</strong>
+            <button type="button" onclick="removeReviewItem(${idx})" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:0.9rem;" title="Remove Review">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+          <div class="form-row" style="margin-bottom:0.6rem;">
+            <div>
+              <label style="font-size:0.8rem;">Author Name & Qualifications *</label>
+              <input type="text" value="${t.authorName || ''}" placeholder="e.g. Dr. Akshay Gawande (MBBS)" onchange="updateReviewItem(${idx}, 'authorName', this.value)" style="padding:0.5rem; font-size:0.88rem;">
+            </div>
+            <div>
+              <label style="font-size:0.8rem;">Designation / Role</label>
+              <input type="text" value="${t.authorRole || ''}" placeholder="e.g. Resident Doctor" onchange="updateReviewItem(${idx}, 'authorRole', this.value)" style="padding:0.5rem; font-size:0.88rem;">
+            </div>
+          </div>
+          <div class="form-row" style="margin-bottom:0.6rem;">
+            <div>
+              <label style="font-size:0.8rem;">Star Rating (1 to 5 Stars)</label>
+              <select onchange="updateReviewItem(${idx}, 'rating', this.value)" style="padding:0.5rem; font-size:0.88rem;">
+                <option value="5" ${t.rating == 5 ? 'selected' : ''}>★★★★★ (5 Stars)</option>
+                <option value="4" ${t.rating == 4 ? 'selected' : ''}>★★★★☆ (4 Stars)</option>
+                <option value="3" ${t.rating == 3 ? 'selected' : ''}>★★★☆☆ (3 Stars)</option>
+                <option value="2" ${t.rating == 2 ? 'selected' : ''}>★★☆☆☆ (2 Stars)</option>
+                <option value="1" ${t.rating == 1 ? 'selected' : ''}>★☆☆☆☆ (1 Star)</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:0.8rem;">Avatar Emoji or Image URL (Optional)</label>
+              <input type="text" value="${t.avatarUrl || ''}" placeholder="😀 or https://..." onchange="updateReviewItem(${idx}, 'avatarUrl', this.value)" style="padding:0.5rem; font-size:0.88rem;">
+            </div>
+          </div>
+          <div>
+            <label style="font-size:0.8rem;">Review Comment / Feedback *</label>
+            <textarea rows="2" placeholder="Write feedback/review text here..." onchange="updateReviewItem(${idx}, 'comment', this.value)" style="padding:0.5rem; font-size:0.88rem; width:100%;">${t.comment || ''}</textarea>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function addReviewItem() {
+      currentTestimonials.push({
+        authorName: 'Dr. New Reviewer',
+        authorRole: 'Medical Practitioner',
+        rating: 5,
+        comment: 'Very informative and valuable content for medical professionals!',
+        avatarUrl: ''
+      });
+      renderAdminTestimonials();
+    }
+
+    function removeReviewItem(idx) {
+      currentTestimonials.splice(idx, 1);
+      renderAdminTestimonials();
+    }
+
+    function updateReviewItem(idx, key, val) {
+      if (currentTestimonials[idx]) {
+        currentTestimonials[idx][key] = val;
+      }
+    }
+
+    async function loadCategoryDropdown() {
+      const categorySelect = document.getElementById('category');
+      let categories = [];
+
+      try {
+        const res = await fetch('/api/products/categories');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data)) {
+          categories = data.data.filter(c => c !== 'All');
+        }
+      } catch (err) {
+        console.error('Error fetching categories:', err);
+      }
+
+      const defaultCats = ['Prompts', 'E-Books', 'Templates', 'Courses', 'Software', 'Graphics'];
+      const combined = Array.from(new Set([...defaultCats, ...categories]));
+
+      categorySelect.innerHTML = combined.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+    }
+
+    const form = document.getElementById('add-product-form');
+    const alertBox = document.getElementById('alert-box');
+
+    function showAlert(msg, isError = true) {
+      alertBox.style.display = 'block';
+      alertBox.style.background = isError ? '#fee2e2' : '#dcfce7';
+      alertBox.style.color = isError ? '#991b1b' : '#166534';
+      alertBox.textContent = msg;
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      alertBox.style.display = 'none';
+
+      const token = await Auth.getToken();
+      const formData = new FormData(form);
+      formData.append('testimonials', JSON.stringify(currentTestimonials));
+      formData.append('faqs', JSON.stringify(currentFaqs));
+
+      const submitBtn = document.getElementById('submit-btn');
+      const progressContainer = document.getElementById('progress-container');
+      const progressFill = document.getElementById('progress-fill');
+      const progressText = document.getElementById('progress-text');
+
+      submitBtn.disabled = true;
+      progressContainer.style.display = 'block';
+      progressText.style.display = 'block';
+      progressFill.style.width = '30%';
+
+      try {
+        progressFill.style.width = '60%';
+        const res = await fetch('/api/admin/products', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+
+        progressFill.style.width = '100%';
+        const data = await res.json();
+
+        if (data.success) {
+          showAlert('Product created successfully in database! Redirecting to dashboard...', false);
+          setTimeout(() => {
+            window.location.href = 'index.html';
+          }, 1000);
+          return;
+        } else {
+          showAlert(data.error || 'Failed to create product in database.');
+        }
+      } catch (err) {
+        showAlert('Network error: Could not connect to database server.');
+      }
+
+      submitBtn.disabled = false;
+      progressContainer.style.display = 'none';
+      progressText.style.display = 'none';
+    });
+  </script>
+
+</body>
+</html>

@@ -511,31 +511,33 @@ public class AppointmentsFragment extends Fragment {
         Context context = getContext();
         if (context == null) return;
 
-        boolean isLateCancel = AvailabilityHelper.isLessThanOneHourBeforeStart(appointment);
-        String cancelReason = isLateCancel ? "Cancelled by patient (Late cancellation - Less than 1 hour remaining)" : "Cancelled by patient";
+        boolean isWithinOneHour = AvailabilityHelper.isLessThanOneHourBeforeStart(appointment);
+        int pct = AvailabilityHelper.calculateRefundPercentage(appointment);
+        int totalFee = appointment.getAmount() > 0 ? appointment.getAmount() : 500;
+        int refundAmt = AvailabilityHelper.calculateRefundAmount(totalFee, isWithinOneHour);
+
+        String cancelReason = isWithinOneHour
+                ? "Cancelled by patient (Within 1 hour of schedule - 50% Refund Approved)"
+                : "Cancelled by patient (1 hour before schedule - 100% Refund Approved)";
+        String cancelledAt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).format(new Date());
 
         appointment.setStatus("Cancelled");
         appointment.setPatientReason(cancelReason);
+        appointment.setCancelledAt(cancelledAt);
         invalidateAppointmentsCache();
         DummyDataProvider.invalidateDoctorsCache();
 
         String patientId = PreferenceManager.getInstance(context).getUserId();
-        CancelAppointmentRpcRequest cancelRequest = new CancelAppointmentRpcRequest(appointment.getId(), patientId, cancelReason);
+        CancelAppointmentRpcRequest cancelRequest = new CancelAppointmentRpcRequest(appointment.getId(), patientId, cancelReason, cancelledAt);
 
         SupabaseClient.getSlotService().cancelAppointment(cancelRequest).enqueue(new Callback<Map<String, Object>>() {
             @Override
             public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
                 Context ctx = getContext();
                 if (!isAdded() || ctx == null) return;
-                if (isLateCancel) {
-                    ToastUtils.showSuccess(ctx, "Appointment cancelled successfully. (No refund applicable for cancellations within 1 hour of schedule)");
-                } else {
-                    ToastUtils.showSuccess(ctx, "Appointment cancelled successfully.");
-                }
+                ToastUtils.showSuccess(ctx, "Appointment cancelled. (" + pct + "% Refund Approved: ₹" + refundAmt + ")");
                 loadAppointments();
-                if (!isLateCancel) {
-                    openRefundDetailsBottomSheet(appointment);
-                }
+                openRefundDetailsBottomSheet(appointment);
             }
 
             @Override
@@ -544,6 +546,7 @@ public class AppointmentsFragment extends Fragment {
                 updateMap.put("status", "Cancelled");
                 updateMap.put("patient_reason", cancelReason);
                 updateMap.put("notes", cancelReason);
+                updateMap.put("cancelled_at", cancelledAt);
 
                 SupabaseClient.getAppointmentService()
                         .updateAppointmentStatus("eq." + appointment.getId(), updateMap)
@@ -552,26 +555,18 @@ public class AppointmentsFragment extends Fragment {
                             public void onResponse(Call<Void> call, Response<Void> response) {
                                 Context ctx = getContext();
                                 if (!isAdded() || ctx == null) return;
-                                if (isLateCancel) {
-                                    ToastUtils.showSuccess(ctx, "Appointment cancelled successfully. (No refund applicable for cancellations within 1 hour of schedule)");
-                                } else {
-                                    ToastUtils.showSuccess(ctx, "Appointment cancelled successfully.");
-                                }
+                                ToastUtils.showSuccess(ctx, "Appointment cancelled. (" + pct + "% Refund Approved: ₹" + refundAmt + ")");
                                 loadAppointments();
-                                if (!isLateCancel) {
-                                    openRefundDetailsBottomSheet(appointment);
-                                }
+                                openRefundDetailsBottomSheet(appointment);
                             }
 
                             @Override
                             public void onFailure(Call<Void> call, Throwable t) {
                                 Context ctx = getContext();
                                 if (!isAdded() || ctx == null) return;
-                                ToastUtils.showSuccess(ctx, "Appointment marked cancelled.");
+                                ToastUtils.showSuccess(ctx, "Appointment cancelled. (" + pct + "% Refund Approved: ₹" + refundAmt + ")");
                                 loadAppointments();
-                                if (!isLateCancel) {
-                                    openRefundDetailsBottomSheet(appointment);
-                                }
+                                openRefundDetailsBottomSheet(appointment);
                             }
                         });
             }
@@ -1468,13 +1463,16 @@ public class AppointmentsFragment extends Fragment {
 
                 if (AvailabilityHelper.isAppointmentSchedulePassed(appt, 20)) {
                     String cancelReason = "Appointment cancelled automatically because doctor consultation was not completed before the appointment schedule ended.";
+                    String autoCancelledAt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).format(new Date());
                     appt.setStatus("Cancelled");
                     appt.setPatientReason(cancelReason);
+                    appt.setCancelledAt(autoCancelledAt);
 
                     Map<String, Object> updateMap = new HashMap<>();
                     updateMap.put("status", "Cancelled");
                     updateMap.put("patient_reason", cancelReason);
                     updateMap.put("notes", cancelReason);
+                    updateMap.put("cancelled_at", autoCancelledAt);
 
                     SupabaseClient.getAppointmentService()
                             .updateAppointmentStatus("eq." + appt.getId(), updateMap)
@@ -1494,11 +1492,6 @@ public class AppointmentsFragment extends Fragment {
         if (!isAdded() || appointment == null) return;
         Context context = getContext();
         if (context == null) return;
-
-        if (!AvailabilityHelper.isRefundEligible(appointment)) {
-            ToastUtils.showWarning(context, "Refund is not available for this appointment because it was cancelled less than 1 hour before schedule.");
-            return;
-        }
 
         BottomSheetDialog dialog = new BottomSheetDialog(context);
         DialogRefundDetailsBinding refundBinding = DialogRefundDetailsBinding.inflate(getLayoutInflater());
@@ -1521,10 +1514,17 @@ public class AppointmentsFragment extends Fragment {
 
         dialog.show();
 
+        boolean isWithinOneHour = AvailabilityHelper.isLessThanOneHourBeforeStart(appointment);
+        int pct = AvailabilityHelper.calculateRefundPercentage(appointment);
         int fee = appointment.getAmount() > 0 ? appointment.getAmount() : (appointment.getFee() > 0 ? appointment.getFee() : 500);
+        int refundAmt = AvailabilityHelper.calculateRefundAmount(fee, isWithinOneHour);
 
         refundBinding.tvRefundPaidAmount.setText("₹" + fee);
-        refundBinding.tvTotalRefundAmount.setText("₹" + fee);
+        refundBinding.tvTotalRefundAmount.setText("₹" + refundAmt);
+        refundBinding.tvRefundStatusTitle.setText(pct + "% Refund Approved (" + (isWithinOneHour ? "Within 1 Hour" : "1 Hour Before") + ")");
+        refundBinding.tvRefundStatusSub.setText(isWithinOneHour
+                ? "Cancelled within 1 hour of schedule: 50% refund (₹" + refundAmt + ") approved."
+                : "Cancelled 1 hour before schedule: 100% refund (₹" + refundAmt + ") approved.");
 
         String refId = "REF-" + Math.abs((appointment.getId() != null ? appointment.getId() : "123").hashCode() % 899999 + 100000);
         refundBinding.tvRefundReferenceId.setText("Refund Reference ID: " + refId);
@@ -1653,8 +1653,9 @@ public class AppointmentsFragment extends Fragment {
             refundMap.put("doctor_specialization", appointment.getSpecialization());
             refundMap.put("clinic_name", appointment.getClinicName());
             refundMap.put("appointment_date", apptDate);
-            refundMap.put("amount", fee);
-            refundMap.put("reason", reasonText.isEmpty() ? "Patient requested cancellation refund" : reasonText);
+            refundMap.put("amount", refundAmt);
+            refundMap.put("refund_percentage", pct);
+            refundMap.put("reason", reasonText.isEmpty() ? (isWithinOneHour ? "Cancellation within 1 hour - 50% Refund Approved" : "Cancellation 1 hour before - 100% Refund Approved") : reasonText);
             refundMap.put("status", "pending");
 
             refundBinding.btnRefundAction.setEnabled(false);

@@ -427,7 +427,11 @@ public class RefundPaymentActivity extends AppCompatActivity {
         String patientName = prefManager.getUserName();
         String patientPhone = prefManager.getUserPhone();
 
-        int amt = a.getAmount() > 0 ? a.getAmount() : 500;
+        int totalFee = a.getAmount() > 0 ? a.getAmount() : 500;
+        boolean isWithinOneHour = AvailabilityHelper.isLessThanOneHourBeforeStart(a);
+        int pct = AvailabilityHelper.calculateRefundPercentage(a);
+        int refundAmt = AvailabilityHelper.calculateRefundAmount(totalFee, isWithinOneHour);
+        String reason = isWithinOneHour ? "Cancelled within 1 hour of schedule - 50% Refund Approved" : "Cancelled 1 hour before schedule - 100% Refund Approved";
 
         Map<String, Object> refundMap = new HashMap<>();
         refundMap.put("appointment_id", a.getId());
@@ -439,8 +443,9 @@ public class RefundPaymentActivity extends AppCompatActivity {
         refundMap.put("doctor_specialization", a.getSpecialization());
         refundMap.put("clinic_name", a.getClinicName());
         refundMap.put("appointment_date", a.getDate() != null ? a.getDate() : "");
-        refundMap.put("amount", amt);
-        refundMap.put("reason", "Cancelled appointment refund requested by patient");
+        refundMap.put("amount", refundAmt);
+        refundMap.put("refund_percentage", pct);
+        refundMap.put("reason", reason);
         refundMap.put("status", "pending");
 
         ToastUtils.showInfo(this, "Submitting refund request...");
@@ -518,8 +523,12 @@ public class RefundPaymentActivity extends AppCompatActivity {
                 if (amt <= 0) amt = 500;
                 b.tvOriginalPayment.setText("₹" + amt + " (Paid)");
 
-                int refundAmt = (r != null && r.getAmount() > 0) ? r.getAmount() : amt;
-                b.tvRefundAmount.setText("₹" + refundAmt);
+                boolean isWithinOneHour = AvailabilityHelper.isLessThanOneHourBeforeStart(a);
+                int pct = (r != null && r.getRefundPercentage() > 0) ? r.getRefundPercentage() : AvailabilityHelper.calculateRefundPercentage(a);
+                int calculatedRefundAmt = AvailabilityHelper.calculateRefundAmount(amt, isWithinOneHour);
+                int refundAmt = (r != null && r.getAmount() > 0) ? r.getAmount() : calculatedRefundAmt;
+
+                b.tvRefundAmount.setText("₹" + refundAmt + " (" + pct + "%)");
 
                 String paymentId = a.getPaymentId();
                 if (paymentId == null || paymentId.trim().isEmpty()) {
@@ -540,7 +549,7 @@ public class RefundPaymentActivity extends AppCompatActivity {
                     b.tvRefundStatusBadge.setText("Refunded");
                     b.tvRefundStatusBadge.setTextColor(ContextCompat.getColor(context, R.color.success_green));
                     b.llRefundStatusBadge.setBackgroundResource(R.drawable.bg_badge_verified);
-                    b.tvRefundGuidance.setText("Your appointment was cancelled. Refund Amount: ₹" + refundAmt + " has been processed and credited to your original payment method.");
+                    b.tvRefundGuidance.setText("Your appointment was cancelled. Refund Amount: ₹" + refundAmt + " (" + pct + "% Approved) has been processed and credited to your original payment method.");
                     b.llGuidanceBox.setVisibility(View.VISIBLE);
 
                     b.btnRefundAction.setVisibility(View.VISIBLE);
@@ -551,7 +560,7 @@ public class RefundPaymentActivity extends AppCompatActivity {
                     b.tvRefundStatusBadge.setText("Refund Processing");
                     b.tvRefundStatusBadge.setTextColor(ContextCompat.getColor(context, R.color.warning_yellow));
                     b.llRefundStatusBadge.setBackgroundResource(R.drawable.bg_warning_chip);
-                    b.tvRefundGuidance.setText("Your appointment was cancelled. Refund Request is under review. Amount: ₹" + refundAmt + ". It will be credited according to payment provider timelines.");
+                    b.tvRefundGuidance.setText("Your appointment was cancelled. Refund Request is under review. Amount: ₹" + refundAmt + " (" + pct + "% Approved). It will be credited according to payment provider timelines.");
                     b.llGuidanceBox.setVisibility(View.VISIBLE);
 
                     b.btnRefundAction.setVisibility(View.VISIBLE);
@@ -571,10 +580,10 @@ public class RefundPaymentActivity extends AppCompatActivity {
                     b.btnRefundAction.setBackgroundTintList(ContextCompat.getColorStateList(context, R.color.text_muted));
                 } else {
                     // Appointment is Cancelled + Paid, but no RefundRequest record exists yet
-                    b.tvRefundStatusBadge.setText("Refund Eligible");
+                    b.tvRefundStatusBadge.setText("Refund Eligible (" + pct + "%)");
                     b.tvRefundStatusBadge.setTextColor(ContextCompat.getColor(context, R.color.primary));
                     b.llRefundStatusBadge.setBackgroundResource(R.drawable.bg_badge_verified);
-                    b.tvRefundGuidance.setText("Your appointment was cancelled. Payment was completed. Click below to submit your refund request.");
+                    b.tvRefundGuidance.setText("Your appointment was cancelled. Calculated Refund (" + pct + "% Approved): ₹" + refundAmt + ". Click below to submit your refund request.");
                     b.llGuidanceBox.setVisibility(View.VISIBLE);
 
                     b.btnRefundAction.setVisibility(View.VISIBLE);

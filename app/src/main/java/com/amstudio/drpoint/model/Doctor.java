@@ -174,33 +174,35 @@ public class Doctor implements Serializable {
         }
         if (location != null && !location.trim().isEmpty()) {
             String locLower = location.toLowerCase();
-            if (locLower.contains("bangalore") || locLower.contains("bengaluru") || locLower.contains("karnataka")) {
+            if (locLower.contains("bangalore") || locLower.contains("bengaluru") || locLower.contains("mysore") || locLower.contains("karnataka")) {
                 return "Karnataka";
-            } else if (locLower.contains("patna") || locLower.contains("bihar")) {
+            } else if (locLower.contains("patna") || locLower.contains("bihar") || locLower.contains("madhubani") || locLower.contains("gaya") || locLower.contains("muzaffarpur")) {
                 return "Bihar";
-            } else if (locLower.contains("delhi")) {
+            } else if (locLower.contains("delhi") || locLower.contains("noida") || locLower.contains("gurgaon") || locLower.contains("gurugram")) {
                 return "Delhi";
-            } else if (locLower.contains("mumbai") || locLower.contains("pune") || locLower.contains("maharashtra")) {
+            } else if (locLower.contains("mumbai") || locLower.contains("pune") || locLower.contains("nagpur") || locLower.contains("maharashtra")) {
                 return "Maharashtra";
-            } else if (locLower.contains("kolkata") || locLower.contains("west bengal")) {
+            } else if (locLower.contains("kolkata") || locLower.contains("howrah") || locLower.contains("siliguri") || locLower.contains("west bengal")) {
                 return "West Bengal";
-            } else if (locLower.contains("chennai") || locLower.contains("tamil nadu")) {
+            } else if (locLower.contains("chennai") || locLower.contains("coimbatore") || locLower.contains("madurai") || locLower.contains("tamil nadu")) {
                 return "Tamil Nadu";
-            } else if (locLower.contains("hyderabad") || locLower.contains("telangana")) {
+            } else if (locLower.contains("hyderabad") || locLower.contains("warangal") || locLower.contains("telangana")) {
                 return "Telangana";
-            } else if (locLower.contains("jaipur") || locLower.contains("rajasthan")) {
+            } else if (locLower.contains("jaipur") || locLower.contains("jodhpur") || locLower.contains("udaipur") || locLower.contains("rajasthan")) {
                 return "Rajasthan";
-            } else if (locLower.contains("lucknow") || locLower.contains("uttar pradesh")) {
+            } else if (locLower.contains("lucknow") || locLower.contains("kanpur") || locLower.contains("varanasi") || locLower.contains("uttar pradesh")) {
                 return "Uttar Pradesh";
-            } else if (locLower.contains("ahmedabad") || locLower.contains("gujarat")) {
+            } else if (locLower.contains("ahmedabad") || locLower.contains("surat") || locLower.contains("vadodara") || locLower.contains("gujarat")) {
                 return "Gujarat";
-            } else if (locLower.contains("chandigarh") || locLower.contains("punjab")) {
+            } else if (locLower.contains("ludhiana") || locLower.contains("amritsar") || locLower.contains("jalandhar") || locLower.contains("chandigarh") || locLower.contains("punjab")) {
                 return "Punjab";
-            } else if (locLower.contains("kochi") || locLower.contains("kerala")) {
+            } else if (locLower.contains("kochi") || locLower.contains("thiruvananthapuram") || locLower.contains("kozhikode") || locLower.contains("kerala")) {
                 return "Kerala";
+            } else if (locLower.contains("indore") || locLower.contains("bhopal") || locLower.contains("gwalior") || locLower.contains("madhya pradesh")) {
+                return "Madhya Pradesh";
             }
         }
-        return "Karnataka";
+        return "";
     }
 
     public void setState(String state) { this.state = state; }

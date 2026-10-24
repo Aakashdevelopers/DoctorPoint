@@ -17,24 +17,39 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         app:cardBackgroundColor="@color/surface_white"
-        app:cardCornerRadius="20dp"
-        app:cardElevation="10dp"
+        app:cardCornerRadius="0dp"
+        app:cardElevation="12dp"
         app:cardPreventCornerOverlap="false"
-        app:strokeColor="@color/card_stroke"
-        app:strokeWidth="1dp">
+        app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.TopRoundedCard"
+        app:strokeWidth="0dp">
 
-        <com.google.android.material.bottomnavigation.BottomNavigationView
-            android:id="@+id/bottom_navigation"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="64dp"
-            android:background="@drawable/bg_bottom_nav_background"
-            app:elevation="0dp"
-            app:itemIconSize="22dp"
-            app:itemIconTint="@color/bottom_nav_item_color"
-            app:itemRippleColor="@color/primary_light"
-            app:itemTextColor="@color/bottom_nav_item_color"
-            app:labelVisibilityMode="labeled"
-            app:menu="@menu/bottom_nav_menu" />
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/divider" />
+
+            <com.google.android.material.bottomnavigation.BottomNavigationView
+                android:id="@+id/bottom_navigation"
+                android:layout_width="match_parent"
+                android:layout_height="68dp"
+                android:background="@color/surface_white"
+                app:elevation="0dp"
+                app:itemActiveIndicatorStyle="@null"
+                app:itemIconSize="22dp"
+                app:itemIconTint="@color/bottom_nav_item_color"
+                app:itemPaddingBottom="0dp"
+                app:itemPaddingTop="15dp"
+                app:itemRippleColor="@color/primary_light"
+                app:itemTextColor="@color/bottom_nav_item_color"
+                app:labelVisibilityMode="labeled"
+                app:menu="@menu/bottom_nav_menu" />
+
+        </LinearLayout>
 
     </com.google.android.material.card.MaterialCardView>
 

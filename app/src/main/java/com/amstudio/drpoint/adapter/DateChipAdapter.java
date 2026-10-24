@@ -1,6 +1,7 @@
 package com.amstudio.drpoint.adapter;
 
 import android.content.Context;
+import android.graphics.Typeface;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
@@ -13,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.amstudio.drpoint.R;
 import com.amstudio.drpoint.databinding.ItemDateChipBinding;
 
+import java.util.Locale;
 import java.util.Objects;
 
 public class DateChipAdapter extends ListAdapter<DateChipAdapter.DateItem, DateChipAdapter.ViewHolder> {
@@ -118,16 +120,22 @@ public class DateChipAdapter extends ListAdapter<DateChipAdapter.DateItem, DateC
 
         void bind(DateItem dateItem, boolean isSelected, OnInternalClickListener internalClickListener) {
             Context context = itemView.getContext();
-            binding.tvDayName.setText(dateItem != null ? dateItem.getDay() : "");
-            binding.tvDateVal.setText(dateItem != null ? dateItem.getDate() : "");
+            String dayStr = dateItem != null && dateItem.getDay() != null ? dateItem.getDay().toUpperCase(Locale.US) : "";
+            binding.tvDayName.setText(dayStr);
+
+            String fullDateStr = dateItem != null ? dateItem.getDate() : "";
+            String dateNumber = fullDateStr != null ? fullDateStr.trim().split("\\s+")[0] : "";
+            binding.tvDateVal.setText(dateNumber);
 
             if (isSelected) {
                 binding.llDateContainer.setBackgroundResource(R.drawable.bg_date_chip_selected);
-                binding.tvDayName.setTextColor(ContextCompat.getColor(context, R.color.primary_light));
-                binding.tvDateVal.setTextColor(ContextCompat.getColor(context, R.color.white));
+                binding.tvDayName.setTextColor(ContextCompat.getColor(context, R.color.primary_blue));
+                binding.tvDayName.setTypeface(null, Typeface.BOLD);
+                binding.tvDateVal.setTextColor(ContextCompat.getColor(context, R.color.primary_blue));
             } else {
                 binding.llDateContainer.setBackgroundResource(R.drawable.bg_date_chip_unselected);
-                binding.tvDayName.setTextColor(ContextCompat.getColor(context, R.color.text_secondary));
+                binding.tvDayName.setTextColor(ContextCompat.getColor(context, R.color.text_muted));
+                binding.tvDayName.setTypeface(null, Typeface.NORMAL);
                 binding.tvDateVal.setTextColor(ContextCompat.getColor(context, R.color.text_primary));
             }
 

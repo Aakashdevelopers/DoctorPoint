@@ -245,8 +245,7 @@ public class ProfileFragment extends Fragment {
         binding.flEditProfileTop.setOnClickListener(v -> openEditProfileBottomSheet());
         binding.tvEditProfile.setOnClickListener(v -> openEditProfileBottomSheet());
 
-        binding.cardJoinAsDoctor.setOnClickListener(v -> openJoinAsDoctorActivity());
-        binding.btnJoinDoctorBanner.setOnClickListener(v -> openJoinAsDoctorActivity());
+
 
         View.OnClickListener customerCareListener = v -> openCustomerCareBottomSheet();
         if (binding.cardCustomerCareSupport != null) {

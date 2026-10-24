@@ -1,0 +1,198 @@
+<?php
+/**
+ * Admin Product Management Endpoint (List & Create)
+ * Endpoint: GET /api/admin/products | POST /api/admin/products
+ */
+
+require_once __DIR__ . '/../../config/auth.php';
+
+$admin = requireAdmin();
+$db = getDbConnection();
+
+$method = $_SERVER['REQUEST_METHOD'];
+
+if ($method === 'GET') {
+    $search = sanitizeString($_GET['search'] ?? '');
+    $status = sanitizeString($_GET['status'] ?? 'all');
+
+    $whereConditions = [];
+    $params = [];
+
+    if (!empty($status) && $status !== 'all') {
+        $whereConditions[] = "status = :status";
+        $params[':status'] = $status;
+    }
+
+    if (!empty($search)) {
+        $whereConditions[] = "(title LIKE :search OR category LIKE :search)";
+        $params[':search'] = '%' . $search . '%';
+    }
+
+    $whereClause = !empty($whereConditions) ? 'WHERE ' . implode(' AND ', $whereConditions) : '';
+
+    $sql = "SELECT * FROM products {$whereClause} ORDER BY created_at DESC";
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
+    $products = $stmt->fetchAll();
+
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https" : "http";
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $baseUrl = $protocol . "://" . $host;
+
+    $formatted = array_map(function($p) use ($baseUrl) {
+        $coverPath = $p['cover_image_path'];
+        $coverUrl = (strpos($coverPath, 'http') === 0)
+            ? $coverPath
+            : $baseUrl . '/uploads/public/' . ltrim($coverPath, '/');
+
+        return [
+            '_id'                 => $p['id'],
+            'title'               => $p['title'],
+            'slug'                => $p['slug'],
+            'shortDescription'    => $p['short_description'],
+            'description'         => $p['description'],
+            'coverImageUrl'       => $coverUrl,
+            'priceInINR'          => (string)number_format($p['price_in_paise'] / 100, 0, '.', ''),
+            'compareAtPriceInINR' => $p['compare_at_price_in_paise'] > 0 ? (string)number_format($p['compare_at_price_in_paise'] / 100, 0, '.', '') : null,
+            'category'            => $p['category'],
+            'resourceUrl'         => $p['resource_url'] ?: 'https://drive.google.com/',
+            'supportEmail'        => $p['support_email'] ?: 'ravivadhiya46@gmail.com',
+            'supportPhone'        => $p['support_phone'] ?: '+91 9574055968',
+            'features'            => !empty($p['features']) ? json_decode($p['features'], true) : [],
+            'testimonials'        => !empty($p['testimonials']) ? json_decode($p['testimonials'], true) : [],
+            'faqs'                => !empty($p['faqs']) ? json_decode($p['faqs'], true) : [],
+            'resourceCount'       => (int)($p['resource_count'] ?? 1),
+            'resourceType'        => $p['resource_type'] ?: 'File',
+            'status'              => $p['status'],
+            'createdAt'           => $p['created_at'],
+            'archivedAt'          => $p['archived_at']
+        ];
+    }, $products);
+
+    sendJsonResponse([
+        'success' => true,
+        'count'   => count($formatted),
+        'data'    => $formatted
+    ]);
+}
+
+if ($method === 'POST') {
+    $title               = sanitizeString($_POST['title'] ?? '');
+    $category            = sanitizeString($_POST['category'] ?? 'General');
+    $status              = sanitizeString($_POST['status'] ?? 'published');
+    $shortDescription    = sanitizeString($_POST['shortDescription'] ?? '');
+    $description         = sanitizeString($_POST['description'] ?? '');
+    $resourceUrl         = sanitizeString($_POST['resourceUrl'] ?? 'https://drive.google.com/');
+    $supportEmail        = sanitizeString($_POST['supportEmail'] ?? 'ravivadhiya46@gmail.com');
+    $supportPhone        = sanitizeString($_POST['supportPhone'] ?? '+91 9574055968');
+    $resourceType        = sanitizeString($_POST['resourceType'] ?? 'File');
+    $resourceCount       = (int)($_POST['resourceCount'] ?? 1);
+    $priceInINR          = (float)($_POST['priceInINR'] ?? 0);
+    $compareAtPriceInINR = (float)($_POST['compareAtPriceInINR'] ?? 0);
+
+    if (empty($title) || empty($shortDescription) || empty($description)) {
+        sendJsonResponse(['success' => false, 'error' => 'Title, short description, and full description are required.'], 400);
+    }
+
+    $priceInPaise = (int)round($priceInINR * 100);
+    $compareAtPriceInPaise = (int)round($compareAtPriceInINR * 100);
+    $slug = generateSlug($title);
+
+    // Handle Cover Image Upload
+    $coverImagePath = 'default-cover.jpg';
+    if (isset($_FILES['coverImage']) && $_FILES['coverImage']['error'] === UPLOAD_ERR_OK) {
+        $ext = strtolower(pathinfo($_FILES['coverImage']['name'], PATHINFO_EXTENSION));
+        $allowed = ['jpg', 'jpeg', 'png', 'webp'];
+        if (in_array($ext, $allowed)) {
+            $filename = 'cover-' . time() . '-' . rand(1000, 9999) . '.' . $ext;
+            if (move_uploaded_file($_FILES['coverImage']['tmp_name'], UPLOAD_DIR_PUBLIC . $filename)) {
+                $coverImagePath = $filename;
+            }
+        }
+    }
+
+    // Handle Private Digital File Upload
+    $privateFilePath = 'default-product.zip';
+    $originalFileName = 'digital-product-file.zip';
+    $fileSize = 0;
+
+    if (isset($_FILES['digitalFile']) && $_FILES['digitalFile']['error'] === UPLOAD_ERR_OK) {
+        $originalFileName = basename($_FILES['digitalFile']['name']);
+        $fileSize = (int)$_FILES['digitalFile']['size'];
+        $ext = strtolower(pathinfo($originalFileName, PATHINFO_EXTENSION));
+        $allowedDigitalExts = ['pdf', 'zip', 'rar', 'epub', 'mp3', 'mp4', 'png', 'jpg', 'jpeg', 'doc', 'docx', 'txt', 'csv'];
+
+        if (in_array($ext, $allowedDigitalExts, true)) {
+            $filename = 'file-' . time() . '-' . rand(1000, 9999) . '.' . $ext;
+
+            if (move_uploaded_file($_FILES['digitalFile']['tmp_name'], UPLOAD_DIR_PRIVATE . $filename)) {
+                $privateFilePath = $filename;
+            }
+        }
+    }
+
+    // Parse Features
+    $featuresRaw = $_POST['features'] ?? '';
+    $featuresArray = [];
+    if (is_array($featuresRaw)) {
+        $featuresArray = array_values(array_filter(array_map('trim', $featuresRaw)));
+    } elseif (!empty($featuresRaw)) {
+        $featuresArray = array_values(array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $featuresRaw))));
+    }
+
+    // Parse Testimonials
+    $testimonialsRaw = $_POST['testimonials'] ?? '[]';
+    $testimonialsArray = is_array($testimonialsRaw) ? $testimonialsRaw : json_decode($testimonialsRaw, true);
+
+    // Parse FAQs
+    $faqsRaw = $_POST['faqs'] ?? '[]';
+    $faqsArray = is_array($faqsRaw) ? $faqsRaw : json_decode($faqsRaw, true);
+
+    $sql = "INSERT INTO products
+            (title, slug, short_description, description, cover_image_path, private_file_path, file_name, file_size, resource_url, price_in_paise, compare_at_price_in_paise, category, support_email, support_phone, resource_count, resource_type, features, testimonials, faqs, status)
+            VALUES
+            (:title, :slug, :short_desc, :desc, :cover_path, :file_path, :file_name, :file_size, :res_url, :price, :compare_price, :cat, :sup_email, :sup_phone, :res_count, :res_type, :features, :testimonials, :faqs, :status)";
+
+    $stmt = $db->prepare($sql);
+    $stmt->execute([
+        ':title'         => $title,
+        ':slug'          => $slug,
+        ':short_desc'    => $shortDescription,
+        ':desc'          => $description,
+        ':cover_path'    => $coverImagePath,
+        ':file_path'     => $privateFilePath,
+        ':file_name'     => $originalFileName,
+        ':file_size'     => $fileSize,
+        ':res_url'       => $resourceUrl,
+        ':price'         => $priceInPaise,
+        ':compare_price' => $compareAtPriceInPaise,
+        ':cat'           => $category,
+        ':sup_email'     => $supportEmail,
+        ':sup_phone'     => $supportPhone,
+        ':res_count'     => $resourceCount,
+        ':res_type'      => $resourceType,
+        ':features'      => json_encode($featuresArray, JSON_UNESCAPED_UNICODE),
+        ':testimonials'  => json_encode(is_array($testimonialsArray) ? $testimonialsArray : [], JSON_UNESCAPED_UNICODE),
+        ':faqs'          => json_encode(is_array($faqsArray) ? $faqsArray : [], JSON_UNESCAPED_UNICODE),
+        ':status'        => $status
+    ]);
+
+    $newId = $db->lastInsertId();
+
+    // Log admin audit action
+    try {
+        $auditStmt = $db->prepare("INSERT INTO admin_audit_logs (admin_user_id, admin_email, action, target_type, target_id, details) VALUES (:uid, :email, 'CREATE_PRODUCT', 'PRODUCT', :pid, :details)");
+        $auditStmt->execute([
+            ':uid'     => $admin['id'],
+            ':email'   => $admin['email'],
+            ':pid'     => $newId,
+            ':details' => "Created product: {$title}"
+        ]);
+    } catch (Exception $e) {}
+
+    sendJsonResponse([
+        'success' => true,
+        'message' => 'Product created successfully',
+        'data'    => ['_id' => $newId, 'slug' => $slug, 'title' => $title]
+    ], 201);
+}

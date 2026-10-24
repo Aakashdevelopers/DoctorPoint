@@ -189,6 +189,26 @@
             android:visibility="gone"
             android:text="Appointment cancelled because doctor confirmation was not received before the appointment schedule ended." />
 
+        <TextView
+            android:id="@+id/tv_cancelled_at"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="@color/error_red"
+            android:textSize="11sp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tv_original_datetime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:fontFamily="sans-serif"
+            android:textColor="@color/text_muted"
+            android:textSize="11sp"
+            android:visibility="gone" />
+
         <LinearLayout
             android:id="@+id/ll_action_buttons"
             android:layout_width="match_parent"

@@ -1,0 +1,24 @@
+<?php
+/**
+ * Admin Category Detail Endpoint (Delete)
+ * Endpoint: DELETE /api/admin/categories/{id}
+ */
+
+require_once __DIR__ . '/../../config/auth.php';
+
+$admin = requireAdmin();
+$db = getDbConnection();
+
+$id = sanitizeString($_GET['id'] ?? '');
+
+if (empty($id) || !is_numeric($id)) {
+    sendJsonResponse(['success' => false, 'error' => 'Valid category ID parameter is required.'], 400);
+}
+
+$stmt = $db->prepare("DELETE FROM categories WHERE id = :id");
+$stmt->execute([':id' => $id]);
+
+sendJsonResponse([
+    'success' => true,
+    'message' => 'Category deleted successfully.'
+]);

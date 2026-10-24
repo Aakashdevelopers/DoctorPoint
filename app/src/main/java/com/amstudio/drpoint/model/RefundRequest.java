@@ -39,6 +39,9 @@ public class RefundRequest implements Serializable {
     @SerializedName("amount")
     private int amount;
 
+    @SerializedName(value = "refund_percentage", alternate = {"percentage", "refundPercentage"})
+    private int refundPercentage = 100;
+
     @SerializedName("reason")
     private String reason;
 
@@ -103,6 +106,9 @@ public class RefundRequest implements Serializable {
 
     public int getAmount() { return amount; }
     public void setAmount(int amount) { this.amount = amount; }
+
+    public int getRefundPercentage() { return refundPercentage; }
+    public void setRefundPercentage(int refundPercentage) { this.refundPercentage = refundPercentage; }
 
     public String getReason() { return reason; }
     public void setReason(String reason) { this.reason = reason; }

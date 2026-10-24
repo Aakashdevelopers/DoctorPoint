@@ -1,0 +1,107 @@
+// Admin Panel Auth Manager with Live Firebase ID Token Support
+
+const Auth = {
+  async getToken(forceRefresh = false) {
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+      let currentUser = firebase.auth().currentUser;
+
+      // If user session is initializing asynchronously, wait for onAuthStateChanged
+      if (!currentUser) {
+        await new Promise((resolve) => {
+          let unsubscribe;
+          const timer = setTimeout(() => {
+            if (unsubscribe) unsubscribe();
+            resolve(null);
+          }, 1500);
+
+          unsubscribe = firebase.auth().onAuthStateChanged((u) => {
+            clearTimeout(timer);
+            if (unsubscribe) unsubscribe();
+            resolve(u);
+          });
+        });
+        currentUser = firebase.auth().currentUser;
+      }
+
+      if (currentUser) {
+        try {
+          return await currentUser.getIdToken(forceRefresh);
+        } catch (e) {
+          console.warn('Firebase ID token error:', e);
+        }
+      }
+    }
+
+    const devToken = localStorage.getItem('novastore_dev_token');
+    if (devToken) return devToken;
+
+    return null;
+  },
+
+  getUser() {
+    const userJson = localStorage.getItem('novastore_user');
+    return userJson ? JSON.parse(userJson) : null;
+  },
+
+  async login(email, password) {
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+      try {
+        const userCred = await firebase.auth().signInWithEmailAndPassword(email, password);
+        const token = await userCred.user.getIdToken();
+
+        const res = await fetch('/api/auth/sync', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ displayName: userCred.user.displayName || email.split('@')[0] })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          localStorage.setItem('novastore_user', JSON.stringify(data.data));
+          return { success: true, user: data.data };
+        }
+      } catch (err) {
+        console.warn('[Firebase Auth] Sign in error:', err.message);
+        if (window.location.protocol === 'file:') {
+          return this.devModeFallback(email);
+        }
+        return { success: false, error: err.message };
+      }
+    }
+
+    return this.devModeFallback(email);
+  },
+
+  devModeFallback(email) {
+    const isAdmin = email.toLowerCase().includes('admin');
+    const devToken = `dev-token-${Date.now()}:${email.toLowerCase()}:${isAdmin ? 'Admin User' : 'Customer'}`;
+    const userObj = {
+      uid: `dev-uid-${email.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+      email: email.toLowerCase(),
+      displayName: isAdmin ? 'System Admin' : 'Customer',
+      role: isAdmin ? 'admin' : 'user',
+      isAdmin: isAdmin
+    };
+
+    localStorage.setItem('novastore_dev_token', devToken);
+    localStorage.setItem('novastore_user', JSON.stringify(userObj));
+
+    return { success: true, user: userObj };
+  },
+
+  async logout() {
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+      try {
+        await firebase.auth().signOut();
+      } catch (e) {}
+    }
+    localStorage.removeItem('novastore_dev_token');
+    localStorage.removeItem('novastore_user');
+    const isSubdir = window.location.pathname.includes('/admin/');
+    const target = isSubdir ? '../user/login.html' : 'user/login.html';
+    window.location.href = target;
+  }
+};

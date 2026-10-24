@@ -3610,6 +3610,7 @@
                 clinic_name: r.clinic_name || 'Clinic',
                 appointment_date: r.appointment_date || 'N/A',
                 amount: parseFloat(r.amount) || 0,
+                refund_percentage: parseInt(r.refund_percentage || (r.reason && r.reason.includes('50%') ? 50 : 100)),
                 reason: r.reason || 'Requested refund for cancelled appointment.',
                 status: (r.status || 'pending').toLowerCase(),
                 created_at: r.created_at || null
@@ -3674,7 +3675,7 @@
                 let actionBtns = '';
                 if (st === 'pending' || st.includes('request') || st.includes('review')) {
                     actionBtns = `
-                        <button class="btn btn-success btn-sm" style="padding:4px 10px; font-size:12px;" onclick="window.approveRefundRequest('${r.id}', '${r.appointment_id}')" title="Approve 100% Refund">✅ Approve</button>
+                        <button class="btn btn-success btn-sm" style="padding:4px 10px; font-size:12px;" onclick="window.approveRefundRequest('${r.id}', '${r.appointment_id}')" title="Approve Refund">✅ Approve</button>
                         <button class="btn btn-danger btn-sm" style="padding:4px 10px; font-size:12px; margin-left:4px;" onclick="window.rejectRefundRequest('${r.id}', '${r.appointment_id}')" title="Reject Refund Request">❌ Reject</button>
                     `;
                 } else {
@@ -3695,7 +3696,10 @@
                             <small style="color:var(--text-muted);">${r.doctor_specialization || 'Consultant'} • ${r.clinic_name || 'Clinic'}</small>
                         </td>
                         <td>${r.appointment_date || reqDate}</td>
-                        <td><strong style="color:var(--primary); font-size:1rem;">₹${parseFloat(r.amount || 0).toLocaleString('en-IN')}</strong></td>
+                        <td>
+                            <strong style="color:var(--primary); font-size:1rem;">₹${parseFloat(r.amount || 0).toLocaleString('en-IN')}</strong><br>
+                            <small style="color:var(--text-muted); font-size:11px;">(${r.refund_percentage}% Rule Approved)</small>
+                        </td>
                         <td style="max-width:200px; font-size:0.85rem; color:var(--text-secondary);">${r.reason || 'Requested refund for cancelled appointment.'}</td>
                         <td>${statusBadge}</td>
                         <td>${actionBtns}</td>
@@ -3707,7 +3711,7 @@
         window.renderRefunds = renderRefunds;
 
         window.approveRefundRequest = async function(refundId, appointmentId) {
-            if (!confirm('Are you sure you want to approve this refund? This will mark the booking payment as 100% Refunded.')) return;
+            if (!confirm('Are you sure you want to approve this refund? This will mark the booking payment as Refunded according to refund policy.')) return;
             try {
                 if (refundId) {
                     const { error: rErr } = await supabase

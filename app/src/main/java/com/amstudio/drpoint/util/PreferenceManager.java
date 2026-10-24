@@ -123,11 +123,7 @@ public class PreferenceManager {
         if (selected != null && !selected.trim().isEmpty()) {
             return selected.trim();
         }
-        String userAddr = getUserAddress();
-        if (userAddr != null && !userAddr.trim().isEmpty()) {
-            return userAddr.trim();
-        }
-        return "Karnataka";
+        return "All States";
     }
 
     public boolean isStateManuallySelected() {

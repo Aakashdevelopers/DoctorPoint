@@ -118,22 +118,22 @@ public class TimeSlotAdapter extends ListAdapter<DoctorSlot, TimeSlotAdapter.Vie
             if (isTimeLocked) {
                 // Time-locked slot -> Grayed out background with locked indicator
                 binding.getRoot().setBackgroundResource(R.drawable.bg_calendar_day_unavailable);
-                binding.getRoot().setTextColor(ContextCompat.getColor(context, R.color.error_red));
-                binding.getRoot().setAlpha(0.5f);
+                binding.getRoot().setTextColor(ContextCompat.getColor(context, R.color.text_muted));
+                binding.getRoot().setAlpha(0.6f);
             } else if (isBooked || !isAvailable) {
                 // Booked / Blocked -> Grayed out background
                 binding.getRoot().setBackgroundResource(R.drawable.bg_calendar_day_unavailable);
-                binding.getRoot().setTextColor(ContextCompat.getColor(context, R.color.error_red));
-                binding.getRoot().setAlpha(0.5f);
+                binding.getRoot().setTextColor(ContextCompat.getColor(context, R.color.text_muted));
+                binding.getRoot().setAlpha(0.6f);
             } else if (isSelected) {
-                // Available & Selected -> Dark Green Fill
+                // Available & Selected -> Vibrant Blue Fill
                 binding.getRoot().setBackgroundResource(R.drawable.bg_calendar_day_selected);
                 binding.getRoot().setTextColor(ContextCompat.getColor(context, R.color.white));
                 binding.getRoot().setAlpha(1.0f);
             } else {
-                // Available & Not Selected -> Light Green (Available) outline
+                // Available & Not Selected -> Blue Outline
                 binding.getRoot().setBackgroundResource(R.drawable.bg_calendar_day_available);
-                binding.getRoot().setTextColor(ContextCompat.getColor(context, R.color.primary));
+                binding.getRoot().setTextColor(ContextCompat.getColor(context, R.color.text_primary));
                 binding.getRoot().setAlpha(1.0f);
             }
 

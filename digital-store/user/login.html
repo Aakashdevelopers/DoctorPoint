@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In / Sign Up — NovaStore</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .auth-card {
+      max-width: 440px;
+      margin: 4rem auto;
+      background: white;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 2.5rem;
+      box-shadow: var(--shadow-md);
+    }
+    .auth-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 1.8rem;
+    }
+    .auth-tab {
+      flex: 1;
+      text-align: center;
+      padding: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+    .auth-tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 0.4rem;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1.5px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+    .form-group input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand-logo">
+        <i class="fa-solid fa-cube" style="color:var(--primary);"></i>
+        <span>NovaStore</span>
+        <span class="brand-badge">Digital</span>
+      </a>
+      <nav id="nav-links-dynamic" class="nav-links">
+        <!-- Dynamic JS Navbar Links -->
+      </nav>
+    </div>
+  </header>
+
+  <main class="main-container">
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <div class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Sign In</div>
+        <div class="auth-tab" id="tab-signup" onclick="switchAuthTab('signup')">Sign Up</div>
+      </div>
+
+      <div id="auth-alert" style="display: none; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.88rem;"></div>
+
+      <form id="auth-form">
+        <div class="form-group" id="name-group" style="display: none;">
+          <label for="displayName">Full Name</label>
+          <input type="text" id="displayName" placeholder="e.g. Alex Johnson">
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" placeholder="you@example.com" value="admin@novastore.com" required>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="••••••••" value="123456" required minlength="6">
+        </div>
+
+        <button type="submit" id="auth-btn" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-size: 1rem; margin-top: 0.5rem;">
+          Sign In
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 NovaStore Digital Platform. All rights reserved.</p>
+  </footer>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="assets/js/firebase-config.js"></script>
+  <script src="assets/js/auth.js"></script>
+
+  <script>
+    let mode = 'login';
+    let rawRedirect = new URLSearchParams(window.location.search).get('redirect') || 'index.html';
+    let redirectUrl = rawRedirect;
+
+    if (window.location.protocol === 'file:') {
+      if (rawRedirect.includes('admin')) {
+        redirectUrl = '../' + rawRedirect.replace(/^(\.\.\/|\/)/, '');
+      } else if (rawRedirect.startsWith('/')) {
+        redirectUrl = rawRedirect.replace(/^\//, '');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const modeParam = new URLSearchParams(window.location.search).get('mode');
+      if (modeParam === 'signup') {
+        switchAuthTab('signup');
+      }
+
+      if (rawRedirect.includes('admin')) {
+        showAlert('Admin Panel requires Sign In. Pre-filled with sample admin email below.', false);
+      }
+    });
+
+    function switchAuthTab(newMode) {
+      mode = newMode;
+      document.getElementById('tab-login').classList.toggle('active', mode === 'login');
+      document.getElementById('tab-signup').classList.toggle('active', mode === 'signup');
+      document.getElementById('name-group').style.display = mode === 'signup' ? 'block' : 'none';
+      document.getElementById('auth-btn').textContent = mode === 'signup' ? 'Create Account' : 'Sign In';
+      hideAlert();
+    }
+
+    function showAlert(msg, isError = true) {
+      const el = document.getElementById('auth-alert');
+      el.style.display = 'block';
+      el.style.background = isError ? '#fee2e2' : '#dcfce7';
+      el.style.color = isError ? '#991b1b' : '#166534';
+      el.textContent = msg;
+    }
+
+    function hideAlert() {
+      document.getElementById('auth-alert').style.display = 'none';
+    }
+
+    document.getElementById('auth-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideAlert();
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const displayName = document.getElementById('displayName').value.trim();
+
+      const btn = document.getElementById('auth-btn');
+      btn.disabled = true;
+      btn.textContent = 'Authenticating...';
+
+      try {
+        let res;
+        if (mode === 'signup') {
+          res = await Auth.register(email, password, displayName);
+        } else {
+          res = await Auth.login(email, password);
+        }
+
+        if (res.success) {
+          showAlert('Authentication successful! Redirecting...', false);
+          setTimeout(() => {
+            window.location.href = redirectUrl;
+          }, 800);
+        } else {
+          showAlert(res.error || 'Authentication failed');
+          btn.disabled = false;
+          btn.textContent = mode === 'signup' ? 'Create Account' : 'Sign In';
+        }
+      } catch (err) {
+        let msg = err.message || 'Error authenticating';
+        if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+          msg = 'Unable to connect to backend server. Please verify database/server connection.';
+        }
+        showAlert(msg);
+        btn.disabled = false;
+        btn.textContent = mode === 'signup' ? 'Create Account' : 'Sign In';
+      }
+    });
+  </script>
+
+</body>
+</html>

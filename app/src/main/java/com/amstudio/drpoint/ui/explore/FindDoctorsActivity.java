@@ -8,7 +8,7 @@ import android.text.TextWatcher;
 import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.amstudio.drpoint.adapter.DoctorListAdapter;
 import com.amstudio.drpoint.databinding.ActivityFindDoctorsBinding;
@@ -63,9 +63,9 @@ public class FindDoctorsActivity extends AppCompatActivity {
             public void afterTextChanged(Editable s) {}
         });
 
-        // Top Doctors Grid (Live Supabase Data)
-        binding.rvTopDoctors.setLayoutManager(new GridLayoutManager(this, 2));
-        doctorListAdapter = new DoctorListAdapter(true, new DoctorListAdapter.OnDoctorClickListener() {
+        // Top Doctors List (Live Supabase Data)
+        binding.rvTopDoctors.setLayoutManager(new LinearLayoutManager(this));
+        doctorListAdapter = new DoctorListAdapter(false, new DoctorListAdapter.OnDoctorClickListener() {
             @Override
             public void onDoctorClick(Doctor doctor) {
                 Intent intent = new Intent(FindDoctorsActivity.this, DoctorDetailActivity.class);

@@ -59,6 +59,15 @@ public class Appointment implements Serializable {
     @SerializedName("end_time")
     private String endTime;
 
+    @SerializedName(value = "original_appointment_date", alternate = {"original_date", "originalAppointmentDate"})
+    private String originalAppointmentDate;
+
+    @SerializedName(value = "original_appointment_time", alternate = {"original_start_time", "original_time", "originalAppointmentTime"})
+    private String originalAppointmentTime;
+
+    @SerializedName(value = "cancelled_at", alternate = {"cancelled_time", "cancellation_time", "cancelledAt"})
+    private String cancelledAt;
+
     @SerializedName("appointment_type")
     private String appointmentType = "clinic";
 
@@ -245,6 +254,85 @@ public class Appointment implements Serializable {
 
     public String getEndTime() { return endTime; }
     public void setEndTime(String endTime) { this.endTime = endTime; }
+
+    public String getOriginalAppointmentDate() {
+        if (originalAppointmentDate != null && !originalAppointmentDate.trim().isEmpty()) {
+            return originalAppointmentDate;
+        }
+        return appointmentDate;
+    }
+
+    public void setOriginalAppointmentDate(String originalAppointmentDate) {
+        this.originalAppointmentDate = originalAppointmentDate;
+    }
+
+    public String getOriginalAppointmentTime() {
+        if (originalAppointmentTime != null && !originalAppointmentTime.trim().isEmpty()) {
+            return originalAppointmentTime;
+        }
+        return startTime;
+    }
+
+    public void setOriginalAppointmentTime(String originalAppointmentTime) {
+        this.originalAppointmentTime = originalAppointmentTime;
+    }
+
+    public String getOriginalFormattedTime() {
+        String timeToFormat = getOriginalAppointmentTime();
+        if (timeToFormat == null || timeToFormat.trim().isEmpty()) return getFormattedTime();
+        try {
+            String clean = timeToFormat.trim();
+            if (clean.contains("AM") || clean.contains("PM") || clean.contains("am") || clean.contains("pm")) {
+                return clean;
+            }
+            String[] parts = clean.split(":");
+            int hour = Integer.parseInt(parts[0]);
+            int min = Integer.parseInt(parts[1]);
+            String ampm = hour >= 12 ? "PM" : "AM";
+            int hour12 = hour % 12;
+            if (hour12 == 0) hour12 = 12;
+            return String.format(Locale.US, "%02d:%02d %s", hour12, min, ampm);
+        } catch (Exception e) {
+            return timeToFormat;
+        }
+    }
+
+    public String getCancelledAt() { return cancelledAt; }
+    public void setCancelledAt(String cancelledAt) { this.cancelledAt = cancelledAt; }
+
+    public String getFormattedCancelledAt() {
+        if (cancelledAt == null || cancelledAt.trim().isEmpty()) return "";
+        try {
+            String clean = cancelledAt.trim();
+            if (clean.contains("T")) {
+                String[] dateTimeParts = clean.split("T");
+                String datePart = dateTimeParts[0];
+                String timePart = dateTimeParts[1];
+                if (timePart.contains(".")) {
+                    timePart = timePart.substring(0, timePart.indexOf("."));
+                }
+                if (timePart.contains("+")) {
+                    timePart = timePart.substring(0, timePart.indexOf("+"));
+                }
+                if (timePart.contains("-") && timePart.indexOf("-") > 2) {
+                    timePart = timePart.substring(0, timePart.indexOf("-"));
+                }
+                if (timePart.endsWith("Z")) {
+                    timePart = timePart.substring(0, timePart.length() - 1);
+                }
+                String[] tParts = timePart.split(":");
+                int hour = Integer.parseInt(tParts[0]);
+                int min = Integer.parseInt(tParts[1]);
+                String ampm = hour >= 12 ? "PM" : "AM";
+                int hour12 = hour % 12;
+                if (hour12 == 0) hour12 = 12;
+                return String.format(Locale.US, "%s • %02d:%02d %s", datePart, hour12, min, ampm);
+            }
+            return clean;
+        } catch (Exception e) {
+            return cancelledAt;
+        }
+    }
 
     public String getAppointmentType() {
         return appointmentType != null ? appointmentType : "clinic";

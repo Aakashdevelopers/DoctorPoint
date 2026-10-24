@@ -296,7 +296,7 @@ public class AvailabilityHelper {
         SimpleDateFormat daySdf = new SimpleDateFormat("EEE", Locale.US);
         daySdf.setTimeZone(getAppTimeZone());
 
-        SimpleDateFormat dateSdf = new SimpleDateFormat("dd MMM", Locale.US);
+        SimpleDateFormat dateSdf = new SimpleDateFormat("d", Locale.US);
         dateSdf.setTimeZone(getAppTimeZone());
 
         SimpleDateFormat todaySdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
@@ -493,18 +493,55 @@ public class AvailabilityHelper {
         return isLessThanOneHourBeforeStart(appointment.getAppointmentDate(), appointment.getStartTime());
     }
 
+    // Configurable Refund Policy Rules (100% refund if > 1 hour before start, 50% refund if within 1 hour)
+    public static final int REFUND_PERCENT_BEFORE_ONE_HOUR = 100;
+    public static final int REFUND_PERCENT_WITHIN_ONE_HOUR = 50;
+
     /**
-     * Determines if a cancelled/rejected appointment is eligible for refund.
-     * Non-eligible if user cancelled less than 1 hour before start time or if reason notes late cancellation.
+     * Calculates refund percentage based on cancellation timing:
+     * - 1 hour before cancellation (> 1 hour before start): 100% Refund Approved
+     * - Otherwise (Within 1 hour before start): 50% Refund Approved
+     */
+    public static int calculateRefundPercentage(String slotDateStr, String startTimeStr) {
+        boolean isWithinOneHour = isLessThanOneHourBeforeStart(slotDateStr, startTimeStr);
+        return isWithinOneHour ? REFUND_PERCENT_WITHIN_ONE_HOUR : REFUND_PERCENT_BEFORE_ONE_HOUR;
+    }
+
+    public static int calculateRefundPercentage(Appointment appointment) {
+        if (appointment == null) return REFUND_PERCENT_BEFORE_ONE_HOUR;
+        return calculateRefundPercentage(appointment.getAppointmentDate(), appointment.getStartTime());
+    }
+
+    /**
+     * Calculates the exact refund amount based on fee paid and refund policy logic.
+     */
+    public static int calculateRefundAmount(int feePaid, boolean isWithinOneHour) {
+        int pct = isWithinOneHour ? REFUND_PERCENT_WITHIN_ONE_HOUR : REFUND_PERCENT_BEFORE_ONE_HOUR;
+        return (int) Math.round(feePaid * (pct / 100.0));
+    }
+
+    public static int calculateRefundAmount(Appointment appointment) {
+        if (appointment == null) return 0;
+        int feePaid = appointment.getAmount() > 0 ? appointment.getAmount() : (appointment.getFee() > 0 ? appointment.getFee() : 500);
+        boolean isWithinOneHour = isLessThanOneHourBeforeStart(appointment);
+        return calculateRefundAmount(feePaid, isWithinOneHour);
+    }
+
+    public static String getRefundPolicyRuleText(boolean isWithinOneHour) {
+        return isWithinOneHour ? "50% Refund Approved (Cancelled within 1 hour of schedule)"
+                               : "100% Refund Approved (Cancelled 1 hour before schedule)";
+    }
+
+    /**
+     * Determines if an appointment is eligible for refund.
+     * All cancelled/rejected appointments are eligible according to configured policy rules (100% or 50%).
      */
     public static boolean isRefundEligible(Appointment appointment) {
         if (appointment == null) return false;
-        String reason = appointment.getPatientReason() != null ? appointment.getPatientReason() : appointment.getNotes();
-        if (reason != null) {
-            String lower = reason.toLowerCase(Locale.US);
-            if (lower.contains("late cancellation") || lower.contains("no refund") || lower.contains("within 1 hour") || lower.contains("less than 1 hour")) {
-                return false;
-            }
+        String st = appointment.getStatus();
+        if (st != null) {
+            String lower = st.trim().toLowerCase(Locale.US);
+            if ("completed".equals(lower)) return false;
         }
         return true;
     }

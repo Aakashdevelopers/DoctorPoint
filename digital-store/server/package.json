@@ -1,0 +1,31 @@
+{
+  "name": "nova-digital-store-server",
+  "version": "1.0.0",
+  "description": "Backend API for NovaStore - Professional Digital Product Store (SuperProfile Inspired)",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "seed": "node src/utils/seedData.js"
+  },
+  "keywords": [
+    "express",
+    "mongodb",
+    "firebase-auth",
+    "digital-products",
+    "superprofile"
+  ],
+  "author": "NovaStore Developer",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.2.0",
+    "firebase-admin": "^12.1.0",
+    "helmet": "^7.1.0",
+    "mongoose": "^8.3.1",
+    "multer": "^1.4.5-lts.1",
+    "slugify": "^1.6.6"
+  }
+}

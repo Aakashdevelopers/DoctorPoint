@@ -51,6 +51,9 @@ public class HomeFragment extends Fragment {
     private FragmentHomeBinding binding;
     private DoctorListAdapter availableAdapter;
     private DoctorListAdapter doctorAdapter;
+    private DoctorListAdapter allDoctorsAdapter;
+    private SpecialitiesAdapter specialitiesAdapter;
+    private int activeRefreshTasks = 0;
     private static long lastNotificationBadgeFetchTime = 0;
     private static long lastProfileHeaderFetchTime = 0;
 
@@ -65,6 +68,11 @@ public class HomeFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        if (binding != null && binding.swipeRefreshLayout != null) {
+            binding.swipeRefreshLayout.setColorSchemeResources(R.color.primary, R.color.secondary);
+            binding.swipeRefreshLayout.setOnRefreshListener(this::refreshAllData);
+        }
+
         updateGreeting();
 
         if (binding != null && binding.llLocationContainer != null) {
@@ -78,11 +86,9 @@ public class HomeFragment extends Fragment {
         updateLocationChipText();
 
         if (binding != null) {
-            binding.cardCarePlan.setOnClickListener(v -> openFindDoctors());
+
             binding.layoutSearch.setOnClickListener(v -> openFindDoctors());
             binding.flFilter.setOnClickListener(v -> openFindDoctors());
-
-
 
             binding.flBell.setOnClickListener(v -> {
                 Context context = getContext();
@@ -93,6 +99,10 @@ public class HomeFragment extends Fragment {
             });
 
             binding.tvSeeAllDoctors.setOnClickListener(v -> openDoctorList("Top Rated Doctors"));
+
+            if (binding.tvSeeAllAllDoctors != null) {
+                binding.tvSeeAllAllDoctors.setOnClickListener(v -> openDoctorList("All Doctors"));
+            }
 
             if (binding.tvSeeAllSpecialities != null) {
                 binding.tvSeeAllSpecialities.setOnClickListener(v -> showSpecialitiesBottomSheet());
@@ -121,21 +131,11 @@ public class HomeFragment extends Fragment {
                 Context context = getContext();
                 if (context != null) {
                     binding.rvSpecialities.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false));
-                    SpecialitiesAdapter specialitiesAdapter = new SpecialitiesAdapter(speciality -> {
+                    specialitiesAdapter = new SpecialitiesAdapter(speciality -> {
                         if (speciality != null) openDoctorList(speciality.getName());
                     });
                     binding.rvSpecialities.setAdapter(specialitiesAdapter);
-                    DummyDataProvider.fetchSpecialitiesFromSupabase(list -> {
-                        if (binding == null || !isAdded() || getContext() == null) return;
-                        specialitiesAdapter.submitList(list);
-                        if (binding.shimmerSpecialities != null) {
-                            binding.shimmerSpecialities.stopShimmer();
-                            binding.shimmerSpecialities.setVisibility(View.GONE);
-                        }
-                        if (binding.rvSpecialities != null) {
-                            binding.rvSpecialities.setVisibility(View.VISIBLE);
-                        }
-                    });
+                    loadSpecialities();
                 }
             }
 
@@ -146,98 +146,70 @@ public class HomeFragment extends Fragment {
 
         Context context = getContext();
         if (context != null && binding != null) {
+            DoctorListAdapter.OnDoctorClickListener doctorClickListener = createDoctorClickListener();
+
             if (binding.rvAvailableToday != null) {
                 binding.rvAvailableToday.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false));
-                availableAdapter = new DoctorListAdapter(true, new DoctorListAdapter.OnDoctorClickListener() {
-                    @Override
-                    public void onDoctorClick(Doctor doctor) {
-                        Context ctx = getContext();
-                        if (ctx != null && doctor != null) {
-                            Intent intent = new Intent(ctx, DoctorDetailActivity.class);
-                            intent.putExtra("doctor", doctor);
-                            startActivity(intent);
-                        }
-                    }
-
-                    @Override
-                    public void onBookClick(Doctor doctor) {
-                        Context ctx = getContext();
-                        if (ctx != null && doctor != null) {
-                            Intent intent = new Intent(ctx, DoctorDetailActivity.class);
-                            intent.putExtra("doctor", doctor);
-                            startActivity(intent);
-                        }
-                    }
-
-                    @Override
-                    public void onCallClick(Doctor doctor) {
-                        Context ctx = getContext();
-                        if (ctx == null || doctor == null) return;
-                        try {
-                            String phone = doctor.getDoctorPhone() != null && !doctor.getDoctorPhone().trim().isEmpty()
-                                    ? doctor.getDoctorPhone().trim()
-                                    : (doctor.getReceptionPhone() != null && !doctor.getReceptionPhone().trim().isEmpty()
-                                    ? doctor.getReceptionPhone().trim() : "9876543210");
-                            Intent intent = new Intent(Intent.ACTION_DIAL);
-                            intent.setData(Uri.parse("tel:" + phone));
-                            startActivity(intent);
-                        } catch (Exception e) {
-                            ToastUtils.showInfo(ctx, "Calling Dr. " + doctor.getName());
-                        }
-                    }
-
-                    @Override
-                    public void onFavoriteClick(Doctor doctor) {}
-                });
+                availableAdapter = new DoctorListAdapter(true, doctorClickListener);
                 binding.rvAvailableToday.setAdapter(availableAdapter);
             }
 
             if (binding.rvTopDoctors != null) {
                 binding.rvTopDoctors.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false));
-                doctorAdapter = new DoctorListAdapter(true, new DoctorListAdapter.OnDoctorClickListener() {
-                    @Override
-                    public void onDoctorClick(Doctor doctor) {
-                        Context ctx = getContext();
-                        if (ctx != null && doctor != null) {
-                            Intent intent = new Intent(ctx, DoctorDetailActivity.class);
-                            intent.putExtra("doctor", doctor);
-                            startActivity(intent);
-                        }
-                    }
-
-                    @Override
-                    public void onBookClick(Doctor doctor) {
-                        Context ctx = getContext();
-                        if (ctx != null && doctor != null) {
-                            Intent intent = new Intent(ctx, DoctorDetailActivity.class);
-                            intent.putExtra("doctor", doctor);
-                            startActivity(intent);
-                        }
-                    }
-
-                    @Override
-                    public void onCallClick(Doctor doctor) {
-                        Context ctx = getContext();
-                        if (ctx == null || doctor == null) return;
-                        try {
-                            String phone = doctor.getDoctorPhone() != null && !doctor.getDoctorPhone().trim().isEmpty()
-                                    ? doctor.getDoctorPhone().trim()
-                                    : (doctor.getReceptionPhone() != null && !doctor.getReceptionPhone().trim().isEmpty()
-                                    ? doctor.getReceptionPhone().trim() : "9876543210");
-                            Intent intent = new Intent(Intent.ACTION_DIAL);
-                            intent.setData(Uri.parse("tel:" + phone));
-                            startActivity(intent);
-                        } catch (Exception e) {
-                            ToastUtils.showInfo(ctx, "Calling Dr. " + doctor.getName());
-                        }
-                    }
-
-                    @Override
-                    public void onFavoriteClick(Doctor doctor) {}
-                });
+                doctorAdapter = new DoctorListAdapter(true, doctorClickListener);
                 binding.rvTopDoctors.setAdapter(doctorAdapter);
             }
+
+            if (binding.rvAllDoctors != null) {
+                binding.rvAllDoctors.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false));
+                allDoctorsAdapter = new DoctorListAdapter(true, doctorClickListener);
+                binding.rvAllDoctors.setAdapter(allDoctorsAdapter);
+            }
         }
+    }
+
+    private DoctorListAdapter.OnDoctorClickListener createDoctorClickListener() {
+        return new DoctorListAdapter.OnDoctorClickListener() {
+            @Override
+            public void onDoctorClick(Doctor doctor) {
+                Context ctx = getContext();
+                if (ctx != null && doctor != null) {
+                    Intent intent = new Intent(ctx, DoctorDetailActivity.class);
+                    intent.putExtra("doctor", doctor);
+                    startActivity(intent);
+                }
+            }
+
+            @Override
+            public void onBookClick(Doctor doctor) {
+                Context ctx = getContext();
+                if (ctx != null && doctor != null) {
+                    Intent intent = new Intent(ctx, DoctorDetailActivity.class);
+                    intent.putExtra("doctor", doctor);
+                    startActivity(intent);
+                }
+            }
+
+            @Override
+            public void onCallClick(Doctor doctor) {
+                Context ctx = getContext();
+                if (ctx == null || doctor == null) return;
+                try {
+                    String phone = doctor.getDoctorPhone() != null && !doctor.getDoctorPhone().trim().isEmpty()
+                            ? doctor.getDoctorPhone().trim()
+                            : (doctor.getReceptionPhone() != null && !doctor.getReceptionPhone().trim().isEmpty()
+                            ? doctor.getReceptionPhone().trim() : "9876543210");
+                    Intent intent = new Intent(Intent.ACTION_DIAL);
+                    intent.setData(Uri.parse("tel:" + phone));
+                    startActivity(intent);
+                } catch (Exception e) {
+                    ToastUtils.showInfo(ctx, "Calling Dr. " + doctor.getName());
+                }
+            }
+
+            @Override
+            public void onFavoriteClick(Doctor doctor) {}
+        };
     }
 
     @Override
@@ -263,14 +235,47 @@ public class HomeFragment extends Fragment {
         loadDoctors();
     }
 
+    private void loadSpecialities() {
+        if (binding == null || !isAdded() || getContext() == null) {
+            onTaskCompleted();
+            return;
+        }
+        DummyDataProvider.fetchSpecialitiesFromSupabase(list -> {
+            if (binding == null || !isAdded() || getContext() == null) {
+                onTaskCompleted();
+                return;
+            }
+            if (specialitiesAdapter != null) {
+                specialitiesAdapter.submitList(list);
+            }
+            if (binding.shimmerSpecialities != null) {
+                binding.shimmerSpecialities.stopShimmer();
+                binding.shimmerSpecialities.setVisibility(View.GONE);
+            }
+            if (binding.rvSpecialities != null) {
+                binding.rvSpecialities.setVisibility(View.VISIBLE);
+            }
+            onTaskCompleted();
+        });
+    }
+
     private void loadDoctors() {
-        if (binding == null || !isAdded()) return;
+        if (binding == null || !isAdded()) {
+            onTaskCompleted();
+            return;
+        }
         Context context = getContext();
-        if (context == null) return;
+        if (context == null) {
+            onTaskCompleted();
+            return;
+        }
         String currentState = PreferenceManager.getInstance(context).getSelectedState();
 
         DummyDataProvider.fetchDoctorsFromSupabase(doctors -> {
-            if (binding == null || !isAdded() || getContext() == null) return;
+            if (binding == null || !isAdded() || getContext() == null) {
+                onTaskCompleted();
+                return;
+            }
 
             List<Doctor> stateFilteredDoctors = DummyDataProvider.filterDoctorsByState(doctors, currentState);
 
@@ -279,9 +284,6 @@ public class HomeFragment extends Fragment {
                 if (d != null && d.isAvailableToday()) {
                     availableTodayList.add(d);
                 }
-            }
-            if (availableTodayList.isEmpty()) {
-                availableTodayList.addAll(stateFilteredDoctors);
             }
 
             List<Doctor> topRatedList = new ArrayList<>();
@@ -316,6 +318,9 @@ public class HomeFragment extends Fragment {
             if (doctorAdapter != null) {
                 doctorAdapter.submitList(topRatedList);
             }
+            if (allDoctorsAdapter != null) {
+                allDoctorsAdapter.submitList(doctors != null && !doctors.isEmpty() ? doctors : stateFilteredDoctors);
+            }
 
             if (binding.shimmerAvailableToday != null) {
                 binding.shimmerAvailableToday.stopShimmer();
@@ -325,13 +330,92 @@ public class HomeFragment extends Fragment {
                 binding.shimmerTopDoctors.stopShimmer();
                 binding.shimmerTopDoctors.setVisibility(View.GONE);
             }
+            if (binding.shimmerAllDoctors != null) {
+                binding.shimmerAllDoctors.stopShimmer();
+                binding.shimmerAllDoctors.setVisibility(View.GONE);
+            }
             if (binding.rvAvailableToday != null) {
-                binding.rvAvailableToday.setVisibility(View.VISIBLE);
+                binding.rvAvailableToday.setVisibility(availableTodayList.isEmpty() ? View.GONE : View.VISIBLE);
             }
             if (binding.rvTopDoctors != null) {
                 binding.rvTopDoctors.setVisibility(View.VISIBLE);
             }
+            if (binding.rvAllDoctors != null) {
+                binding.rvAllDoctors.setVisibility(View.VISIBLE);
+            }
+            onTaskCompleted();
         });
+    }
+
+    public void refreshAllData() {
+        if (binding == null || !isAdded()) return;
+
+        // Invalidate cache memory
+        DummyDataProvider.invalidateDoctorsCache();
+        DummyDataProvider.invalidateSpecialitiesCache();
+        lastNotificationBadgeFetchTime = 0;
+        lastProfileHeaderFetchTime = 0;
+
+        if (binding.swipeRefreshLayout != null) {
+            binding.swipeRefreshLayout.setRefreshing(true);
+        }
+
+        activeRefreshTasks = 2;
+
+        if (binding.shimmerSpecialities != null) {
+            binding.shimmerSpecialities.setVisibility(View.VISIBLE);
+            binding.shimmerSpecialities.startShimmer();
+        }
+        if (binding.rvSpecialities != null) {
+            binding.rvSpecialities.setVisibility(View.GONE);
+        }
+        if (binding.shimmerAvailableToday != null) {
+            binding.shimmerAvailableToday.setVisibility(View.VISIBLE);
+            binding.shimmerAvailableToday.startShimmer();
+        }
+        if (binding.rvAvailableToday != null) {
+            binding.rvAvailableToday.setVisibility(View.GONE);
+        }
+        if (binding.shimmerTopDoctors != null) {
+            binding.shimmerTopDoctors.setVisibility(View.VISIBLE);
+            binding.shimmerTopDoctors.startShimmer();
+        }
+        if (binding.rvTopDoctors != null) {
+            binding.rvTopDoctors.setVisibility(View.GONE);
+        }
+        if (binding.shimmerAllDoctors != null) {
+            binding.shimmerAllDoctors.setVisibility(View.VISIBLE);
+            binding.shimmerAllDoctors.startShimmer();
+        }
+        if (binding.rvAllDoctors != null) {
+            binding.rvAllDoctors.setVisibility(View.GONE);
+        }
+
+        updateGreeting();
+        updateNotificationBadge();
+        loadSpecialities();
+        loadDoctors();
+
+        if (binding.swipeRefreshLayout != null) {
+            binding.swipeRefreshLayout.postDelayed(() -> {
+                if (binding != null && binding.swipeRefreshLayout != null && binding.swipeRefreshLayout.isRefreshing()) {
+                    binding.swipeRefreshLayout.setRefreshing(false);
+                }
+            }, 6000);
+        }
+    }
+
+    private synchronized void onTaskCompleted() {
+        if (activeRefreshTasks > 0) {
+            activeRefreshTasks--;
+            if (activeRefreshTasks == 0 && binding != null && binding.swipeRefreshLayout != null) {
+                binding.swipeRefreshLayout.post(() -> {
+                    if (binding != null && binding.swipeRefreshLayout != null) {
+                        binding.swipeRefreshLayout.setRefreshing(false);
+                    }
+                });
+            }
+        }
     }
 
     private void updateNotificationBadge() {

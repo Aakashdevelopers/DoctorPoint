@@ -1318,21 +1318,36 @@
             border-left-color: #c75b63 !important;
         }
 
-        #unverified-status-card > div:first-child {
+        #unverified-status-card .status-card-header {
+            display: flex;
+            align-items: flex-start;
             gap: 1rem !important;
-            margin-bottom: 1.25rem !important;
+            margin-bottom: 1rem !important;
         }
 
-        #unverified-status-card > div:first-child > div:first-child {
+        #unverified-status-card .status-icon-box {
             display: flex;
-            flex: 0 0 48px;
-            width: 48px;
-            height: 48px;
+            flex: 0 0 44px;
+            width: 44px;
+            height: 44px;
             align-items: center;
             justify-content: center;
             border-radius: 12px;
-            background: #fff0f0;
+            background: #fef3c7;
+            color: #d97706;
             font-size: 1.55rem !important;
+            flex-shrink: 0;
+        }
+
+        #unverified-status-card.is-rejected .status-icon-box {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        #unverified-status-card .status-card-body {
+            flex: 1;
+            min-width: 0;
+            width: 100%;
         }
 
         #unverified-status-card h3 {
@@ -1535,11 +1550,11 @@
                 grid-template-columns: 1fr !important;
             }
 
-            #unverified-status-card > div:first-child > div:first-child {
-                flex-basis: 40px;
-                width: 40px;
-                height: 40px;
-                font-size: 1.3rem !important;
+            #unverified-status-card .status-icon-box {
+                flex-basis: 38px;
+                width: 38px;
+                height: 38px;
+                font-size: 1.2rem !important;
             }
         }
 
@@ -1673,74 +1688,197 @@
             }
         }
 
+        /* Global Mobile Overflow Containment */
+        html, body {
+            width: 100% !important;
+            max-width: 100vw !important;
+            overflow-x: hidden !important;
+            box-sizing: border-box !important;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        .app-layout, .main-wrapper, .content-area {
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow-x: hidden !important;
+            box-sizing: border-box !important;
+        }
+
+        .card, .analytics-grid, .chart-span-full, .grid-stats {
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        .chart-container-wrapper, .chart-container-wrapper-lg {
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow: hidden !important;
+        }
+
+        .chart-container-wrapper canvas, .chart-container-wrapper-lg canvas {
+            max-width: 100% !important;
+        }
+
         @media (max-width: 480px) {
             .content-area {
-                padding: 0.75rem !important;
-                padding-left: max(0.75rem, env(safe-area-inset-left)) !important;
-                padding-right: max(0.75rem, env(safe-area-inset-right)) !important;
+                padding: 0.65rem !important;
+                padding-left: max(0.65rem, env(safe-area-inset-left)) !important;
+                padding-right: max(0.65rem, env(safe-area-inset-right)) !important;
                 padding-bottom: max(1.5rem, env(safe-area-inset-bottom)) !important;
             }
 
             .card {
-                padding: 0.875rem !important;
+                padding: 0.75rem !important;
                 border-radius: 10px !important;
-                margin-bottom: 0.875rem !important;
+                margin-bottom: 0.75rem !important;
             }
 
             .grid-stats {
                 grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-                gap: 0.6rem !important;
-                margin-bottom: 0.875rem !important;
+                gap: 0.5rem !important;
+                margin-bottom: 0.75rem !important;
             }
 
             .stat-card {
-                padding: 0.75rem 0.85rem !important;
+                padding: 0.6rem 0.75rem !important;
                 border-radius: 8px !important;
+                min-width: 0 !important;
             }
 
             .stat-title {
-                font-size: 0.75rem !important;
+                font-size: 0.7rem !important;
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
             }
 
             .stat-value {
-                font-size: 1.35rem !important;
+                font-size: 1.25rem !important;
             }
 
             #header-doctor-name {
-                max-width: 110px;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
+                max-width: 90px !important;
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                font-size: 0.8rem !important;
             }
 
             /* Live Consultation Card Mobile Adjustments */
             #live-consultation-card {
-                padding: 0.875rem !important;
+                padding: 0.75rem !important;
             }
 
             #live-consultation-card h3 {
-                font-size: 1.1rem !important;
+                font-size: 1.05rem !important;
             }
 
             #live-token-badge {
-                width: 46px !important;
-                height: 44px !important;
-                font-size: 1.2rem !important;
+                width: 44px !important;
+                height: 42px !important;
+                font-size: 1.15rem !important;
             }
 
             .analytics-grid {
                 grid-template-columns: 1fr !important;
-                gap: 0.75rem !important;
+                gap: 0.65rem !important;
             }
 
             .chart-span-full {
                 grid-column: span 1 !important;
             }
+
+            /* Card Header Actions Responsiveness */
+            .card-header {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 0.75rem !important;
+            }
+
+            .card-header > div:last-child {
+                width: 100% !important;
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 0.5rem !important;
+            }
+
+            .card-header button,
+            .card-header a {
+                flex: 1 1 auto !important;
+                justify-content: center !important;
+                text-align: center !important;
+            }
+
+            /* Bulk Modal Mobile Responsive Layout */
+            .bulk-config-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: 0.65rem !important;
+            }
+
+            .bulk-tab-header {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 0.25rem !important;
+            }
+
+            .bulk-tab-header button {
+                flex: 1 1 auto !important;
+                text-align: center !important;
+                font-size: 0.8rem !important;
+                padding: 8px 10px !important;
+            }
+
+            .bulk-table-container {
+                max-height: 220px !important;
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+
+            .bulk-table-container table {
+                min-width: 580px !important;
+            }
+
+            .bulk-footer-actions {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 0.75rem !important;
+            }
+
+            .bulk-footer-actions > div:last-child {
+                width: 100% !important;
+                display: flex !important;
+                gap: 0.5rem !important;
+            }
+
+            .bulk-footer-actions button {
+                flex: 1 !important;
+                justify-content: center !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .bulk-config-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            .bulk-row-controls {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 0.5rem !important;
+            }
+
+            .bulk-row-controls button {
+                width: 100% !important;
+            }
         }
 
         @media (max-width: 360px) {
             .grid-stats {
-                grid-template-columns: 1fr !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
             }
         }
     </style>
@@ -2116,35 +2254,35 @@
             </div>
 
             <!-- Analytics Key Metrics Summary Badges -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 1.25rem;">
-                <div style="background: #f8fafc; border-radius: 10px; padding: 0.75rem 1rem; border: 1px solid #e2e8f0;">
-                    <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Total Appointments</div>
-                    <div id="graph-stat-total" style="font-size: 1.3rem; font-weight: 800; color: #1e293b; margin-top: 2px;">0</div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.5rem; margin-bottom: 1.25rem;">
+                <div style="background: #f8fafc; border-radius: 10px; padding: 0.65rem 0.85rem; border: 1px solid #e2e8f0; min-width: 0;">
+                    <div style="font-size: 0.725rem; color: #64748b; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Total Appointments</div>
+                    <div id="graph-stat-total" style="font-size: 1.25rem; font-weight: 800; color: #1e293b; margin-top: 2px;">0</div>
                 </div>
-                <div style="background: #f8fafc; border-radius: 10px; padding: 0.75rem 1rem; border: 1px solid #e2e8f0;">
-                    <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Completion Rate</div>
-                    <div id="graph-stat-rate" style="font-size: 1.3rem; font-weight: 800; color: #16a34a; margin-top: 2px;">0%</div>
+                <div style="background: #f8fafc; border-radius: 10px; padding: 0.65rem 0.85rem; border: 1px solid #e2e8f0; min-width: 0;">
+                    <div style="font-size: 0.725rem; color: #64748b; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Completion Rate</div>
+                    <div id="graph-stat-rate" style="font-size: 1.25rem; font-weight: 800; color: #16a34a; margin-top: 2px;">0%</div>
                 </div>
-                <div style="background: #f8fafc; border-radius: 10px; padding: 0.75rem 1rem; border: 1px solid #e2e8f0;">
-                    <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Net Earnings</div>
-                    <div id="graph-stat-revenue" style="font-size: 1.3rem; font-weight: 800; color: #2563eb; margin-top: 2px;">₹0</div>
+                <div style="background: #f8fafc; border-radius: 10px; padding: 0.65rem 0.85rem; border: 1px solid #e2e8f0; min-width: 0;">
+                    <div style="font-size: 0.725rem; color: #64748b; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Net Earnings</div>
+                    <div id="graph-stat-revenue" style="font-size: 1.25rem; font-weight: 800; color: #2563eb; margin-top: 2px;">₹0</div>
                 </div>
-                <div style="background: #f8fafc; border-radius: 10px; padding: 0.75rem 1rem; border: 1px solid #e2e8f0;">
-                    <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Avg Daily Patients</div>
-                    <div id="graph-stat-avg" style="font-size: 1.3rem; font-weight: 800; color: #7c3aed; margin-top: 2px;">0</div>
+                <div style="background: #f8fafc; border-radius: 10px; padding: 0.65rem 0.85rem; border: 1px solid #e2e8f0; min-width: 0;">
+                    <div style="font-size: 0.725rem; color: #64748b; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Avg Daily Patients</div>
+                    <div id="graph-stat-avg" style="font-size: 1.25rem; font-weight: 800; color: #7c3aed; margin-top: 2px;">0</div>
                 </div>
             </div>
 
             <!-- Charts Grid -->
-            <div class="analytics-grid">
+            <div class="analytics-grid" style="width: 100%; max-width: 100%; overflow: hidden;">
 
                 <!-- Chart 1: Appointments & Revenue Trend (Line Chart) -->
-                <div class="chart-span-full" style="background: #ffffff; border-radius: 12px; padding: 1rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-                        <h4 style="font-size: 0.95rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 0.4rem;">
-                            <i class='bx bx-trending-up' style="color: #2563eb;"></i> Daily Appointments &amp; Revenue Growth
+                <div class="chart-span-full" style="background: #ffffff; border-radius: 12px; padding: 0.875rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+                        <h4 style="font-size: 0.925rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 0.4rem; min-width: 0; word-break: break-word;">
+                            <i class='bx bx-trending-up' style="color: #2563eb; flex-shrink: 0;"></i> Daily Appointments &amp; Revenue Growth
                         </h4>
-                        <span style="font-size: 0.725rem; color: #1e40af; font-weight: 600; background: #eff6ff; padding: 2px 8px; border-radius: 4px;">Interactive Trend</span>
+                        <span style="font-size: 0.7rem; color: #1e40af; font-weight: 600; background: #eff6ff; padding: 2px 8px; border-radius: 4px; flex-shrink: 0;">Interactive Trend</span>
                     </div>
                     <div class="chart-container-wrapper chart-container-wrapper-lg">
                         <canvas id="chart-appointment-trend"></canvas>
@@ -2152,22 +2290,22 @@
                 </div>
 
                 <!-- Chart 2: Patient Types (Doughnut Chart) -->
-                <div style="background: #ffffff; border-radius: 12px; padding: 1rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-                        <h4 style="font-size: 0.95rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 0.4rem;">
-                            <i class='bx bx-pie-chart-alt-2' style="color: #7c3aed;"></i> Patient Mix (New vs Follow-up)
+                <div style="background: #ffffff; border-radius: 12px; padding: 0.875rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+                        <h4 style="font-size: 0.925rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 0.4rem; min-width: 0; word-break: break-word;">
+                            <i class='bx bx-pie-chart-alt-2' style="color: #7c3aed; flex-shrink: 0;"></i> Patient Mix (New vs Follow-up)
                         </h4>
                     </div>
-                    <div class="chart-container-wrapper" style="display: flex; justify-content: center;">
+                    <div class="chart-container-wrapper" style="display: flex; justify-content: center; align-items: center;">
                         <canvas id="chart-patient-types"></canvas>
                     </div>
                 </div>
 
                 <!-- Chart 3: Appointment Status Distribution (Bar Chart) -->
-                <div style="background: #ffffff; border-radius: 12px; padding: 1rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-                        <h4 style="font-size: 0.95rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 0.4rem;">
-                            <i class='bx bx-bar-chart-alt-2' style="color: #059669;"></i> Queue &amp; Status Distribution
+                <div style="background: #ffffff; border-radius: 12px; padding: 0.875rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+                        <h4 style="font-size: 0.925rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 0.4rem; min-width: 0; word-break: break-word;">
+                            <i class='bx bx-bar-chart-alt-2' style="color: #059669; flex-shrink: 0;"></i> Queue &amp; Status Distribution
                         </h4>
                     </div>
                     <div class="chart-container-wrapper">
@@ -2176,10 +2314,10 @@
                 </div>
 
                 <!-- Chart 4: Consultation Rush Hours (Horizontal Bar Chart) -->
-                <div style="background: #ffffff; border-radius: 12px; padding: 1rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-                        <h4 style="font-size: 0.95rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 0.4rem;">
-                            <i class='bx bx-time' style="color: #ea580c;"></i> Peak Rush Hours Distribution
+                <div style="background: #ffffff; border-radius: 12px; padding: 0.875rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+                        <h4 style="font-size: 0.925rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 0.4rem; min-width: 0; word-break: break-word;">
+                            <i class='bx bx-time' style="color: #ea580c; flex-shrink: 0;"></i> Peak Rush Hours Distribution
                         </h4>
                     </div>
                     <div class="chart-container-wrapper">
@@ -2198,7 +2336,8 @@
                 </div>
                 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
                     <button class="btn btn-outline btn-sm" style="font-weight: 600;" onclick="window.openQueueBottomSheet(0)">Patient Profile Sheet</button>
-                    <button class="btn btn-outline btn-sm" onclick="window.openAddAppointmentModal()">+ Add Appointment</button>
+                    <button class="btn btn-outline btn-sm" onclick="window.openAddAppointmentModal()">+ Add Single</button>
+                    <button class="btn btn-primary btn-sm" onclick="window.openBulkAddModal()"><i class='bx bx-group'></i> + Bulk Add Patients</button>
                     <a href="#appointments" class="btn btn-primary btn-sm" style="text-decoration: none !important;">View All Dates Queue →</a>
                 </div>
             </div>
@@ -2271,7 +2410,8 @@
                             <input type="text" id="appt-search" class="form-control" style="height: 38px; font-size: 0.85rem;" placeholder="Search patient, token or phone..." onkeyup="window.searchAppointments(this.value)">
                         </div>
                         <button class="btn btn-success btn-sm" style="height: 38px; font-weight: 700; background: #22c55e; border-color: #22c55e; color: #ffffff;" onclick="window.startConsultationModeForQueue()">Start Consultation Mode</button>
-                        <button class="btn btn-outline btn-sm" style="height: 38px; font-weight: 600;" onclick="window.openAddAppointmentModal()">+ Add Appointment</button>
+                        <button class="btn btn-outline btn-sm" style="height: 38px; font-weight: 600;" onclick="window.openAddAppointmentModal()">+ Add Single</button>
+                        <button class="btn btn-primary btn-sm" style="height: 38px; font-weight: 700;" onclick="window.openBulkAddModal()"><i class='bx bx-group'></i> + Bulk Add Patients</button>
                         <button class="btn btn-outline btn-sm" style="height: 38px; font-weight: 600;" onclick="window.toggleBulkMenu(event)">⋮ Bulk Actions</button>
                     </div>
                 </div>
@@ -2962,6 +3102,12 @@
             const banner = document.getElementById('doctor-status-banner');
             if (!banner || !doc) return;
 
+            // Hide top banner when unverified status card is present to prevent duplicate banners
+            if (document.getElementById('unverified-status-card')) {
+                banner.style.display = 'none';
+                return;
+            }
+
             if (sessionStorage.getItem('hide_status_banner_' + doc.id) === 'true') {
                 banner.style.display = 'none';
                 return;
@@ -3639,17 +3785,20 @@
                 container.style.borderLeft = '6px solid #ef4444';
                 container.style.background = '#fef2f2';
                 container.innerHTML = `
-                    <div style="display: flex; align-items: flex-start; gap: 1.25rem; margin-bottom: 1.5rem;">
-                        <div style="flex: 1;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-                                <h3 style="font-size: 1.35rem; font-weight: 800; color: #991b1b; margin: 0;">Account Verification Rejected</h3>
-                                <span class="badge badge-error" style="font-size:0.85rem; padding:6px 12px;">REJECTED</span>
+                    <div class="status-card-header" style="display: flex; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
+                        <div class="status-icon-box" style="flex: 0 0 44px; width: 44px; height: 44px; border-radius: 12px; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0;">
+                            <i class='bx bx-x-circle'></i>
+                        </div>
+                        <div class="status-card-body" style="flex: 1; min-width: 0; width: 100%;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                <h3 style="font-size: 1.25rem; font-weight: 800; color: #991b1b; margin: 0; line-height: 1.3;">Account Verification Rejected</h3>
+                                <span class="badge badge-error" style="font-size:0.8rem; padding:5px 10px; background: #fee2e2; color: #991b1b; border: 1px solid #ef4444; font-weight: 700;">REJECTED</span>
                             </div>
-                            <p style="font-size: 0.925rem; color: #7f1d1d; margin-top: 6px; line-height: 1.5;">
+                            <p style="font-size: 0.9rem; color: #7f1d1d; margin: 0; line-height: 1.5;">
                                 Your doctor account verification was rejected by Doctor Point Admin. Please review the rejection reason below, update your profile details or clinic documents, and resubmit for review.
                             </p>
                             ${msg ? `
-                                <div class="admin-rejection-note" style="margin-top: 1rem; background: #ffffff; padding: 12px 16px; border-radius: 10px; border: 1px solid #fca5a5; color: #991b1b; font-weight: 600; font-size: 0.9rem;">
+                                <div class="admin-rejection-note" style="margin-top: 0.875rem; background: #ffffff; padding: 10px 14px; border-radius: 10px; border: 1px solid #fca5a5; color: #991b1b; font-weight: 600; font-size: 0.875rem; word-break: break-word;">
                                     <strong>Admin Rejection Reason:</strong> "${msg}"
                                 </div>
                             ` : ''}
@@ -3657,10 +3806,10 @@
                     </div>
 
                     <!-- Resubmit Profile Form -->
-                    <div class="resubmit-panel" style="background: #ffffff; padding: 1.5rem; border-radius: 14px; border: 1px solid #fca5a5;">
-                        <h4 class="resubmit-title" style="font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 1rem;">Update Details &amp; Resubmit Profile for Review</h4>
+                    <div class="resubmit-panel" style="background: #ffffff; padding: 1.25rem; border-radius: 14px; border: 1px solid #fca5a5;">
+                        <h4 class="resubmit-title" style="font-size: 1.05rem; font-weight: 800; color: var(--primary); margin-bottom: 1rem;">Update Details &amp; Resubmit Profile for Review</h4>
                         <form id="resubmit-profile-form">
-                            <div class="form-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                            <div class="form-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.875rem; margin-bottom: 1rem;">
                                 <div class="form-group">
                                     <label class="form-label">Full Doctor Name *</label>
                                     <input type="text" id="resubmit-name" class="form-control" value="${doc.name || ''}" required>
@@ -3692,12 +3841,12 @@
                                         ${['Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh','Goa','Gujarat','Haryana','Himachal Pradesh','Jharkhand','Karnataka','Kerala','Madhya Pradesh','Maharashtra','Manipur','Meghalaya','Mizoram','Nagaland','Odisha','Punjab','Rajasthan','Sikkim','Tamil Nadu','Telangana','Tripura','Uttar Pradesh','Uttarakhand','West Bengal','Delhi','Chandigarh'].map(s => `<option value="${s}" ${(doc.state === s || doc.location === s) ? 'selected' : ''}>${s}</option>`).join('')}
                                     </select>
                                 </div>
-                                <div class="form-group span-full" style="background: #f8fafc; padding: 1rem; border-radius: 12px; border: 1px dashed #cbd5e1;">
+                                <div class="form-group span-full" style="background: #f8fafc; padding: 0.875rem; border-radius: 12px; border: 1px dashed #cbd5e1;">
                                     <label class="form-label" style="font-weight: 700; color: var(--primary);">Clinic GPS Location <span style="color:#dc2626; font-size:0.8rem;">(Mandatory *)</span></label>
                                     <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
                                         <button type="button" class="btn btn-primary btn-sm" onclick="window.fetchCurrentGPS('resubmit')" style="font-weight: 700;">Auto Fetch Clinic Location</button>
                                     </div>
-                                    <div id="resubmit-gps-status" style="margin-top: 0.75rem; font-size: 0.85rem;">
+                                    <div id="resubmit-gps-status" style="margin-top: 0.5rem; font-size: 0.85rem; word-break: break-word;">
                                         ${doc.clinic_latitude && doc.clinic_longitude ? `Saved GPS: <strong>${doc.clinic_latitude.toFixed(5)}, ${doc.clinic_longitude.toFixed(5)}</strong> <a href="https://www.google.com/maps/search/?api=1&query=${doc.clinic_latitude},${doc.clinic_longitude}" target="_blank" style="margin-left:6px; font-weight:700; color:var(--primary);">View Map ↗</a>` : '<span style="color:#d97706; font-weight:600;">Location Not Set. Click "Auto Fetch Clinic Location".</span>'}
                                     </div>
                                     <input type="hidden" id="resubmit-clinic-lat" value="${doc.clinic_latitude || ''}">
@@ -3713,7 +3862,7 @@
                                 <input type="url" id="resubmit-avatar" class="form-control" value="${doc.image_url || ''}" placeholder="https://...">
                             </div>
                             <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
-                                <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-weight: 800; background: #dc2626; border-color: #dc2626; color: #fff;">Resubmit Profile for Admin Review →</button>
+                                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px 20px; font-weight: 800; background: #dc2626; border-color: #dc2626; color: #fff;">Resubmit Profile for Admin Review →</button>
                             </div>
                         </form>
                     </div>
@@ -3728,37 +3877,40 @@
                 container.style.borderLeft = '6px solid #f59e0b';
                 container.style.background = '#fffbe2';
                 container.innerHTML = `
-                    <div style="display: flex; align-items: flex-start; gap: 1.25rem;">
-                        <div style="flex: 1;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-                                <h3 style="font-size: 1.35rem; font-weight: 800; color: #92400e; margin: 0;">Account Under Admin Review</h3>
-                                <span class="badge badge-warning" style="font-size:0.85rem; padding:6px 12px;">PENDING REVIEW</span>
+                    <div class="status-card-header" style="display: flex; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+                        <div class="status-icon-box" style="flex: 0 0 44px; width: 44px; height: 44px; border-radius: 12px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0;">
+                            <i class='bx bx-time-five'></i>
+                        </div>
+                        <div class="status-card-body" style="flex: 1; min-width: 0; width: 100%;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                <h3 style="font-size: 1.25rem; font-weight: 800; color: #92400e; margin: 0; line-height: 1.3;">Account Under Admin Review</h3>
+                                <span class="badge badge-warning" style="font-size:0.8rem; padding:5px 10px; background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; font-weight: 700;">PENDING REVIEW</span>
                             </div>
-                            <p style="font-size: 0.925rem; color: #78350f; margin-top: 6px; line-height: 1.5;">
+                            <p style="font-size: 0.9rem; color: #78350f; margin: 0; line-height: 1.5;">
                                 Your doctor account profile has been submitted and is currently being verified by <strong>Doctor Point Admin</strong>. Once verified, your profile will automatically go live on the patient app.
                             </p>
                             ${msg ? `
-                                <div style="margin-top: 1rem; background: #ffffff; padding: 12px 16px; border-radius: 10px; border: 1px solid #fcd34d; color: #78350f; font-weight: 600; font-size: 0.9rem;">
+                                <div style="margin-top: 0.875rem; background: #ffffff; padding: 10px 14px; border-radius: 10px; border: 1px solid #fcd34d; color: #78350f; font-weight: 600; font-size: 0.875rem; word-break: break-word;">
                                     <strong>Message from Admin:</strong> "${msg}"
                                 </div>
                             ` : ''}
 
                             <!-- Doctor Submitted Profile Summary -->
-                            <div style="margin-top: 1.25rem; background: #ffffff; padding: 1rem 1.25rem; border-radius: 12px; border: 1px solid #fcd34d; font-size: 0.85rem; color: var(--text-primary);">
-                                <strong style="font-weight: 800; color: var(--primary); font-size: 0.95rem;">Submitted Profile Summary:</strong>
-                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.5rem; margin-top: 0.5rem;">
-                                    <div><strong>Doctor:</strong> ${doc.name} (${doc.qualification})</div>
-                                    <div><strong>Specialization:</strong> ${doc.specialization}</div>
-                                    <div><strong>Doctor Contact:</strong> ${doc.doctor_phone || doc.phone}</div>
+                            <div style="margin-top: 1rem; background: #ffffff; padding: 0.875rem 1rem; border-radius: 12px; border: 1px solid #fcd34d; font-size: 0.85rem; color: var(--text-primary);">
+                                <strong style="font-weight: 800; color: var(--primary); font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">Submitted Profile Summary:</strong>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.5rem;">
+                                    <div><strong>Doctor:</strong> ${doc.name} (${doc.qualification || 'MBBS'})</div>
+                                    <div><strong>Specialization:</strong> ${doc.specialization || 'N/A'}</div>
+                                    <div><strong>Doctor Contact:</strong> ${doc.doctor_phone || doc.phone || 'N/A'}</div>
                                     <div><strong>Reception Contact:</strong> ${doc.reception_phone || 'N/A'}</div>
-                                    <div><strong>Clinic:</strong> ${doc.clinic_name} - ${doc.location}</div>
-                                    <div><strong>Clinic GPS:</strong> ${doc.clinic_latitude && doc.clinic_longitude ? `<a href="https://www.google.com/maps/search/?api=1&query=${doc.clinic_latitude},${doc.clinic_longitude}" target="_blank" style="font-weight:700; color:var(--primary);">${doc.clinic_latitude.toFixed(4)}, ${doc.clinic_longitude.toFixed(4)} (Open Map ↗)</a>` : '<span style="color:#d97706; font-weight:600;">GPS Not Set</span>'}</div>
-                                    <div><strong>Consultation Fee:</strong> ₹${doc.fee}</div>
+                                    <div><strong>Clinic:</strong> ${doc.clinic_name || 'N/A'} - ${doc.location || ''}</div>
+                                    <div style="word-break: break-word;"><strong>Clinic GPS:</strong> ${doc.clinic_latitude && doc.clinic_longitude ? `<a href="https://www.google.com/maps/search/?api=1&query=${doc.clinic_latitude},${doc.clinic_longitude}" target="_blank" style="font-weight:700; color:var(--primary);">${doc.clinic_latitude.toFixed(4)}, ${doc.clinic_longitude.toFixed(4)} (Open Map ↗)</a>` : '<span style="color:#d97706; font-weight:600;">GPS Not Set</span>'}</div>
+                                    <div><strong>Consultation Fee:</strong> ₹${doc.fee || 500}</div>
                                 </div>
                             </div>
 
-                            <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
-                                <button class="btn btn-primary" style="padding: 10px 20px; font-weight: 700; background: #d97706; border-color: #d97706; color: #fff;" onclick="window.recheckDoctorStatus()"><i class='bx bx-refresh'></i> Re-check Verification Status Now</button>
+                            <div style="margin-top: 1rem; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                                <button class="btn btn-primary" style="width: 100%; padding: 12px 18px; font-weight: 700; background: #d97706; border-color: #d97706; color: #fff; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; border-radius: 8px;" onclick="window.recheckDoctorStatus()"><i class='bx bx-refresh' style="font-size: 1.2rem;"></i> Re-check Verification Status Now</button>
                             </div>
                         </div>
                     </div>
@@ -4502,6 +4654,534 @@
                     }
                 }
             });
+        };
+
+        // ----------------------------------------------------
+        // BULK ADD PATIENTS & APPOINTMENTS MODULE
+        // ----------------------------------------------------
+        window.openBulkAddModal = () => {
+            if (!window.doctorContext || !window.doctorContext.clinic_latitude || !window.doctorContext.clinic_longitude) {
+                if (window.showToast) window.showToast("MANDATORY REQUIREMENT: Please set your Clinic GPS Location first in Profile Settings before creating appointments!", "warning", 5000);
+                else alert("MANDATORY REQUIREMENT: Please set your Clinic GPS Location first in Profile Settings before creating appointments!");
+                window.location.hash = '#profile';
+                return;
+            }
+
+            const today = new Date().toISOString().split('T')[0];
+            const modalContainer = document.getElementById('modal-container');
+            const defaultFee = window.doctorContext?.fee || 500;
+            const targetDate = selectedApptDate || today;
+
+            modalContainer.innerHTML = `
+                <div class="modal-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 1rem;">
+                    <div class="modal-content" style="background: #ffffff; width: 100%; max-width: 860px; max-height: 90vh; overflow-y: auto; border-radius: 16px; padding: 1.5rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);">
+                        <!-- Modal Header -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+                            <div>
+                                <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin: 0; display: flex; align-items: center; gap: 8px;">
+                                    <i class='bx bx-group' style="color: var(--primary); font-size: 1.5rem;"></i> Bulk Add Patients & Appointments
+                                </h3>
+                                <p style="font-size: 0.825rem; color: var(--text-secondary); margin-top: 2px; margin-bottom: 0;">
+                                    Add multiple walk-in / offline patients for a specific date queue (without creating/syncing main app user profiles).
+                                </p>
+                            </div>
+                            <button class="btn btn-outline btn-sm" style="border-radius: 50%; width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 700;" onclick="document.getElementById('modal-container').innerHTML=''">✕</button>
+                        </div>
+
+                        <!-- Configuration Controls -->
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; margin-bottom: 1.25rem;">
+                            <div class="bulk-config-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem;">
+                                <div>
+                                    <label class="form-label" style="font-size: 0.8rem; font-weight: 700;">Appointment Date *</label>
+                                    <input type="date" id="bulk-appt-date" class="form-control" value="${targetDate}" style="height: 38px; font-size: 0.85rem;" onchange="window.recalcBulkTokens()" required>
+                                </div>
+                                <div>
+                                    <label class="form-label" style="font-size: 0.8rem; font-weight: 700;">First Patient Time *</label>
+                                    <input type="time" id="bulk-start-time" class="form-control" value="09:00" style="height: 38px; font-size: 0.85rem;" required>
+                                </div>
+                                <div>
+                                    <label class="form-label" style="font-size: 0.8rem; font-weight: 700;">Slot Interval (Mins) *</label>
+                                    <input type="number" id="bulk-interval-mins" class="form-control" value="15" min="1" max="60" style="height: 38px; font-size: 0.85rem;" required>
+                                </div>
+                                <div>
+                                    <label class="form-label" style="font-size: 0.8rem; font-weight: 700;">Default Fee (₹) *</label>
+                                    <input type="number" id="bulk-default-fee" class="form-control" value="${defaultFee}" style="height: 38px; font-size: 0.85rem;" required>
+                                </div>
+                            </div>
+                            <div style="margin-top: 0.75rem; display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #475569;">
+                                <input type="checkbox" id="bulk-local-only-chk" checked style="width: 16px; height: 16px; cursor: pointer;">
+                                <label for="bulk-local-only-chk" style="cursor: pointer; font-weight: 600; margin: 0; color: #1e293b;">
+                                    📌 Walk-in / Direct Queue Only (Do not create/sync main app user accounts)
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Mode Switcher Tabs -->
+                        <div class="bulk-tab-header" style="display: flex; gap: 0.5rem; border-bottom: 2px solid #e2e8f0; margin-bottom: 1rem;">
+                            <button class="btn btn-sm" id="tab-btn-table" style="font-weight: 700; border-bottom: 3px solid var(--primary); border-radius: 0; background: transparent; color: var(--primary); padding: 8px 16px;" onclick="window.switchBulkTab('table')">
+                                📝 Dynamic Rows Table
+                            </button>
+                            <button class="btn btn-sm" id="tab-btn-paste" style="font-weight: 600; border-bottom: 3px solid transparent; border-radius: 0; background: transparent; color: var(--text-secondary); padding: 8px 16px;" onclick="window.switchBulkTab('paste')">
+                                ⚡ Quick Multi-Line Paste / Import
+                            </button>
+                        </div>
+
+                        <!-- Tab 1: Dynamic Table Entry -->
+                        <div id="bulk-tab-table" style="display: block;">
+                            <div class="bulk-table-container" style="max-height: 280px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 0.75rem;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                                    <thead style="background: #f1f5f9; position: sticky; top: 0; z-index: 2;">
+                                        <tr style="text-align: left; color: #334155;">
+                                            <th style="padding: 8px 10px; width: 60px; text-align: center;">Token</th>
+                                            <th style="padding: 8px 10px;">Patient Name *</th>
+                                            <th style="padding: 8px 10px; width: 140px;">Phone Number</th>
+                                            <th style="padding: 8px 10px; width: 110px;">Age / Gender</th>
+                                            <th style="padding: 8px 10px; width: 100px;">Fee (₹)</th>
+                                            <th style="padding: 8px 10px; width: 50px; text-align: center;">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="bulk-rows-body">
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="bulk-row-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button class="btn btn-outline btn-sm" style="font-weight: 600;" onclick="window.addBulkRow()">+ Add Patient Row</button>
+                                    <button class="btn btn-outline btn-sm" style="font-weight: 600;" onclick="window.addBulkRows(5)">+ Add 5 Rows</button>
+                                </div>
+                                <button class="btn btn-outline btn-sm" style="color: var(--error); border-color: var(--error); font-weight: 600;" onclick="window.clearBulkRows()">🗑️ Clear Rows</button>
+                            </div>
+                        </div>
+
+                        <!-- Tab 2: Quick Multi-line Paste -->
+                        <div id="bulk-tab-paste" style="display: none; margin-bottom: 1rem;">
+                            <label class="form-label" style="font-size: 0.825rem; font-weight: 700; color: #1e293b;">Paste Patient List (One per line)</label>
+                            <p style="font-size: 0.775rem; color: var(--text-secondary); margin-top: 2px; margin-bottom: 6px;">
+                                Format per line: <code>Name, Phone, Age/Gender, Fee</code> or simply paste patient names list.
+                            </p>
+                            <textarea id="bulk-paste-input" class="form-control" rows="6" style="font-family: monospace; font-size: 0.825rem; border-radius: 10px;" placeholder="Rahul Sharma, 9876543210, 28/M&#10;Priya Verma, 9123456789, 32/F, 500&#10;Amit Kumar&#10;Suresh Patel, 9988776655, 45/M"></textarea>
+                            <button class="btn btn-secondary btn-sm" style="margin-top: 8px; font-weight: 700;" onclick="window.parseAndImportBulkPaste()">
+                                ⚡ Parse & Load into Table →
+                            </button>
+                        </div>
+
+                        <!-- Error Message -->
+                        <div id="bulk-add-error" style="color: var(--error); font-size: 0.85rem; margin-bottom: 0.75rem; display: none; background: #fef2f2; padding: 8px 12px; border-radius: 8px; border: 1px solid #fca5a5;"></div>
+
+                        <!-- Action Footer -->
+                        <div class="bulk-footer-actions" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                            <div id="bulk-summary-count" style="font-size: 0.85rem; font-weight: 700; color: var(--primary);">
+                                Total Patients: 0
+                            </div>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="btn btn-outline btn-sm" onclick="document.getElementById('modal-container').innerHTML=''">Cancel</button>
+                                <button class="btn btn-success btn-sm" id="btn-save-bulk-appts" style="font-weight: 700; padding: 8px 20px; background: #22c55e; border-color: #22c55e; color: #ffffff;" onclick="window.submitBulkPatients()">
+                                    🚀 Add All Patients to Queue →
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Initialize 3 empty rows by default
+            window.clearBulkRows();
+            window.addBulkRows(3);
+        };
+
+        window.switchBulkTab = (tabName) => {
+            const tabTable = document.getElementById('bulk-tab-table');
+            const tabPaste = document.getElementById('bulk-tab-paste');
+            const btnTable = document.getElementById('tab-btn-table');
+            const btnPaste = document.getElementById('tab-btn-paste');
+
+            if (tabName === 'paste') {
+                if (tabTable) tabTable.style.display = 'none';
+                if (tabPaste) tabPaste.style.display = 'block';
+                if (btnTable) { btnTable.style.borderBottomColor = 'transparent'; btnTable.style.color = 'var(--text-secondary)'; btnTable.style.fontWeight = '600'; }
+                if (btnPaste) { btnPaste.style.borderBottomColor = 'var(--primary)'; btnPaste.style.color = 'var(--primary)'; btnPaste.style.fontWeight = '700'; }
+            } else {
+                if (tabTable) tabTable.style.display = 'block';
+                if (tabPaste) tabPaste.style.display = 'none';
+                if (btnTable) { btnTable.style.borderBottomColor = 'var(--primary)'; btnTable.style.color = 'var(--primary)'; btnTable.style.fontWeight = '700'; }
+                if (btnPaste) { btnPaste.style.borderBottomColor = 'transparent'; btnPaste.style.color = 'var(--text-secondary)'; btnPaste.style.fontWeight = '600'; }
+            }
+        };
+
+        window.addBulkRow = (initialData = null) => {
+            const tbody = document.getElementById('bulk-rows-body');
+            if (!tbody) return;
+
+            const defaultFee = parseInt(document.getElementById('bulk-default-fee')?.value) || window.doctorContext?.fee || 500;
+            const apptDate = document.getElementById('bulk-appt-date')?.value || new Date().toISOString().split('T')[0];
+
+            // Calculate starting token number for preview
+            const dateAppts = (cachedAppointments || []).filter(a => a.appointment_date === apptDate);
+            let startToken = 1;
+            if (dateAppts.length > 0) {
+                const maxToken = Math.max(...dateAppts.map(a => parseInt(a.slot_number || a.token_number) || 0));
+                startToken = (maxToken > 0 ? maxToken : dateAppts.length) + 1;
+            }
+
+            const existingRows = tbody.querySelectorAll('tr').length;
+            const tokenNum = startToken + existingRows;
+            const tokenStr = `#${String(tokenNum).padStart(2, '0')}`;
+
+            const nameVal = initialData?.name || '';
+            const phoneVal = initialData?.phone || '';
+            const ageGenderVal = initialData?.agegender || '';
+            const feeVal = initialData?.fee || defaultFee;
+
+            const tr = document.createElement('tr');
+            tr.className = 'bulk-patient-row';
+            tr.style.borderBottom = '1px solid #f1f5f9';
+            tr.innerHTML = `
+                <td style="padding: 6px 10px; text-align: center;"><span class="badge badge-info bulk-token-badge">${tokenStr}</span></td>
+                <td style="padding: 6px 10px;"><input type="text" class="form-control bulk-p-name" style="height: 32px; font-size: 0.825rem;" value="${nameVal}" placeholder="e.g. Ramesh Kumar" oninput="window.updateBulkSummaryCount()"></td>
+                <td style="padding: 6px 10px;"><input type="text" class="form-control bulk-p-phone" style="height: 32px; font-size: 0.825rem;" value="${phoneVal}" placeholder="Phone (optional)"></td>
+                <td style="padding: 6px 10px;"><input type="text" class="form-control bulk-p-agegender" style="height: 32px; font-size: 0.825rem;" value="${ageGenderVal}" placeholder="e.g. 30/M"></td>
+                <td style="padding: 6px 10px;"><input type="number" class="form-control bulk-p-fee" style="height: 32px; font-size: 0.825rem;" value="${feeVal}"></td>
+                <td style="padding: 6px 10px; text-align: center;"><button type="button" class="btn btn-outline btn-sm" style="padding: 2px 6px; color: var(--error); font-weight: 700;" onclick="window.removeBulkRow(this)">✕</button></td>
+            `;
+            tbody.appendChild(tr);
+            window.updateBulkSummaryCount();
+        };
+
+        window.addBulkRows = (count = 5) => {
+            for (let i = 0; i < count; i++) {
+                window.addBulkRow();
+            }
+        };
+
+        window.removeBulkRow = (btn) => {
+            const tr = btn.closest('tr');
+            if (tr) {
+                tr.remove();
+                window.recalcBulkTokens();
+                window.updateBulkSummaryCount();
+            }
+        };
+
+        window.clearBulkRows = () => {
+            const tbody = document.getElementById('bulk-rows-body');
+            if (tbody) tbody.innerHTML = '';
+            window.updateBulkSummaryCount();
+        };
+
+        window.recalcBulkTokens = () => {
+            const tbody = document.getElementById('bulk-rows-body');
+            if (!tbody) return;
+
+            const apptDate = document.getElementById('bulk-appt-date')?.value || new Date().toISOString().split('T')[0];
+            const dateAppts = (cachedAppointments || []).filter(a => a.appointment_date === apptDate);
+            let startToken = 1;
+            if (dateAppts.length > 0) {
+                const maxToken = Math.max(...dateAppts.map(a => parseInt(a.slot_number || a.token_number) || 0));
+                startToken = (maxToken > 0 ? maxToken : dateAppts.length) + 1;
+            }
+
+            const rows = tbody.querySelectorAll('tr');
+            rows.forEach((tr, idx) => {
+                const badge = tr.querySelector('.bulk-token-badge');
+                if (badge) {
+                    badge.textContent = `#${String(startToken + idx).padStart(2, '0')}`;
+                }
+            });
+        };
+
+        window.updateBulkSummaryCount = () => {
+            const tbody = document.getElementById('bulk-rows-body');
+            const summary = document.getElementById('bulk-summary-count');
+            if (!tbody || !summary) return;
+
+            const names = Array.from(tbody.querySelectorAll('.bulk-p-name'))
+                .map(i => i.value.trim())
+                .filter(Boolean);
+
+            summary.textContent = `Total Patients: ${names.length}`;
+        };
+
+        window.parseAndImportBulkPaste = () => {
+            const pasteInput = document.getElementById('bulk-paste-input');
+            if (!pasteInput || !pasteInput.value.trim()) {
+                alert("Please paste patient list first.");
+                return;
+            }
+
+            const defaultFee = parseInt(document.getElementById('bulk-default-fee')?.value) || window.doctorContext?.fee || 500;
+            const lines = pasteInput.value.split('\n');
+            let addedCount = 0;
+
+            lines.forEach(line => {
+                const trimmed = line.trim();
+                if (!trimmed) return;
+
+                const parts = trimmed.split(/[,;\t]+/).map(p => p.trim());
+                if (parts.length > 0 && parts[0]) {
+                    const name = parts[0];
+                    let phone = '';
+                    let agegender = '';
+                    let fee = defaultFee;
+
+                    if (parts.length >= 2) {
+                        if (/^\+?\d{8,13}$/.test(parts[1])) phone = parts[1];
+                        else agegender = parts[1];
+                    }
+                    if (parts.length >= 3) {
+                        if (!phone && /^\+?\d{8,13}$/.test(parts[2])) phone = parts[2];
+                        else if (!agegender) agegender = parts[2];
+                    }
+                    if (parts.length >= 4) {
+                        const parsedFee = parseInt(parts[3]);
+                        if (!isNaN(parsedFee)) fee = parsedFee;
+                    }
+
+                    window.addBulkRow({ name, phone, agegender, fee });
+                    addedCount++;
+                }
+            });
+
+            window.switchBulkTab('table');
+            if (window.showToast) window.showToast(`⚡ Parsed and added ${addedCount} patients to table!`, "success", 2500);
+        };
+
+        window.submitBulkPatients = async () => {
+            const errDiv = document.getElementById('bulk-add-error');
+            const btnSave = document.getElementById('btn-save-bulk-appts');
+            if (errDiv) errDiv.style.display = 'none';
+
+            const apptDate = document.getElementById('bulk-appt-date').value;
+            const startTimeVal = document.getElementById('bulk-start-time').value || "09:00";
+            const intervalMins = parseInt(document.getElementById('bulk-interval-mins').value) || 15;
+            const defaultFee = parseInt(document.getElementById('bulk-default-fee').value) || 500;
+
+            const tbody = document.getElementById('bulk-rows-body');
+            if (!tbody) return;
+
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const patientItems = [];
+
+            rows.forEach(tr => {
+                const name = tr.querySelector('.bulk-p-name')?.value.trim();
+                const phone = tr.querySelector('.bulk-p-phone')?.value.trim() || 'N/A';
+                const agegender = tr.querySelector('.bulk-p-agegender')?.value.trim() || '';
+                const fee = parseInt(tr.querySelector('.bulk-p-fee')?.value) || defaultFee;
+
+                if (name) {
+                    let age = null;
+                    let gender = null;
+                    if (agegender) {
+                        const parts = agegender.split(/[\/\s,-]+/);
+                        if (parts.length >= 1 && /^\d+$/.test(parts[0])) age = parseInt(parts[0]);
+                        if (parts.length >= 2) gender = parts[1];
+                        else if (agegender.toUpperCase().includes('M')) gender = 'Male';
+                        else if (agegender.toUpperCase().includes('F')) gender = 'Female';
+                    }
+
+                    patientItems.push({ name, phone, age, gender, agegender, fee });
+                }
+            });
+
+            if (patientItems.length === 0) {
+                if (errDiv) {
+                    errDiv.textContent = '❌ Please enter at least 1 patient full name.';
+                    errDiv.style.display = 'block';
+                } else {
+                    alert("Please enter at least 1 patient full name.");
+                }
+                return;
+            }
+
+            let docId = window.doctorContext?.id;
+            let docName = window.doctorContext?.name || 'Doctor';
+            let docSpec = window.doctorContext?.specialization || 'General Physician';
+
+            if (!docId && typeof doctors !== 'undefined' && doctors.length > 0) {
+                docId = doctors[0].id;
+                docName = doctors[0].name || docName;
+                docSpec = doctors[0].specialization || docSpec;
+            }
+
+            if (!docId) {
+                if (errDiv) {
+                    errDiv.textContent = 'Doctor session not found. Please reload or log in.';
+                    errDiv.style.display = 'block';
+                }
+                return;
+            }
+
+            if (btnSave) {
+                btnSave.disabled = true;
+                btnSave.textContent = 'Saving Patients to Queue...';
+            }
+
+            try {
+                // Calculate starting token number for target date
+                let startToken = 1;
+                const dateAppts = (cachedAppointments || []).filter(a => a.appointment_date === apptDate);
+                if (dateAppts.length > 0) {
+                    const maxToken = Math.max(...dateAppts.map(a => parseInt(a.slot_number || a.token_number) || 0));
+                    startToken = (maxToken > 0 ? maxToken : dateAppts.length) + 1;
+                }
+
+                function addMinsToTimeStr(sTimeStr, addMins) {
+                    if (!sTimeStr) return "09:00:00";
+                    const parts = sTimeStr.split(':');
+                    let hrs = parseInt(parts[0]) || 9;
+                    let mins = parseInt(parts[1]) || 0;
+                    mins += addMins;
+                    while (mins >= 60) {
+                        mins -= 60;
+                        hrs = (hrs + 1) % 24;
+                    }
+                    const hh = String(hrs).padStart(2, '0');
+                    const mm = String(mins).padStart(2, '0');
+                    return `${hh}:${mm}:00`;
+                }
+
+                function calcEndTimeStr(sTimeStr, durMins = 15) {
+                    return addMinsToTimeStr(sTimeStr, durMins);
+                }
+
+                const bulkPayloads = [];
+                const insertedItems = [];
+
+                patientItems.forEach((item, idx) => {
+                    const tokenNum = startToken + idx;
+                    const startTimeFormatted = addMinsToTimeStr(startTimeVal, idx * intervalMins);
+                    const endTimeFormatted = calcEndTimeStr(startTimeFormatted, intervalMins);
+                    const timeSlot = startTimeFormatted.substring(0, 5);
+                    const apptId = crypto.randomUUID();
+
+                    const apptObj = {
+                        id: apptId,
+                        doctor_id: docId,
+                        patient_id: crypto.randomUUID(),
+                        doctor_name: docName,
+                        patient_name: item.name,
+                        patient_phone: item.phone,
+                        patient_age: item.age,
+                        patient_gender: item.gender,
+                        specialization: docSpec,
+                        appointment_date: apptDate,
+                        start_time: startTimeFormatted,
+                        end_time: endTimeFormatted,
+                        time_slot: timeSlot,
+                        token_number: tokenNum,
+                        slot_number: tokenNum,
+                        fee: item.fee,
+                        status: 'Confirmed',
+                        is_walkin: true,
+                        source: 'bulk_add'
+                    };
+
+                    bulkPayloads.push(apptObj);
+                    insertedItems.push(apptObj);
+                });
+
+                // Primary bulk insert into Supabase appointments table
+                let { error: insertErr } = await supabase.from('appointments').insert(bulkPayloads);
+
+                if (insertErr) {
+                    console.warn('Primary bulk insert warning, retrying core schema fields:', insertErr);
+                    // Core schema fallback
+                    const corePayloads = bulkPayloads.map(b => ({
+                        doctor_id: b.doctor_id,
+                        patient_name: b.patient_name,
+                        patient_phone: b.patient_phone,
+                        appointment_date: b.appointment_date,
+                        start_time: b.start_time,
+                        end_time: b.end_time,
+                        token_number: b.token_number,
+                        fee: b.fee,
+                        status: 'Confirmed'
+                    }));
+
+                    let { error: retryErr } = await supabase.from('appointments').insert(corePayloads);
+                    if (retryErr) {
+                        console.warn('Retry bulk insert note:', retryErr);
+                    }
+                }
+
+                // Immediately update local cachedAppointments memory state
+                if (!cachedAppointments) cachedAppointments = [];
+                insertedItems.forEach(item => cachedAppointments.push(item));
+
+                if (window.showToast) {
+                    window.showToast(`✅ Successfully added ${insertedItems.length} patients to queue for ${apptDate}!`, "success", 3500);
+                }
+
+                document.getElementById('modal-container').innerHTML = '';
+                await loadAppointmentsData();
+                if (window.location.hash.includes('dashboard')) initDashboard();
+
+            } catch (err) {
+                console.error("Submit bulk patients error:", err);
+                if (errDiv) {
+                    errDiv.textContent = '❌ Failed to add bulk patients: ' + err.message;
+                    errDiv.style.display = 'block';
+                } else {
+                    alert("Failed to add bulk patients: " + err.message);
+                }
+                if (btnSave) {
+                    btnSave.disabled = false;
+                    btnSave.textContent = '🚀 Add All Patients to Queue →';
+                }
+            }
+        };
+
+        window.toggleBulkMenu = (evt) => {
+            if (evt) {
+                evt.stopPropagation();
+                evt.preventDefault();
+            }
+
+            let bulkMenu = document.getElementById('bulk-actions-menu-dropdown');
+            if (bulkMenu) {
+                bulkMenu.remove();
+                return;
+            }
+
+            const btn = evt.currentTarget || evt.target;
+            const rect = btn.getBoundingClientRect();
+
+            bulkMenu = document.createElement('div');
+            bulkMenu.id = 'bulk-actions-menu-dropdown';
+            bulkMenu.className = 'dropdown-menu show';
+            bulkMenu.style.cssText = `
+                position: fixed;
+                top: ${rect.bottom + 6}px;
+                left: ${Math.max(10, rect.left - 120)}px;
+                z-index: 9999;
+                display: block;
+                min-width: 230px;
+                background: #ffffff;
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+                border-radius: 12px;
+                border: 1px solid var(--border);
+                padding: 6px;
+            `;
+            bulkMenu.innerHTML = `
+                <button class="dropdown-item" style="display:flex; align-items:center; gap:8px; font-weight:600; width:100%; text-align:left;" onclick="document.getElementById('bulk-actions-menu-dropdown')?.remove(); window.openBulkAddModal();">
+                    <i class='bx bx-user-plus' style="font-size:1.1rem; color:var(--primary);"></i> ➕ Bulk Add Patients
+                </button>
+                <button class="dropdown-item" style="display:flex; align-items:center; gap:8px; font-weight:600; width:100%; text-align:left;" onclick="document.getElementById('bulk-actions-menu-dropdown')?.remove(); window.bulkConfirmSelectedDateAppointments();">
+                    <i class='bx bx-check-circle' style="font-size:1.1rem; color:#16a34a;"></i> ✅ Bulk Confirm Queue
+                </button>
+                <button class="dropdown-item danger" style="display:flex; align-items:center; gap:8px; font-weight:600; color:var(--error); width:100%; text-align:left;" onclick="document.getElementById('bulk-actions-menu-dropdown')?.remove(); window.bulkCancelSelectedDateAppointments();">
+                    <i class='bx bx-x-circle' style="font-size:1.1rem; color:var(--error);"></i> ❌ Bulk Cancel Queue
+                </button>
+            `;
+            document.body.appendChild(bulkMenu);
+
+            const closeHandler = (e) => {
+                if (bulkMenu && !bulkMenu.contains(e.target) && e.target !== btn) {
+                    bulkMenu.remove();
+                    document.removeEventListener('click', closeHandler);
+                }
+            };
+            setTimeout(() => document.addEventListener('click', closeHandler), 10);
         };
 
         // ----------------------------------------------------
@@ -6322,6 +7002,16 @@
         async function initSlots() {
             if (!window.doctorContext) return;
 
+            // Refresh doctorContext from DB to ensure GPS location & fees are always up-to-date in real time
+            try {
+                const { data: freshDoc } = await supabase
+                    .from('doctors')
+                    .select('*')
+                    .eq('id', window.doctorContext.id)
+                    .maybeSingle();
+                if (freshDoc) window.doctorContext = freshDoc;
+            } catch (ignored) {}
+
             const doc = window.doctorContext;
             if (doc.morning_start && document.getElementById('slot-morning-start')) document.getElementById('slot-morning-start').value = doc.morning_start.substring(0, 5);
             if (doc.morning_end && document.getElementById('slot-morning-end')) document.getElementById('slot-morning-end').value = doc.morning_end.substring(0, 5);
@@ -6526,6 +7216,18 @@
         async function handleGenerateSlots(e) {
             e.preventDefault();
             if (!window.doctorContext) return;
+
+            // If GPS location is missing in memory, re-fetch doctor context from DB first
+            if (!window.doctorContext.clinic_latitude || !window.doctorContext.clinic_longitude) {
+                try {
+                    const { data: freshDoc } = await supabase
+                        .from('doctors')
+                        .select('*')
+                        .eq('id', window.doctorContext.id)
+                        .maybeSingle();
+                    if (freshDoc) window.doctorContext = freshDoc;
+                } catch (ignored) {}
+            }
 
             if (!window.doctorContext.clinic_latitude || !window.doctorContext.clinic_longitude) {
                 if (window.showToast) window.showToast("MANDATORY REQUIREMENT: Please set your Clinic GPS Location first in Profile Settings before generating appointment slots!", "warning", 5000);
@@ -7193,6 +7895,17 @@
         // ----------------------------------------------------
         async function initProfile() {
             if (!window.doctorContext) return;
+
+            // Refresh doctorContext from DB when entering Profile tab to ensure latest fields & GPS
+            try {
+                const { data: freshDoc } = await supabase
+                    .from('doctors')
+                    .select('*')
+                    .eq('id', window.doctorContext.id)
+                    .maybeSingle();
+                if (freshDoc) window.doctorContext = freshDoc;
+            } catch (ignored) {}
+
             const doc = window.doctorContext;
 
             document.getElementById('prof-name').value = doc.name || '';
@@ -7303,6 +8016,9 @@
                     window.doctorContext.qualification = qualification;
                     window.doctorContext.clinic_name = clinic;
                     window.doctorContext.location = location;
+                    window.doctorContext.state = location;
+                    window.doctorContext.clinic_latitude = latVal;
+                    window.doctorContext.clinic_longitude = lngVal;
                     window.doctorContext.fee = fee;
                     window.doctorContext.followup_fee = followupFee;
                     window.doctorContext.morning_start = morningStart;
@@ -7313,10 +8029,12 @@
                     window.doctorContext.clinic_photos = clinicPhotos;
                     window.doctorContext.about = about;
 
+                    await checkSession();
+
                     document.getElementById('header-doctor-name').textContent = name;
 
                     msg.style.color = 'var(--success)';
-                    msg.textContent = 'Profile updated successfully!';
+                    msg.textContent = 'Profile & Clinic GPS Location updated successfully!';
                     msg.style.display = 'block';
 
                 } catch (err) {

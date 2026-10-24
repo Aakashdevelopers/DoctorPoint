@@ -851,7 +851,7 @@
                 android:orientation="vertical"
                 android:visibility="gone">
 
-                <!-- About Doctor Card -->
+                <!-- 1. About Doctor Card -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -869,42 +869,109 @@
                         android:orientation="vertical"
                         android:padding="18dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
-                            android:text="About Doctor"
-                            android:textColor="@color/text_primary"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
+                        <!-- Card Header -->
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
 
-                        <TextView
-                            android:id="@+id/tv_about_desc"
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentStart="true"
+                                android:layout_centerVertical="true"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <FrameLayout
+                                    android:layout_width="38dp"
+                                    android:layout_height="38dp"
+                                    android:background="@drawable/bg_icon_blue">
+
+                                    <ImageView
+                                        android:layout_width="20dp"
+                                        android:layout_height="20dp"
+                                        android:layout_gravity="center"
+                                        android:contentDescription="@string/app_name"
+                                        android:src="@drawable/ic_user"
+                                        app:tint="@color/primary" />
+                                </FrameLayout>
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="12dp"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="About Doctor"
+                                    android:textColor="@color/text_primary"
+                                    android:textSize="16sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <!-- Verified Badge Pill -->
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:layout_centerVertical="true"
+                                android:background="@drawable/bg_badge_verified"
+                                android:gravity="center_vertical"
+                                android:paddingHorizontal="10dp"
+                                android:paddingVertical="5dp">
+
+                                <ImageView
+                                    android:layout_width="14dp"
+                                    android:layout_height="14dp"
+                                    android:contentDescription="@string/app_name"
+                                    android:src="@drawable/ic_verified" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="4dp"
+                                    android:text="Verified"
+                                    android:textColor="@color/success_green"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+                        </RelativeLayout>
+
+                        <!-- Soft Container for Description -->
+                        <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:lineSpacingExtra="4dp"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="13sp"
-                            tools:text="Dr. Priya Sharma is a renowned Dermatologist with over 12 years of experience in skin care, laser treatments, and anti-aging therapies." />
+                            android:layout_marginTop="14dp"
+                            android:background="@drawable/bg_card_container_blue"
+                            android:orientation="vertical"
+                            android:padding="14dp">
 
-                        <TextView
-                            android:id="@+id/tv_read_more"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:paddingVertical="2dp"
-                            android:text="Read More"
-                            android:textColor="@color/secondary"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
+                            <TextView
+                                android:id="@+id/tv_about_desc"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:lineSpacingExtra="4dp"
+                                android:textColor="@color/text_primary"
+                                android:textSize="13sp"
+                                tools:text="Dr. Priya Sharma is a renowned Dermatologist with over 12 years of experience in skin care, laser treatments, and anti-aging therapies." />
+
+                            <TextView
+                                android:id="@+id/tv_read_more"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:paddingVertical="2dp"
+                                android:text="Read More"
+                                android:textColor="@color/secondary"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Doctor Details & Credentials Overview Card -->
+                <!-- 2. Doctor Details & Credentials Overview Card -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -922,35 +989,59 @@
                         android:orientation="vertical"
                         android:padding="18dp">
 
-                        <TextView
+                        <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
-                            android:text="Doctor Profile Overview"
-                            android:textColor="@color/text_primary"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-
-                        <!-- Specialization -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="14dp"
                             android:gravity="center_vertical"
                             android:orientation="horizontal">
 
                             <FrameLayout
-                                android:layout_width="36dp"
-                                android:layout_height="36dp"
-                                android:background="@drawable/bg_squircle_icon">
+                                android:layout_width="38dp"
+                                android:layout_height="38dp"
+                                android:background="@drawable/bg_icon_purple">
 
                                 <ImageView
-                                    android:layout_width="18dp"
-                                    android:layout_height="18dp"
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:layout_gravity="center"
+                                    android:contentDescription="@string/app_name"
+                                    android:src="@drawable/ic_terms"
+                                    app:tint="#8B5CF6" />
+                            </FrameLayout>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="Professional Overview"
+                                android:textColor="@color/text_primary"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <!-- Specialization Container -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="14dp"
+                            android:background="@drawable/bg_card_container_light"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:padding="12dp">
+
+                            <FrameLayout
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:background="@drawable/bg_icon_blue">
+
+                                <ImageView
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
                                     android:layout_gravity="center"
                                     android:contentDescription="@string/app_name"
                                     android:src="@drawable/ic_stethoscope"
-                                    app:tint="@color/primary" />
+                                    app:tint="@color/secondary" />
                             </FrameLayout>
 
                             <LinearLayout
@@ -963,7 +1054,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Specialization"
+                                    android:text="Specialization &amp; Expertise"
                                     android:textColor="@color/text_secondary"
                                     android:textSize="11sp" />
 
@@ -971,6 +1062,7 @@
                                     android:id="@+id/tv_about_specialization"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
                                     android:fontFamily="sans-serif-medium"
                                     android:textColor="@color/text_primary"
                                     android:textSize="13sp"
@@ -979,26 +1071,28 @@
                             </LinearLayout>
                         </LinearLayout>
 
-                        <!-- Qualification -->
+                        <!-- Qualification Container -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_card_container_light"
                             android:gravity="center_vertical"
-                            android:orientation="horizontal">
+                            android:orientation="horizontal"
+                            android:padding="12dp">
 
                             <FrameLayout
-                                android:layout_width="36dp"
-                                android:layout_height="36dp"
-                                android:background="@drawable/bg_squircle_icon">
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:background="@drawable/bg_icon_purple">
 
                                 <ImageView
-                                    android:layout_width="18dp"
-                                    android:layout_height="18dp"
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
                                     android:layout_gravity="center"
                                     android:contentDescription="@string/app_name"
                                     android:src="@drawable/ic_terms"
-                                    app:tint="@color/primary" />
+                                    app:tint="#8B5CF6" />
                             </FrameLayout>
 
                             <LinearLayout
@@ -1019,6 +1113,7 @@
                                     android:id="@+id/tv_about_qualification"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
                                     android:fontFamily="sans-serif-medium"
                                     android:textColor="@color/text_primary"
                                     android:textSize="13sp"
@@ -1027,7 +1122,7 @@
                             </LinearLayout>
                         </LinearLayout>
 
-                        <!-- Experience & Gender Row -->
+                        <!-- Experience & Gender Dual Grid Row -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -1035,18 +1130,21 @@
                             android:baselineAligned="false"
                             android:orientation="horizontal">
 
-                            <!-- Experience -->
+                            <!-- Experience Column -->
                             <LinearLayout
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
+                                android:layout_marginEnd="5dp"
                                 android:layout_weight="1"
+                                android:background="@drawable/bg_card_container_light"
                                 android:gravity="center_vertical"
-                                android:orientation="horizontal">
+                                android:orientation="horizontal"
+                                android:padding="12dp">
 
                                 <FrameLayout
                                     android:layout_width="36dp"
                                     android:layout_height="36dp"
-                                    android:background="@drawable/bg_squircle_icon">
+                                    android:background="@drawable/bg_icon_orange">
 
                                     <ImageView
                                         android:layout_width="18dp"
@@ -1054,13 +1152,14 @@
                                         android:layout_gravity="center"
                                         android:contentDescription="@string/app_name"
                                         android:src="@drawable/ic_clock"
-                                        app:tint="@color/primary" />
+                                        app:tint="#F97316" />
                                 </FrameLayout>
 
                                 <LinearLayout
-                                    android:layout_width="wrap_content"
+                                    android:layout_width="0dp"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginStart="12dp"
+                                    android:layout_marginStart="10dp"
+                                    android:layout_weight="1"
                                     android:orientation="vertical">
 
                                     <TextView
@@ -1074,26 +1173,30 @@
                                         android:id="@+id/tv_about_experience"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
                                         android:fontFamily="sans-serif-medium"
                                         android:textColor="@color/text_primary"
-                                        android:textSize="13sp"
+                                        android:textSize="12sp"
                                         android:textStyle="bold"
                                         tools:text="12 Years" />
                                 </LinearLayout>
                             </LinearLayout>
 
-                            <!-- Gender -->
+                            <!-- Gender Column -->
                             <LinearLayout
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
+                                android:layout_marginStart="5dp"
                                 android:layout_weight="1"
+                                android:background="@drawable/bg_card_container_light"
                                 android:gravity="center_vertical"
-                                android:orientation="horizontal">
+                                android:orientation="horizontal"
+                                android:padding="12dp">
 
                                 <FrameLayout
                                     android:layout_width="36dp"
                                     android:layout_height="36dp"
-                                    android:background="@drawable/bg_squircle_icon">
+                                    android:background="@drawable/bg_icon_indigo">
 
                                     <ImageView
                                         android:layout_width="18dp"
@@ -1101,13 +1204,14 @@
                                         android:layout_gravity="center"
                                         android:contentDescription="@string/app_name"
                                         android:src="@drawable/ic_profile"
-                                        app:tint="@color/secondary" />
+                                        app:tint="#6366F1" />
                                 </FrameLayout>
 
                                 <LinearLayout
-                                    android:layout_width="wrap_content"
+                                    android:layout_width="0dp"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginStart="12dp"
+                                    android:layout_marginStart="10dp"
+                                    android:layout_weight="1"
                                     android:orientation="vertical">
 
                                     <TextView
@@ -1121,9 +1225,10 @@
                                         android:id="@+id/tv_about_gender"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
                                         android:fontFamily="sans-serif-medium"
                                         android:textColor="@color/text_primary"
-                                        android:textSize="13sp"
+                                        android:textSize="12sp"
                                         android:textStyle="bold"
                                         tools:text="Female Doctor" />
                                 </LinearLayout>
@@ -1131,39 +1236,41 @@
 
                         </LinearLayout>
 
-
-
-                        <!-- Verified Status Row -->
+                        <!-- Verified Registration Container -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_card_container_light"
                             android:gravity="center_vertical"
-                            android:orientation="horizontal">
+                            android:orientation="horizontal"
+                            android:padding="12dp">
 
                             <FrameLayout
-                                android:layout_width="36dp"
-                                android:layout_height="36dp"
-                                android:background="@drawable/bg_squircle_icon">
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:background="@drawable/bg_icon_green">
 
                                 <ImageView
-                                    android:layout_width="18dp"
-                                    android:layout_height="18dp"
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
                                     android:layout_gravity="center"
                                     android:contentDescription="@string/app_name"
-                                    android:src="@drawable/ic_verified" />
+                                    android:src="@drawable/ic_verified"
+                                    app:tint="@color/success_green" />
                             </FrameLayout>
 
                             <LinearLayout
-                                android:layout_width="wrap_content"
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="12dp"
+                                android:layout_weight="1"
                                 android:orientation="vertical">
 
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Status"
+                                    android:text="Medical Registration &amp; Status"
                                     android:textColor="@color/text_secondary"
                                     android:textSize="11sp" />
 
@@ -1171,6 +1278,7 @@
                                     android:id="@+id/tv_about_verified"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
                                     android:fontFamily="sans-serif-medium"
                                     android:textColor="@color/text_primary"
                                     android:textSize="13sp"
@@ -1182,12 +1290,16 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Clinic Details Card -->
+                <!-- 3. Clinic Details Card -->
                 <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_clinic_details"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginHorizontal="16dp"
                     android:layout_marginTop="12dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
                     app:cardBackgroundColor="@color/surface_white"
                     app:cardCornerRadius="20dp"
                     app:cardElevation="2dp"
@@ -1197,24 +1309,99 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical">
-
-
+                        android:orientation="vertical"
+                        android:padding="18dp">
 
                         <LinearLayout
-                            android:layout_width="match_parent"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="18dp">
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <FrameLayout
+                                android:layout_width="38dp"
+                                android:layout_height="38dp"
+                                android:background="@drawable/bg_icon_teal">
+
+                                <ImageView
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:layout_gravity="center"
+                                    android:contentDescription="@string/app_name"
+                                    android:src="@drawable/ic_location"
+                                    app:tint="#0D9488" />
+                            </FrameLayout>
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
                                 android:fontFamily="sans-serif-medium"
-                                android:text="Clinic Details"
+                                android:text="Clinic &amp; Practice Location"
                                 android:textColor="@color/text_primary"
                                 android:textSize="16sp"
                                 android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="14dp"
+                            android:background="@drawable/bg_card_container_light"
+                            android:orientation="vertical"
+                            android:padding="14dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:layout_width="22dp"
+                                    android:layout_height="22dp"
+                                    android:contentDescription="@string/app_name"
+                                    android:src="@drawable/ic_hospital_building"
+                                    app:tint="@color/primary" />
+
+                                <TextView
+                                    android:id="@+id/tv_clinic_name"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="10dp"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:textColor="@color/text_primary"
+                                    android:textSize="15sp"
+                                    android:textStyle="bold"
+                                    tools:text="Skin Care &amp; Laser Clinic" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:gravity="top"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:layout_width="16dp"
+                                    android:layout_height="16dp"
+                                    android:layout_marginTop="2dp"
+                                    android:contentDescription="@string/app_name"
+                                    android:src="@drawable/ic_location"
+                                    app:tint="@color/text_secondary" />
+
+                                <TextView
+                                    android:id="@+id/tv_clinic_address"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:layout_weight="1"
+                                    android:lineSpacingExtra="2dp"
+                                    android:textColor="@color/text_secondary"
+                                    android:textSize="12sp"
+                                    tools:text="#42, 100 Feet Road, Indiranagar, Bangalore - 560038" />
+                            </LinearLayout>
 
                             <LinearLayout
                                 android:layout_width="match_parent"
@@ -1223,64 +1410,53 @@
                                 android:gravity="center_vertical"
                                 android:orientation="horizontal">
 
-                                <FrameLayout
-                                    android:layout_width="42dp"
-                                    android:layout_height="42dp"
-                                    android:background="@drawable/bg_squircle_icon">
-
-                                    <ImageView
-                                        android:layout_width="20dp"
-                                        android:layout_height="20dp"
-                                        android:layout_gravity="center"
-                                        android:contentDescription="@string/app_name"
-                                        android:src="@drawable/ic_location"
-                                        app:tint="@color/primary" />
-                                </FrameLayout>
-
                                 <LinearLayout
-                                    android:layout_width="0dp"
+                                    android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginStart="14dp"
-                                    android:layout_weight="1"
-                                    android:orientation="vertical">
-
-                                    <TextView
-                                        android:id="@+id/tv_clinic_name"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:fontFamily="sans-serif-medium"
-                                        android:textColor="@color/text_primary"
-                                        android:textSize="15sp"
-                                        android:textStyle="bold"
-                                        tools:text="Skin Care &amp; Laser Clinic" />
-
-                                    <TextView
-                                        android:id="@+id/tv_clinic_address"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:layout_marginTop="2dp"
-                                        android:textColor="@color/text_secondary"
-                                        android:textSize="12sp"
-                                        tools:text="#42, 100 Feet Road, Indiranagar, Bangalore - 560038" />
+                                    android:background="@drawable/bg_location_pill"
+                                    android:gravity="center_vertical"
+                                    android:paddingHorizontal="10dp"
+                                    android:paddingVertical="4dp">
 
                                     <TextView
                                         android:id="@+id/tv_clinic_state"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:layout_marginTop="1dp"
                                         android:textColor="@color/secondary"
                                         android:textSize="11sp"
                                         android:textStyle="bold"
                                         tools:text="Karnataka" />
                                 </LinearLayout>
+
+                                <View
+                                    android:layout_width="0dp"
+                                    android:layout_height="0dp"
+                                    android:layout_weight="1" />
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btn_clinic_directions"
+                                    style="@style/Widget.Material3.Button.TextButton"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="36dp"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:paddingHorizontal="8dp"
+                                    android:paddingVertical="0dp"
+                                    android:text="Get Directions ➔"
+                                    android:textColor="@color/secondary"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold"
+                                    app:icon="@drawable/ic_directions"
+                                    app:iconGravity="textStart"
+                                    app:iconPadding="4dp"
+                                    app:iconSize="16dp"
+                                    app:iconTint="@color/secondary" />
                             </LinearLayout>
-
-
                         </LinearLayout>
+
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Clinic Photos Card -->
+                <!-- 4. Clinic Photos Card -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_clinic_photos"
                     android:layout_width="match_parent"
@@ -1299,25 +1475,47 @@
                         android:orientation="vertical"
                         android:padding="18dp">
 
-                        <TextView
+                        <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
-                            android:text="Clinic Photos &amp; Infrastructure"
-                            android:textColor="@color/text_primary"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <FrameLayout
+                                android:layout_width="38dp"
+                                android:layout_height="38dp"
+                                android:background="@drawable/bg_icon_indigo">
+
+                                <ImageView
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:layout_gravity="center"
+                                    android:contentDescription="@string/app_name"
+                                    android:src="@drawable/ic_camera"
+                                    app:tint="#6366F1" />
+                            </FrameLayout>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="Clinic Infrastructure &amp; Facilities"
+                                android:textColor="@color/text_primary"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
 
                         <androidx.recyclerview.widget.RecyclerView
                             android:id="@+id/rv_clinic_photos"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
+                            android:layout_marginTop="12dp"
                             android:clipToPadding="false" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Contact Information Card -->
+                <!-- 5. Contact Information Card -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_contact_info"
                     android:layout_width="match_parent"
@@ -1336,27 +1534,51 @@
                         android:orientation="vertical"
                         android:padding="18dp">
 
-                        <TextView
+                        <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
-                            android:text="Contact Information"
-                            android:textColor="@color/text_primary"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-
-                        <!-- Doctor Direct Phone Row -->
-                        <LinearLayout
-                            android:id="@+id/ll_doctor_phone"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="12dp"
                             android:gravity="center_vertical"
                             android:orientation="horizontal">
 
                             <FrameLayout
-                                android:layout_width="42dp"
-                                android:layout_height="42dp"
+                                android:layout_width="38dp"
+                                android:layout_height="38dp"
+                                android:background="@drawable/bg_icon_blue">
+
+                                <ImageView
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:layout_gravity="center"
+                                    android:contentDescription="@string/app_name"
+                                    android:src="@drawable/ic_phone"
+                                    app:tint="@color/primary" />
+                            </FrameLayout>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="Direct Contact &amp; Assistance"
+                                android:textColor="@color/text_primary"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <!-- Doctor Direct Phone Container -->
+                        <LinearLayout
+                            android:id="@+id/ll_doctor_phone"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="14dp"
+                            android:background="@drawable/bg_card_container_blue"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:padding="12dp">
+
+                            <FrameLayout
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
                                 android:background="@drawable/bg_squircle_icon">
 
                                 <ImageView
@@ -1371,14 +1593,14 @@
                             <LinearLayout
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:layout_marginStart="14dp"
+                                android:layout_marginStart="12dp"
                                 android:layout_weight="1"
                                 android:orientation="vertical">
 
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Doctor Direct Phone"
+                                    android:text="Doctor Direct Line"
                                     android:textColor="@color/text_secondary"
                                     android:textSize="11sp" />
 
@@ -1386,7 +1608,7 @@
                                     android:id="@+id/tv_doctor_phone"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginTop="1dp"
+                                    android:layout_marginTop="2dp"
                                     android:fontFamily="sans-serif-medium"
                                     android:textColor="@color/text_primary"
                                     android:textSize="14sp"
@@ -1396,18 +1618,22 @@
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btn_call_doctor"
-                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                style="@style/Widget.Material3.Button"
                                 android:layout_width="wrap_content"
-                                android:layout_height="36dp"
+                                android:layout_height="38dp"
+                                android:backgroundTint="@color/primary"
                                 android:fontFamily="sans-serif-medium"
-                                android:paddingHorizontal="12dp"
+                                android:paddingHorizontal="14dp"
                                 android:paddingVertical="0dp"
                                 android:text="Call"
-                                android:textColor="@color/primary"
+                                android:textColor="@color/white"
                                 android:textSize="12sp"
-                                app:cornerRadius="8dp"
-                                app:strokeColor="@color/primary"
-                                app:strokeWidth="1dp" />
+                                app:cornerRadius="10dp"
+                                app:icon="@drawable/ic_phone"
+                                app:iconGravity="textStart"
+                                app:iconPadding="4dp"
+                                app:iconSize="14dp"
+                                app:iconTint="@color/white" />
                         </LinearLayout>
 
                         <View
@@ -1417,18 +1643,20 @@
                             android:layout_marginVertical="10dp"
                             android:background="@color/divider" />
 
-                        <!-- Reception Phone Row -->
+                        <!-- Reception Phone Container -->
                         <LinearLayout
                             android:id="@+id/ll_reception_phone"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:background="@drawable/bg_card_container_light"
                             android:gravity="center_vertical"
-                            android:orientation="horizontal">
+                            android:orientation="horizontal"
+                            android:padding="12dp">
 
                             <FrameLayout
-                                android:layout_width="42dp"
-                                android:layout_height="42dp"
-                                android:background="@drawable/bg_squircle_icon">
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:background="@drawable/bg_icon_teal">
 
                                 <ImageView
                                     android:layout_width="20dp"
@@ -1436,20 +1664,20 @@
                                     android:layout_gravity="center"
                                     android:contentDescription="@string/app_name"
                                     android:src="@drawable/ic_phone"
-                                    app:tint="@color/secondary" />
+                                    app:tint="#0D9488" />
                             </FrameLayout>
 
                             <LinearLayout
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:layout_marginStart="14dp"
+                                android:layout_marginStart="12dp"
                                 android:layout_weight="1"
                                 android:orientation="vertical">
 
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Clinic Reception Phone"
+                                    android:text="Clinic Reception Desk"
                                     android:textColor="@color/text_secondary"
                                     android:textSize="11sp" />
 
@@ -1457,7 +1685,7 @@
                                     android:id="@+id/tv_reception_phone"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginTop="1dp"
+                                    android:layout_marginTop="2dp"
                                     android:fontFamily="sans-serif-medium"
                                     android:textColor="@color/text_primary"
                                     android:textSize="14sp"
@@ -1469,14 +1697,19 @@
                                 android:id="@+id/btn_call_reception"
                                 style="@style/Widget.Material3.Button.OutlinedButton"
                                 android:layout_width="wrap_content"
-                                android:layout_height="36dp"
+                                android:layout_height="38dp"
                                 android:fontFamily="sans-serif-medium"
-                                android:paddingHorizontal="12dp"
+                                android:paddingHorizontal="14dp"
                                 android:paddingVertical="0dp"
                                 android:text="Call"
                                 android:textColor="@color/secondary"
                                 android:textSize="12sp"
-                                app:cornerRadius="8dp"
+                                app:cornerRadius="10dp"
+                                app:icon="@drawable/ic_phone"
+                                app:iconGravity="textStart"
+                                app:iconPadding="4dp"
+                                app:iconSize="14dp"
+                                app:iconTint="@color/secondary"
                                 app:strokeColor="@color/secondary"
                                 app:strokeWidth="1dp" />
                         </LinearLayout>

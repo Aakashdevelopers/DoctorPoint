@@ -509,32 +509,120 @@ public class DummyDataProvider {
                                 if (slot != null && slot.getDoctorId() != null && slot.getSlotDate() != null) {
                                     String cleanDate = AvailabilityHelper.cleanDateString(slot.getSlotDate());
                                     if (todayDate.equals(cleanDate) && AvailabilityHelper.isSlotValidAndBookable(slot)) {
-                                        activeTodayDoctorIds.add(slot.getDoctorId());
+                                        activeTodayDoctorIds.add(slot.getDoctorId().trim());
                                     }
                                 }
                             }
                         }
-                        for (Doctor d : fetchedDocs) {
-                            d.setAvailableToday(activeTodayDoctorIds.contains(d.getId()));
-                        }
-                        synchronized (DummyDataProvider.class) {
-                            doctors = new ArrayList<>(fetchedDocs);
-                            cachedDoctors = new ArrayList<>(fetchedDocs);
-                            doctorsCacheTimestamp = System.currentTimeMillis();
-                        }
-                        if (callback != null) callback.onDoctorsLoaded(getDoctors());
+
+                        // Also query doctor_schedules table to include doctors who configured schedules for today
+                        SupabaseClient.getSlotService().getAllDoctorSchedules()
+                                .enqueue(new Callback<List<DoctorSlot>>() {
+                                    @Override
+                                    public void onResponse(Call<List<DoctorSlot>> c2, Response<List<DoctorSlot>> r2) {
+                                        if (r2.isSuccessful() && r2.body() != null) {
+                                            for (DoctorSlot sched : r2.body()) {
+                                                if (sched != null && sched.getDoctorId() != null && sched.getSlotDate() != null) {
+                                                    String cleanDate = AvailabilityHelper.cleanDateString(sched.getSlotDate());
+                                                    if (todayDate.equals(cleanDate)) {
+                                                        List<DoctorSlot> expanded = expandScheduleToSlots(sched, todayDate);
+                                                        for (DoctorSlot es : expanded) {
+                                                            if (AvailabilityHelper.isSlotValidAndBookable(es)) {
+                                                                activeTodayDoctorIds.add(sched.getDoctorId().trim());
+                                                                break;
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        updateDoctorAvailabilityAndFinish(fetchedDocs, activeTodayDoctorIds, callback);
+                                    }
+
+                                    @Override
+                                    public void onFailure(Call<List<DoctorSlot>> c2, Throwable t2) {
+                                        updateDoctorAvailabilityAndFinish(fetchedDocs, activeTodayDoctorIds, callback);
+                                    }
+                                });
                     }
 
                     @Override
                     public void onFailure(Call<List<DoctorSlot>> c, Throwable t) {
-                        synchronized (DummyDataProvider.class) {
-                            doctors = new ArrayList<>(fetchedDocs);
-                            cachedDoctors = new ArrayList<>(fetchedDocs);
-                            doctorsCacheTimestamp = System.currentTimeMillis();
-                        }
-                        if (callback != null) callback.onDoctorsLoaded(getDoctors());
+                        updateDoctorAvailabilityAndFinish(fetchedDocs, new HashSet<>(), callback);
                     }
                 });
+    }
+
+    private static List<DoctorSlot> expandScheduleToSlots(DoctorSlot sched, String todayDate) {
+        List<DoctorSlot> slots = new ArrayList<>();
+        if (sched == null) return slots;
+        if (sched.getStartTime() != null && !sched.getStartTime().trim().isEmpty()) {
+            slots.add(sched);
+            return slots;
+        }
+
+        String mStart = sched.getMorningStart() != null ? sched.getMorningStart() : "09:00:00";
+        String mEnd = sched.getMorningEnd() != null ? sched.getMorningEnd() : "13:00:00";
+        String eStart = sched.getEveningStart() != null ? sched.getEveningStart() : "17:00:00";
+        String eEnd = sched.getEveningEnd() != null ? sched.getEveningEnd() : "20:00:00";
+        int consultMins = sched.getSlotDuration() > 0 ? sched.getSlotDuration() : (sched.getConsultDuration() > 0 ? sched.getConsultDuration() : 20);
+
+        slots.addAll(generateSlotsForRange(sched, todayDate, mStart, mEnd, consultMins));
+        slots.addAll(generateSlotsForRange(sched, todayDate, eStart, eEnd, consultMins));
+        return slots;
+    }
+
+    private static List<DoctorSlot> generateSlotsForRange(DoctorSlot sched, String todayDate, String startStr, String endStr, int consultMins) {
+        List<DoctorSlot> slots = new ArrayList<>();
+        if (startStr == null || endStr == null) return slots;
+        try {
+            int startMins = parseTimeToMinutes(startStr);
+            int endMins = parseTimeToMinutes(endStr);
+            if (startMins >= endMins) return slots;
+
+            int curr = startMins;
+            int count = 0;
+            while (curr + consultMins <= endMins) {
+                String startTime = String.format(Locale.US, "%02d:%02d:00", curr / 60, curr % 60);
+                String endTime = String.format(Locale.US, "%02d:%02d:00", (curr + consultMins) / 60, (curr + consultMins) % 60);
+                DoctorSlot slot = new DoctorSlot(
+                        "sched_" + todayDate + "_" + count++,
+                        sched.getDoctorId(),
+                        sched.getClinicId(),
+                        todayDate,
+                        startTime,
+                        endTime,
+                        "available"
+                );
+                slots.add(slot);
+                curr += consultMins;
+            }
+        } catch (Exception ignored) {}
+        return slots;
+    }
+
+    private static int parseTimeToMinutes(String timeStr) {
+        if (timeStr == null) return 0;
+        String clean = timeStr.trim();
+        if (clean.contains("T")) clean = clean.substring(clean.indexOf("T") + 1);
+        String[] parts = clean.split(":");
+        int h = Integer.parseInt(parts[0].trim());
+        int m = parts.length > 1 ? Integer.parseInt(parts[1].trim()) : 0;
+        return h * 60 + m;
+    }
+
+    private static void updateDoctorAvailabilityAndFinish(List<Doctor> fetchedDocs, Set<String> activeTodayDoctorIds, DoctorsCallback callback) {
+        for (Doctor d : fetchedDocs) {
+            if (d != null && d.getId() != null) {
+                d.setAvailableToday(activeTodayDoctorIds.contains(d.getId().trim()));
+            }
+        }
+        synchronized (DummyDataProvider.class) {
+            doctors = new ArrayList<>(fetchedDocs);
+            cachedDoctors = new ArrayList<>(fetchedDocs);
+            doctorsCacheTimestamp = System.currentTimeMillis();
+        }
+        if (callback != null) callback.onDoctorsLoaded(getDoctors());
     }
 
     public static void recalculateAndUpdateDoctorRating(String doctorId) {
@@ -774,6 +862,11 @@ public class DummyDataProvider {
         String docState = doctor.getState();
         String docLocation = doctor.getLocation();
 
+        // If doctor has no state/location assigned or if location is an email address, keep visible
+        if ((docState == null || docState.trim().isEmpty()) && (docLocation == null || docLocation.trim().isEmpty() || docLocation.contains("@"))) {
+            return true;
+        }
+
         // 1. Direct match on doctor's state property
         if (docState != null && !docState.trim().isEmpty()) {
             String docStateClean = docState.trim().toLowerCase();
@@ -850,16 +943,32 @@ public class DummyDataProvider {
                 filtered.add(d);
             }
         }
+        if (filtered.isEmpty()) {
+            return new ArrayList<>(doctorList);
+        }
         return filtered;
+    }
+
+    public static boolean isAllCategory(String cat) {
+        if (cat == null || cat.trim().isEmpty()) return true;
+        String lower = cat.toLowerCase().trim();
+        return lower.equalsIgnoreCase("all") ||
+               lower.equalsIgnoreCase("all doctors") ||
+               lower.equalsIgnoreCase("all specialists") ||
+               lower.equalsIgnoreCase("see all");
     }
 
     public static synchronized List<Doctor> getFilteredDoctors(String query, String category, String filterChip, String targetState) {
         List<Doctor> all = getDoctors();
         List<Doctor> result = new ArrayList<>();
 
+        boolean isAllDocsCategory = isAllCategory(category);
+
         for (Doctor d : all) {
-            // State check
-            if (!isDoctorInState(d, targetState)) {
+            if (d == null) continue;
+
+            // State check: skip state check when viewing "All Doctors"
+            if (!isAllDocsCategory && !isDoctorInState(d, targetState)) {
                 continue;
             }
 
@@ -887,12 +996,12 @@ public class DummyDataProvider {
             // Search Query check (Doctor name, specialty, qualification, clinic, location, state)
             if (query != null && !query.trim().isEmpty()) {
                 String q = query.trim().toLowerCase();
-                boolean matchesQuery = d.getName().toLowerCase().contains(q) ||
-                        d.getQualification().toLowerCase().contains(q) ||
-                        d.getSpecializationString().toLowerCase().contains(q) ||
-                        d.getClinicName().toLowerCase().contains(q) ||
-                        d.getLocation().toLowerCase().contains(q) ||
-                        d.getState().toLowerCase().contains(q);
+                boolean matchesQuery = (d.getName() != null && d.getName().toLowerCase().contains(q)) ||
+                        (d.getQualification() != null && d.getQualification().toLowerCase().contains(q)) ||
+                        (d.getSpecializationString() != null && d.getSpecializationString().toLowerCase().contains(q)) ||
+                        (d.getClinicName() != null && d.getClinicName().toLowerCase().contains(q)) ||
+                        (d.getLocation() != null && d.getLocation().toLowerCase().contains(q)) ||
+                        (d.getState() != null && d.getState().toLowerCase().contains(q));
                 if (!matchesQuery) {
                     continue;
                 }

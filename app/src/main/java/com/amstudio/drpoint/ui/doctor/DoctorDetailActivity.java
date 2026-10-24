@@ -548,6 +548,13 @@ public class DoctorDetailActivity extends AppCompatActivity {
         binding.btnActionDirections.setOnClickListener(v -> openClinicInGoogleMaps());
         binding.btnActionShare.setOnClickListener(v -> shareDoctorInfo());
         binding.btnActionSave.setOnClickListener(v -> toggleSaveDoctor());
+
+        if (binding.cardClinicDetails != null) {
+            binding.cardClinicDetails.setOnClickListener(v -> openClinicInGoogleMaps());
+        }
+        if (binding.btnClinicDirections != null) {
+            binding.btnClinicDirections.setOnClickListener(v -> openClinicInGoogleMaps());
+        }
     }
 
     private void toggleSaveDoctor() {

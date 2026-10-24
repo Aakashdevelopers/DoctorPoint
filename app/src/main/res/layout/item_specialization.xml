@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/card_specialization"
+    android:layout_width="96dp"
+    android:layout_height="122dp"
+    android:layout_margin="4dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
+    app:cardBackgroundColor="@color/surface_white"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp"
+    app:strokeColor="@color/card_stroke"
+    app:strokeWidth="1dp">
+
+    <!-- Container holding Image with Overlay -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- Specialization Image -->
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/iv_specialization_image"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/desc_specialization_image"
+            android:scaleType="centerCrop"
+            android:src="@drawable/banner_1"
+            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.Corner16dp" />
+
+        <!-- Gradient Scrim overlay at the bottom for image depth -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_gravity="bottom"
+            android:background="@drawable/bg_category_text_scrim" />
+
+        <!-- Translucent LinearLayout Overlay connected flush to Bottom, Left and Right Borders -->
+        <LinearLayout
+            android:id="@+id/ll_bottom_overlay"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:background="@drawable/bg_frosted_glass_overlay"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingHorizontal="4dp"
+            android:paddingVertical="6dp">
+
+            <!-- Title Text over Image Overlay -->
+            <TextView
+                android:id="@+id/tv_specialization_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="center"
+                android:maxLines="1"
+                android:textColor="@color/white"
+                android:textSize="11.5sp"
+                android:textStyle="bold"
+                tools:text="Cardiology" />
+
+            <!-- Subtitle Text over Image Overlay -->
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+</com.google.android.material.card.MaterialCardView>

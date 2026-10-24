@@ -182,6 +182,17 @@ public class AppointmentListAdapter extends ListAdapter<Appointment, Appointment
                 } else if (binding.tvCancellationReason != null) {
                     binding.tvCancellationReason.setVisibility(View.GONE);
                 }
+
+                // Display Cancelled At
+                if (binding.tvCancelledAt != null) {
+                    String cancelTime = appointment.getFormattedCancelledAt();
+                    if (cancelTime != null && !cancelTime.isEmpty()) {
+                        binding.tvCancelledAt.setVisibility(View.VISIBLE);
+                        binding.tvCancelledAt.setText("Cancelled On: " + cancelTime);
+                    } else {
+                        binding.tvCancelledAt.setVisibility(View.GONE);
+                    }
+                }
             } else {
                 binding.llActionButtons.setVisibility(View.VISIBLE);
                 binding.btnReschedule.setVisibility(View.VISIBLE);
@@ -193,6 +204,19 @@ public class AppointmentListAdapter extends ListAdapter<Appointment, Appointment
                 binding.tvStatusText.setTextColor(ContextCompat.getColor(context, R.color.success_green));
                 binding.llStatusBadge.setBackgroundResource(R.drawable.bg_badge_verified);
                 if (binding.tvCancellationReason != null) binding.tvCancellationReason.setVisibility(View.GONE);
+                if (binding.tvCancelledAt != null) binding.tvCancelledAt.setVisibility(View.GONE);
+            }
+
+            // Display Original Appointment Date & Time if present
+            if (binding.tvOriginalDatetime != null) {
+                String origDate = appointment.getOriginalAppointmentDate();
+                String origTime = appointment.getOriginalFormattedTime();
+                if (origDate != null && !origDate.isEmpty() && (!origDate.equals(appointment.getDate()) || !origTime.equals(appointment.getFormattedTime()))) {
+                    binding.tvOriginalDatetime.setVisibility(View.VISIBLE);
+                    binding.tvOriginalDatetime.setText("Original Schedule: " + origDate + " • " + origTime);
+                } else {
+                    binding.tvOriginalDatetime.setVisibility(View.GONE);
+                }
             }
 
             itemView.setOnClickListener(v -> {
